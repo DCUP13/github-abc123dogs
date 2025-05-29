@@ -29,7 +29,8 @@ export function GoogleTab() {
       const { data, error } = await supabase
         .from('google_smtp_emails')
         .select('*')
-        .eq('user_id', user.data.user.id);
+        .eq('user_id', user.data.user.id)
+        .order('address', { ascending: true }); // Sort alphabetically
 
       if (error) throw error;
 
@@ -98,7 +99,7 @@ export function GoogleTab() {
         address: newEmail,
         appPassword: newAppPassword,
         dailyLimit
-      }]);
+      }].sort((a, b) => a.address.localeCompare(b.address))); // Sort after adding
       setNewEmail('');
       setNewAppPassword('');
       setEmailError('');
@@ -255,7 +256,7 @@ export function GoogleTab() {
           </div>
 
           <div>
-            <label htmlFor="appPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="appPassword" className="block text-sm font-medium text-gray-700 dark: text-gray-300 mb-1">
               App Password
             </label>
             <div className="relative">

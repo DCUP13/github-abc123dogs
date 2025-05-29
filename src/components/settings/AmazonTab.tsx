@@ -71,7 +71,8 @@ export function AmazonTab({
       const { data, error } = await supabase
         .from('amazon_ses_emails')
         .select('*')
-        .eq('user_id', user.data.user.id);
+        .eq('user_id', user.data.user.id)
+        .order('address', { ascending: true }); // Sort alphabetically
 
       if (error) throw error;
 
@@ -160,7 +161,7 @@ export function AmazonTab({
       setSesEmails([...sesEmails, { 
         address: newEmail,
         dailyLimit
-      }]);
+      }].sort((a, b) => a.address.localeCompare(b.address))); // Sort after adding
       setNewEmail('');
       setEmailError('');
       setDailyLimit(1440); // Reset to default
