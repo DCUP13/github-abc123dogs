@@ -64,44 +64,30 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     fetchStats();
 
     // Subscribe to changes in dashboard_statistics
-    const statsChannel = supabase.channel('dashboard_stats')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'dashboard_statistics'
-      }, () => {
-        fetchStats();
-      })
+    const channel = supabase.channel('dashboard_stats')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'dashboard_statistics'
+        },
+        (payload) => {
+          if (payload.new) {
+            setStats({
+              totalEmailsRemaining: payload.new.total_emails_remaining,
+              totalEmailAccounts: payload.new.total_email_accounts,
+              totalEmailsSentToday: payload.new.total_emails_sent_today,
+              totalTemplates: payload.new.total_templates,
+              totalCampaigns: payload.new.total_campaigns
+            });
+          }
+        }
+      )
       .subscribe();
 
-    // Subscribe to changes in related tables that affect statistics
-    const relatedTablesChannel = supabase.channel('related_stats')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'amazon_ses_emails'
-      }, () => fetchStats())
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'google_smtp_emails'
-      }, () => fetchStats())
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'templates'
-      }, () => fetchStats())
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'campaigns'
-      }, () => fetchStats())
-      .subscribe();
-
-    // Cleanup subscriptions
     return () => {
-      statsChannel.unsubscribe();
-      relatedTablesChannel.unsubscribe();
+      channel.unsubscribe();
     };
   }, []);
 
