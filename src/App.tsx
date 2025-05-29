@@ -12,6 +12,7 @@ import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
+import { DashboardProvider } from './contexts/DashboardContext';
 
 type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'contacts';
 
@@ -194,56 +195,58 @@ export default function App() {
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
       <TemplatesContext.Provider value={{ templates, fetchTemplates }}>
         <EmailProvider>
-          <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'contacts' ? (
-              <div className="flex min-h-screen bg-white dark:bg-gray-900">
-                <div className="fixed inset-y-0 left-0 w-64">
-                  <Sidebar 
-                    onSignOut={handleSignOut} 
-                    onHomeClick={() => setView('dashboard')}
-                    onAppClick={() => setView('app')}
-                    onSettingsClick={() => setView('settings')}
-                    onTemplatesClick={() => setView('templates')}
-                    onEmailsClick={() => setView('emails')}
-                    onContactsClick={() => setView('contacts')}
-                  />
-                </div>
-                <div className="flex-1 ml-64">
-                  {view === 'dashboard' && (
-                    <Dashboard onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'app' && (
-                    <AppPage onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'settings' && (
-                    <Settings onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'templates' && (
-                    <TemplatesPage onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'emails' && (
-                    <Emails onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'contacts' && (
-                    <Contacts onSignOut={handleSignOut} currentView={view} />
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
-                  {view === 'login' ? (
-                    <Login 
-                      onRegisterClick={() => setView('register')}
-                      onLoginSuccess={handleLogin}
+          <DashboardProvider>
+            <div className={darkMode ? 'dark' : ''}>
+              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'contacts' ? (
+                <div className="flex min-h-screen bg-white dark:bg-gray-900">
+                  <div className="fixed inset-y-0 left-0 w-64">
+                    <Sidebar 
+                      onSignOut={handleSignOut} 
+                      onHomeClick={() => setView('dashboard')}
+                      onAppClick={() => setView('app')}
+                      onSettingsClick={() => setView('settings')}
+                      onTemplatesClick={() => setView('templates')}
+                      onEmailsClick={() => setView('emails')}
+                      onContactsClick={() => setView('contacts')}
                     />
-                  ) : (
-                    <Register onLoginClick={() => setView('login')} />
-                  )}
+                  </div>
+                  <div className="flex-1 ml-64">
+                    {view === 'dashboard' && (
+                      <Dashboard onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'app' && (
+                      <AppPage onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'settings' && (
+                      <Settings onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'templates' && (
+                      <TemplatesPage onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'emails' && (
+                      <Emails onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'contacts' && (
+                      <Contacts onSignOut={handleSignOut} currentView={view} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
+                    {view === 'login' ? (
+                      <Login 
+                        onRegisterClick={() => setView('register')}
+                        onLoginSuccess={handleLogin}
+                      />
+                    ) : (
+                      <Register onLoginClick={() => setView('login')} />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </DashboardProvider>
         </EmailProvider>
       </TemplatesContext.Provider>
     </ThemeContext.Provider>
