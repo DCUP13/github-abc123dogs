@@ -6,6 +6,7 @@ interface DashboardStats {
   totalEmailAccounts: number;
   totalEmailsSentToday: number;
   totalTemplates: number;
+  totalCampaigns: number;
 }
 
 interface DashboardContextType {
@@ -20,7 +21,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     totalEmailsRemaining: 0,
     totalEmailAccounts: 0,
     totalEmailsSentToday: 0,
-    totalTemplates: 0
+    totalTemplates: 0,
+    totalCampaigns: 0
   });
 
   const fetchStats = async () => {
@@ -41,7 +43,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           totalEmailsRemaining: data.total_emails_remaining,
           totalEmailAccounts: data.total_email_accounts,
           totalEmailsSentToday: data.total_emails_sent_today,
-          totalTemplates: data.total_templates
+          totalTemplates: data.total_templates,
+          totalCampaigns: data.total_campaigns
         });
       }
     } catch (error) {
@@ -79,12 +82,4 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       {children}
     </DashboardContext.Provider>
   );
-}
-
-export function useDashboard() {
-  const context = useContext(DashboardContext);
-  if (context === undefined) {
-    throw new Error('useDashboard must be used within a DashboardProvider');
-  }
-  return context;
 }

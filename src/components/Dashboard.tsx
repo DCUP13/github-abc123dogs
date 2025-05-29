@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, FileText, Send, Users } from 'lucide-react';
+import { Mail, FileText, Send, Users, Layout } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
 
 interface DashboardProps {
@@ -39,6 +39,13 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       color: 'text-orange-500',
       bgColor: 'bg-orange-100 dark:bg-orange-900/20',
     },
+    {
+      title: 'Total Campaigns',
+      value: stats.totalCampaigns.toLocaleString(),
+      icon: Layout,
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
+    },
   ];
 
   return (
@@ -46,7 +53,7 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-white dark:text-white mb-8">Dashboard Overview</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats_cards.map((card, index) => {
             const Icon = card.icon;
             return (
