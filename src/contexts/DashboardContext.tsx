@@ -63,9 +63,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchStats();
 
-    // Subscribe to changes
-    const channel = supabase
-      .channel('dashboard_stats_changes')
+    // Subscribe to changes in dashboard_statistics
+    const statsChannel = supabase.channel('dashboard_stats')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -75,8 +74,34 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       })
       .subscribe();
 
+    // Subscribe to changes in related tables that affect statistics
+    const relatedTablesChannel = supabase.channel('related_stats')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'amazon_ses_emails'
+      }, () => fetchStats())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'google_smtp_emails'
+      }, () => fetchStats())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'templates'
+      }, () => fetchStats())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'campaigns'
+      }, () => fetchStats())
+      .subscribe();
+
+    // Cleanup subscriptions
     return () => {
-      channel.unsubscribe();
+      statsChannel.unsubscribe();
+      relatedTablesChannel.unsubscribe();
     };
   }, []);
 
