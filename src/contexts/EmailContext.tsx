@@ -28,7 +28,11 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.data.user.id);
 
       if (sesError) throw sesError;
-      setSesEmails(sesData?.map(email => ({ address: email.address })) || []);
+      setSesEmails(sesData?.map(email => ({
+        address: email.address,
+        dailyLimit: email.daily_limit,
+        sentEmails: email.sent_emails
+      })) || []);
 
       // Fetch Google SMTP emails
       const { data: googleData, error: googleError } = await supabase
@@ -39,7 +43,9 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       if (googleError) throw googleError;
       setGoogleEmails(googleData?.map(email => ({
         address: email.address,
-        appPassword: email.app_password
+        appPassword: email.app_password,
+        dailyLimit: email.daily_limit,
+        sentEmails: email.sent_emails
       })) || []);
     } catch (error) {
       console.error('Error fetching emails:', error);

@@ -21,13 +21,13 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
       ...email, 
       type: 'ses' as const, 
       id: `ses-${email.address}`,
-      sentEmails: 0 // This will be updated by the backend
+      smtpProvider: 'amazon' as const
     })),
     ...googleEmails.map(email => ({ 
       ...email, 
       type: 'gmail' as const, 
       id: `gmail-${email.address}`,
-      sentEmails: 0 // This will be updated by the backend
+      smtpProvider: 'gmail' as const
     }))
   ];
 
