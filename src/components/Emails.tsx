@@ -17,20 +17,20 @@ export interface EmailEntry {
 
 export function Emails({ onSignOut, currentView }: EmailsProps) {
   const { sesEmails, googleEmails } = useEmails();
-  const allEmails = [
-    ...sesEmails.map(email => ({ 
-      ...email, 
-      type: 'ses' as const, 
-      id: `ses-${email.address}`,
-      smtpProvider: 'amazon' as const
-    })),
-    ...googleEmails.map(email => ({ 
-      ...email, 
-      type: 'gmail' as const, 
-      id: `gmail-${email.address}`,
-      smtpProvider: 'gmail' as const
-    }))
-  ];
+  
+  // Combine and sort emails alphabetically by address
+  const allEmails = [...sesEmails.map(email => ({ 
+    ...email, 
+    type: 'ses' as const, 
+    id: `ses-${email.address}`,
+    smtpProvider: 'amazon' as const
+  })),
+  ...googleEmails.map(email => ({ 
+    ...email, 
+    type: 'gmail' as const, 
+    id: `gmail-${email.address}`,
+    smtpProvider: 'gmail' as const
+  }))].sort((a, b) => a.address.localeCompare(b.address));
 
   if (allEmails.length === 0) {
     return (
