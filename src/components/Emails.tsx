@@ -7,16 +7,28 @@ interface EmailsProps {
   currentView: string;
 }
 
-const DAILY_LIMIT = {
-  ses: 50000, // Amazon SES daily limit
-  gmail: 500  // Gmail daily limit
-};
+export interface EmailEntry {
+  address: string;
+  smtpProvider?: 'amazon' | 'gmail';
+  dailyLimit?: number;
+  sentEmails?: number;
+}
 
 export function Emails({ onSignOut, currentView }: EmailsProps) {
   const { sesEmails, googleEmails } = useEmails();
   const allEmails = [
-    ...sesEmails.map(email => ({ ...email, type: 'ses' as const, id: `ses-${email.address}` })),
-    ...googleEmails.map(email => ({ ...email, type: 'gmail' as const, id: `gmail-${email.address}` }))
+    ...sesEmails.map(email => ({ 
+      ...email, 
+      type: 'ses' as const, 
+      id: `ses-${email.address}`,
+      sentEmails: 0 // This will be updated by the backend
+    })),
+    ...googleEmails.map(email => ({ 
+      ...email, 
+      type: 'gmail' as const, 
+      id: `gmail-${email.address}`,
+      sentEmails: 0 // This will be updated by the backend
+    }))
   ];
 
   if (allEmails.length === 0) {
@@ -56,9 +68,8 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
 
         <div className="space-y-6">
           {allEmails.map((email) => {
-            const limit = email.type === 'ses' ? DAILY_LIMIT.ses : DAILY_LIMIT.gmail;
-            // For demo purposes, generate a random number of sent emails
-            const sentEmails = Math.floor(Math.random() * limit);
+            const limit = email.dailyLimit || (email.type === 'ses' ? 50000 : 500);
+            const sentEmails = email.sentEmails || 0;
             const remaining = limit - sentEmails;
             const usagePercentage = (sentEmails / limit) * 100;
 
@@ -83,9 +94,12 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right space-y-1">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {remaining.toLocaleString()} emails remaining
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {sentEmails.toLocaleString()} sent today
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       of {limit.toLocaleString()} daily limit
@@ -105,6 +119,10 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                       }`}
                       style={{ width: `${usagePercentage}%` }}
                     />
+                  </div>
+                  <div className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>{sentEmails.toLocaleString()} sent</span>
+                    <span>{remaining.toLocaleString()} remaining</span>
                   </div>
                 </div>
               </div>
