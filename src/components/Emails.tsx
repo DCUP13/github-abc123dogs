@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, AlertCircle, Server } from 'lucide-react';
+import { Mail, AlertCircle, Server, Lock } from 'lucide-react';
 import { useEmails } from '../contexts/EmailContext';
 
 interface EmailsProps {
@@ -12,6 +12,7 @@ export interface EmailEntry {
   smtpProvider?: 'amazon' | 'gmail';
   dailyLimit?: number;
   sentEmails?: number;
+  isLocked?: boolean;
 }
 
 export function Emails({ onSignOut, currentView }: EmailsProps) {
@@ -72,11 +73,14 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
             const sentEmails = email.sentEmails || 0;
             const remaining = limit - sentEmails;
             const usagePercentage = (sentEmails / limit) * 100;
+            const isLocked = email.isLocked || sentEmails >= limit;
 
             return (
               <div
                 key={email.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+                className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 ${
+                  isLocked ? 'border-2 border-yellow-400 dark:border-yellow-500' : ''
+                }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -86,9 +90,17 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                       <Mail className="w-5 h-5 text-red-500" />
                     )}
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                        {email.address}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                          {email.address}
+                        </h3>
+                        {isLocked && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 rounded-full">
+                            <Lock className="w-3 h-3" />
+                            Locked
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {email.type === 'ses' ? 'Amazon SES' : 'Gmail SMTP'}
                       </p>
@@ -111,7 +123,9 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                   <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
                       className={`absolute left-0 top-0 h-full rounded-full ${
-                        usagePercentage > 90
+                        isLocked
+                          ? 'bg-yellow-500'
+                          : usagePercentage > 90
                           ? 'bg-red-500'
                           : usagePercentage > 75
                           ? 'bg-yellow-500'
@@ -125,6 +139,17 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                     <span>{remaining.toLocaleString()} remaining</span>
                   </div>
                 </div>
+
+                {isLocked && (
+                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+                      <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                        This email has reached its daily sending limit. It will be automatically unlocked at midnight UTC.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

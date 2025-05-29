@@ -11,6 +11,7 @@ export interface SESEmail {
   address: string;
   dailyLimit?: number;
   sentEmails?: number;
+  isLocked?: boolean;
   testing?: boolean;
 }
 
@@ -19,6 +20,7 @@ export interface GoogleEmail {
   appPassword: string;
   dailyLimit?: number;
   sentEmails?: number;
+  isLocked?: boolean;
   testing?: boolean;
 }
 

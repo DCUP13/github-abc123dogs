@@ -31,7 +31,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       setSesEmails(sesData?.map(email => ({
         address: email.address,
         dailyLimit: email.daily_limit,
-        sentEmails: email.sent_emails
+        sentEmails: email.sent_emails,
+        isLocked: email.sent_emails >= email.daily_limit
       })) || []);
 
       // Fetch Google SMTP emails
@@ -45,7 +46,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         address: email.address,
         appPassword: email.app_password,
         dailyLimit: email.daily_limit,
-        sentEmails: email.sent_emails
+        sentEmails: email.sent_emails,
+        isLocked: email.sent_emails >= email.daily_limit
       })) || []);
     } catch (error) {
       console.error('Error fetching emails:', error);
