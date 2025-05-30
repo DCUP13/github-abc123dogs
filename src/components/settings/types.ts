@@ -29,6 +29,7 @@ export interface GeneralSettings {
   twoFactorAuth: boolean;
   newsletter: boolean;
   publicProfile: boolean;
+  debugging: boolean;
 }
 
 export interface ToggleProps {

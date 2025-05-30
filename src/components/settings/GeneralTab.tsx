@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Bell, Moon, Globe, Lock, Mail } from 'lucide-react';
+import { Bell, Moon, Globe, Lock, Mail, Bug } from 'lucide-react';
 import { ThemeContext } from '../../App';
 import { SettingRow } from './SettingRow';
 import type { GeneralSettings } from './types';
@@ -68,6 +68,20 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
             setting="newsletter"
             checked={settings.newsletter}
             onChange={() => onToggle('newsletter')}
+          />
+        </div>
+      </div>
+
+      <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Developer Options</h2>
+        <div className="space-y-2">
+          <SettingRow
+            icon={Bug}
+            title="Debugging"
+            description="Enable additional logging and debugging features"
+            setting="debugging"
+            checked={settings.debugging}
+            onChange={() => onToggle('debugging')}
           />
         </div>
       </div>

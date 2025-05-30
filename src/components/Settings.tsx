@@ -20,7 +20,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
     notifications: true,
     twoFactorAuth: false,
     newsletter: false,
-    publicProfile: true
+    publicProfile: true,
+    debugging: false
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +51,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
           notifications: true,
           two_factor_auth: false,
           newsletter: false,
-          public_profile: true
+          public_profile: true,
+          debugging: false
         });
 
       if (error) throw error;
@@ -80,7 +82,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
           notifications: data.notifications,
           twoFactorAuth: data.two_factor_auth,
           newsletter: data.newsletter,
-          publicProfile: data.public_profile
+          publicProfile: data.public_profile,
+          debugging: data.debugging
         });
       } else {
         await createDefaultSettings();
@@ -109,6 +112,7 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
         two_factor_auth: newSettings.twoFactorAuth,
         newsletter: newSettings.newsletter,
         public_profile: newSettings.publicProfile,
+        debugging: newSettings.debugging,
         updated_at: new Date().toISOString()
       };
 
