@@ -7,14 +7,13 @@ import { Sidebar } from './components/Sidebar';
 import { Settings } from './components/Settings';
 import { TemplatesPage } from './features/templates/TemplatesPage';
 import { Emails } from './components/Emails';
-import { Contacts } from './components/Contacts';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'contacts';
+type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -197,7 +196,7 @@ export default function App() {
         <EmailProvider>
           <DashboardProvider>
             <div className={darkMode ? 'dark' : ''}>
-              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'contacts' ? (
+              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' ? (
                 <div className="flex min-h-screen bg-white dark:bg-gray-900">
                   <div className="fixed inset-y-0 left-0 w-64">
                     <Sidebar 
@@ -207,7 +206,6 @@ export default function App() {
                       onSettingsClick={() => setView('settings')}
                       onTemplatesClick={() => setView('templates')}
                       onEmailsClick={() => setView('emails')}
-                      onContactsClick={() => setView('contacts')}
                     />
                   </div>
                   <div className="flex-1 ml-64">
@@ -225,9 +223,6 @@ export default function App() {
                     )}
                     {view === 'emails' && (
                       <Emails onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'contacts' && (
-                      <Contacts onSignOut={handleSignOut} currentView={view} />
                     )}
                   </div>
                 </div>
