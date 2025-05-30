@@ -25,7 +25,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: sesData, error: sesError } = await supabase
         .from('amazon_ses_emails')
         .select('*')
-        .eq('user_id', user.data.user.id);
+        .eq('user_id', user.data.user.id)
+        .order('address', { ascending: true });
 
       if (sesError) throw sesError;
       setSesEmails(sesData?.map(email => ({
@@ -39,7 +40,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: googleData, error: googleError } = await supabase
         .from('google_smtp_emails')
         .select('*')
-        .eq('user_id', user.data.user.id);
+        .eq('user_id', user.data.user.id)
+        .order('address', { ascending: true });
 
       if (googleError) throw googleError;
       setGoogleEmails(googleData?.map(email => ({

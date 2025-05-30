@@ -1,6 +1,7 @@
 import React from 'react';
-import { Mail, AlertCircle, Server, Lock } from 'lucide-react';
+import { Mail, AlertCircle, Server, Lock, RotateCcw } from 'lucide-react';
 import { useEmails } from '../contexts/EmailContext';
+import { supabase } from '../lib/supabase';
 
 interface EmailsProps {
   onSignOut: () => void;
@@ -16,7 +17,7 @@ export interface EmailEntry {
 }
 
 export function Emails({ onSignOut, currentView }: EmailsProps) {
-  const { sesEmails, googleEmails } = useEmails();
+  const { sesEmails, googleEmails, refreshEmails } = useEmails();
   
   // Combine and sort emails alphabetically by address
   const allEmails = [...sesEmails.map(email => ({ 
@@ -31,6 +32,33 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
     id: `gmail-${email.address}`,
     smtpProvider: 'gmail' as const
   }))].sort((a, b) => a.address.localeCompare(b.address));
+
+  const handleResetSentEmails = async (email: typeof allEmails[0]) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const table = email.type === 'ses' ? 'amazon_ses_emails' : 'google_smtp_emails';
+      const { error } = await supabase
+        .from(table)
+        .update({ 
+          sent_emails: 0,
+          is_locked: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id)
+        .eq('address', email.address);
+
+      if (error) throw error;
+
+      await refreshEmails();
+    } catch (error) {
+      console.error('Error resetting sent emails:', error);
+      alert('Failed to reset sent emails count. Please try again.');
+    }
+  };
 
   if (allEmails.length === 0) {
     return (
@@ -107,6 +135,16 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                     </div>
                   </div>
                   <div className="text-right space-y-1">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleResetSentEmails(email)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        title="Reset sent emails count"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Reset Count
+                      </button>
+                    </div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {remaining.toLocaleString()} emails remaining
                     </p>
@@ -145,7 +183,7 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-500 mt-0.5" />
                       <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                        This email has reached its daily sending limit. It will be automatically unlocked at midnight UTC.
+                        This email has reached its daily sending limit. Click the "Reset Count" button above to manually reset the counter, or wait until midnight UTC for automatic reset.
                       </p>
                     </div>
                   </div>
