@@ -30,10 +30,58 @@ interface AppPageProps {
   currentView: string;
 }
 
-const cities = [
-  'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
-  'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'San Jose, CA'
-];
+const statesAndCities = {
+  'AL': ['Birmingham', 'Montgomery', 'Mobile', 'Huntsville', 'Tuscaloosa'],
+  'AK': ['Anchorage', 'Fairbanks', 'Juneau', 'Sitka', 'Ketchikan'],
+  'AZ': ['Phoenix', 'Tucson', 'Mesa', 'Chandler', 'Scottsdale'],
+  'AR': ['Little Rock', 'Fort Smith', 'Fayetteville', 'Springdale', 'Jonesboro'],
+  'CA': ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco', 'Fresno'],
+  'CO': ['Denver', 'Colorado Springs', 'Aurora', 'Fort Collins', 'Lakewood'],
+  'CT': ['Bridgeport', 'New Haven', 'Hartford', 'Stamford', 'Waterbury'],
+  'DE': ['Wilmington', 'Dover', 'Newark', 'Middletown', 'Smyrna'],
+  'FL': ['Jacksonville', 'Miami', 'Tampa', 'Orlando', 'St. Petersburg'],
+  'GA': ['Atlanta', 'Augusta', 'Columbus', 'Macon', 'Savannah'],
+  'HI': ['Honolulu', 'Pearl City', 'Hilo', 'Kailua', 'Waipahu'],
+  'ID': ['Boise', 'Meridian', 'Nampa', 'Idaho Falls', 'Pocatello'],
+  'IL': ['Chicago', 'Aurora', 'Rockford', 'Joliet', 'Naperville'],
+  'IN': ['Indianapolis', 'Fort Wayne', 'Evansville', 'South Bend', 'Carmel'],
+  'IA': ['Des Moines', 'Cedar Rapids', 'Davenport', 'Sioux City', 'Waterloo'],
+  'KS': ['Wichita', 'Overland Park', 'Kansas City', 'Topeka', 'Olathe'],
+  'KY': ['Louisville', 'Lexington', 'Bowling Green', 'Owensboro', 'Covington'],
+  'LA': ['New Orleans', 'Baton Rouge', 'Shreveport', 'Lafayette', 'Lake Charles'],
+  'ME': ['Portland', 'Lewiston', 'Bangor', 'South Portland', 'Auburn'],
+  'MD': ['Baltimore', 'Frederick', 'Rockville', 'Gaithersburg', 'Bowie'],
+  'MA': ['Boston', 'Worcester', 'Springfield', 'Lowell', 'Cambridge'],
+  'MI': ['Detroit', 'Grand Rapids', 'Warren', 'Sterling Heights', 'Lansing'],
+  'MN': ['Minneapolis', 'Saint Paul', 'Rochester', 'Duluth', 'Bloomington'],
+  'MS': ['Jackson', 'Gulfport', 'Southaven', 'Hattiesburg', 'Biloxi'],
+  'MO': ['Kansas City', 'Saint Louis', 'Springfield', 'Independence', 'Columbia'],
+  'MT': ['Billings', 'Missoula', 'Great Falls', 'Bozeman', 'Butte'],
+  'NE': ['Omaha', 'Lincoln', 'Bellevue', 'Grand Island', 'Kearney'],
+  'NV': ['Las Vegas', 'Henderson', 'Reno', 'North Las Vegas', 'Sparks'],
+  'NH': ['Manchester', 'Nashua', 'Concord', 'Derry', 'Rochester'],
+  'NJ': ['Newark', 'Jersey City', 'Paterson', 'Elizabeth', 'Edison'],
+  'NM': ['Albuquerque', 'Las Cruces', 'Rio Rancho', 'Santa Fe', 'Roswell'],
+  'NY': ['New York', 'Buffalo', 'Rochester', 'Yonkers', 'Syracuse'],
+  'NC': ['Charlotte', 'Raleigh', 'Greensboro', 'Durham', 'Winston-Salem'],
+  'ND': ['Fargo', 'Bismarck', 'Grand Forks', 'Minot', 'West Fargo'],
+  'OH': ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo', 'Akron'],
+  'OK': ['Oklahoma City', 'Tulsa', 'Norman', 'Broken Arrow', 'Lawton'],
+  'OR': ['Portland', 'Eugene', 'Salem', 'Gresham', 'Hillsboro'],
+  'PA': ['Philadelphia', 'Pittsburgh', 'Allentown', 'Erie', 'Reading'],
+  'RI': ['Providence', 'Warwick', 'Cranston', 'Pawtucket', 'East Providence'],
+  'SC': ['Columbia', 'Charleston', 'North Charleston', 'Mount Pleasant', 'Rock Hill'],
+  'SD': ['Sioux Falls', 'Rapid City', 'Aberdeen', 'Brookings', 'Watertown'],
+  'TN': ['Nashville', 'Memphis', 'Knoxville', 'Chattanooga', 'Clarksville'],
+  'TX': ['Houston', 'San Antonio', 'Dallas', 'Austin', 'Fort Worth'],
+  'UT': ['Salt Lake City', 'West Valley City', 'Provo', 'West Jordan', 'Orem'],
+  'VT': ['Burlington', 'Essex', 'South Burlington', 'Colchester', 'Rutland'],
+  'VA': ['Virginia Beach', 'Norfolk', 'Chesapeake', 'Richmond', 'Newport News'],
+  'WA': ['Seattle', 'Spokane', 'Tacoma', 'Vancouver', 'Bellevue'],
+  'WV': ['Charleston', 'Huntington', 'Parkersburg', 'Morgantown', 'Wheeling'],
+  'WI': ['Milwaukee', 'Madison', 'Green Bay', 'Kenosha', 'Racine'],
+  'WY': ['Cheyenne', 'Casper', 'Laramie', 'Gillette', 'Rock Springs']
+};
 
 const daysTillCloseOptions = [
   { value: 'NA', label: 'Not Applicable' },
@@ -49,6 +97,8 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   const availableEmails: EmailEntry[] = [
@@ -69,6 +119,19 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       }))
     );
   }, [sesEmails, googleEmails]);
+
+  // Reset city selection when state changes
+  useEffect(() => {
+    setSelectedCity('');
+  }, [selectedState]);
+
+  // Update campaign city when state or city changes
+  useEffect(() => {
+    if (currentCampaign && selectedState && selectedCity) {
+      const cityStateValue = `${selectedCity}, ${selectedState}`;
+      handleUpdateCampaign({ city: cityStateValue });
+    }
+  }, [selectedState, selectedCity]);
 
   const validateCampaign = (campaign: Campaign) => {
     if (campaign.emails.length === 0) {
@@ -140,7 +203,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       id: '',
       name: 'New Campaign',
       isActive: false,
-      city: cities[0],
+      city: '',
       subjectLines: [],
       daysTillClose: 'NA',
       templates: [],
@@ -148,6 +211,8 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       lastModified: new Date().toISOString()
     };
     setCurrentCampaign(newCampaign);
+    setSelectedState('');
+    setSelectedCity('');
   };
 
   const handleSaveCampaign = async (name: string) => {
@@ -235,6 +300,8 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
 
       await fetchCampaigns();
       setCurrentCampaign(null);
+      setSelectedState('');
+      setSelectedCity('');
     } catch (error) {
       console.error('Error saving campaign:', error);
       alert('Failed to save campaign. Please try again.');
@@ -397,6 +464,16 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
     }
     
     setCurrentCampaign(campaign);
+    
+    // Parse existing city value to set state and city dropdowns
+    if (campaign.city && campaign.city.includes(', ')) {
+      const [city, state] = campaign.city.split(', ');
+      setSelectedState(state);
+      setSelectedCity(city);
+    } else {
+      setSelectedState('');
+      setSelectedCity('');
+    }
   };
 
   if (isLoading) {
@@ -552,7 +629,11 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => setCurrentCampaign(null)}
+                  onClick={() => {
+                    setCurrentCampaign(null);
+                    setSelectedState('');
+                    setSelectedCity('');
+                  }}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
                 >
                   <X className="w-4 h-4 mr-2" />
@@ -575,26 +656,50 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Target City
+                      Target Location
                     </label>
                     {currentCampaign.id ? (
                       <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">
                         {currentCampaign.city}
                       </div>
                     ) : (
-                      <select
-                        value={currentCampaign.city}
-                        onChange={(e) => handleUpdateCampaign({ city: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      >
-                        {cities.map(city => (
-                          <option key={city} value={city}>{city}</option>
-                        ))}
-                      </select>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            State
+                          </label>
+                          <select
+                            value={selectedState}
+                            onChange={(e) => setSelectedState(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          >
+                            <option value="">Select State</option>
+                            {Object.keys(statesAndCities).map(state => (
+                              <option key={state} value={state}>{state}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            City
+                          </label>
+                          <select
+                            value={selectedCity}
+                            onChange={(e) => setSelectedCity(e.target.value)}
+                            disabled={!selectedState}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Select City</option>
+                            {selectedState && statesAndCities[selectedState as keyof typeof statesAndCities]?.map(city => (
+                              <option key={city} value={city}>{city}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
                     )}
                     {currentCampaign.id && (
                       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Target city cannot be changed after campaign creation. Create a new campaign to target a different city.
+                        Target location cannot be changed after campaign creation. Create a new campaign to target a different location.
                       </p>
                     )}
                   </div>
