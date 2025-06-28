@@ -30,6 +30,7 @@ export interface GeneralSettings {
   newsletter: boolean;
   publicProfile: boolean;
   debugging: boolean;
+  cleanUpLoi: boolean;
 }
 
 export interface ToggleProps {

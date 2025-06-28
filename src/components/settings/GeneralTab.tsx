@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Bell, Moon, Globe, Lock, Mail, Bug } from 'lucide-react';
+import { Bell, Moon, Globe, Lock, Mail, Bug, Trash2 } from 'lucide-react';
 import { ThemeContext } from '../../App';
 import { SettingRow } from './SettingRow';
 import type { GeneralSettings } from './types';
@@ -82,6 +82,14 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
             setting="debugging"
             checked={settings.debugging}
             onChange={() => onToggle('debugging')}
+          />
+          <SettingRow
+            icon={Trash2}
+            title="Delete attachments from local filesystem when campaigns are running"
+            description="Automatically clean up local attachment files when campaigns are active"
+            setting="cleanUpLoi"
+            checked={settings.cleanUpLoi}
+            onChange={() => onToggle('cleanUpLoi')}
           />
         </div>
       </div>

@@ -21,7 +21,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
     twoFactorAuth: false,
     newsletter: false,
     publicProfile: true,
-    debugging: false
+    debugging: false,
+    cleanUpLoi: false
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -52,7 +53,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
           two_factor_auth: false,
           newsletter: false,
           public_profile: true,
-          debugging: false
+          debugging: false,
+          clean_up_loi: false
         });
 
       if (error) throw error;
@@ -83,7 +85,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
           twoFactorAuth: data.two_factor_auth,
           newsletter: data.newsletter,
           publicProfile: data.public_profile,
-          debugging: data.debugging
+          debugging: data.debugging,
+          cleanUpLoi: data.clean_up_loi || false
         });
       } else {
         await createDefaultSettings();
@@ -113,6 +116,7 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
         newsletter: newSettings.newsletter,
         public_profile: newSettings.publicProfile,
         debugging: newSettings.debugging,
+        clean_up_loi: newSettings.cleanUpLoi,
         updated_at: new Date().toISOString()
       };
 
