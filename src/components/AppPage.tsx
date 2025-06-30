@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Plus, X, MapPin, Mail, FileText, Save, Clock, Server, AlertCircle, Calendar } from 'lucide-react';
+import { Layout, Plus, X, MapPin, Mail, FileText, Save, Clock, Server, AlertCircle, Calendar, Phone, User, Building, DollarSign } from 'lucide-react';
 import type { Template } from '../features/templates/types';
 import type { EmailEntry } from './Emails';
 import { TemplatesContext } from '../App';
@@ -17,6 +17,12 @@ interface Campaign {
   city: string;
   subjectLines: string[];
   daysTillClose: string;
+  senderPhone: string;
+  senderCity: string;
+  senderState: string;
+  senderName: string;
+  emd: string;
+  optionPeriod: string;
   templates: {
     template: Template;
     type: 'body' | 'attachment';
@@ -178,6 +184,12 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
         city: campaign.city,
         subjectLines: campaign.subject_lines || [],
         daysTillClose: campaign.days_till_close || 'NA',
+        senderPhone: campaign.sender_phone || '',
+        senderCity: campaign.sender_city || '',
+        senderState: campaign.sender_state || '',
+        senderName: campaign.sender_name || '',
+        emd: campaign.emd || '',
+        optionPeriod: campaign.option_period || '',
         templates: campaign.campaign_templates.map((ct: any) => ({
           template: ct.templates,
           type: ct.template_type
@@ -206,6 +218,12 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       city: '',
       subjectLines: [],
       daysTillClose: 'NA',
+      senderPhone: '',
+      senderCity: '',
+      senderState: '',
+      senderName: '',
+      emd: '',
+      optionPeriod: '',
       templates: [],
       emails: [],
       lastModified: new Date().toISOString()
@@ -237,6 +255,12 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
             city: currentCampaign.city,
             subject_lines: currentCampaign.subjectLines,
             days_till_close: currentCampaign.daysTillClose,
+            sender_phone: currentCampaign.senderPhone,
+            sender_city: currentCampaign.senderCity,
+            sender_state: currentCampaign.senderState,
+            sender_name: currentCampaign.senderName,
+            emd: currentCampaign.emd,
+            option_period: currentCampaign.optionPeriod,
             updated_at: now
           })
           .select()
@@ -252,6 +276,12 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
             is_active: false,
             subject_lines: currentCampaign.subjectLines,
             days_till_close: currentCampaign.daysTillClose,
+            sender_phone: currentCampaign.senderPhone,
+            sender_city: currentCampaign.senderCity,
+            sender_state: currentCampaign.senderState,
+            sender_name: currentCampaign.senderName,
+            emd: currentCampaign.emd,
+            option_period: currentCampaign.optionPeriod,
             updated_at: now
           })
           .eq('id', campaignId);
@@ -706,26 +736,6 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Days Till Close
-                    </label>
-                    <select
-                      value={currentCampaign.daysTillClose}
-                      onChange={(e) => handleUpdateCampaign({ daysTillClose: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {daysTillCloseOptions.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      Select the number of days until close or "Not Applicable" if not relevant.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Subject Lines
                     </label>
                     <div className="space-y-2">
@@ -897,6 +907,108 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Days Till Close
+                    </label>
+                    <select
+                      value={currentCampaign.daysTillClose}
+                      onChange={(e) => handleUpdateCampaign({ daysTillClose: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {daysTillCloseOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                      Select the number of days until close or "Not Applicable" if not relevant.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sender Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={currentCampaign.senderPhone}
+                      onChange={(e) => handleUpdateCampaign({ senderPhone: e.target.value })}
+                      placeholder="(555) 123-4567"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Sender City
+                      </label>
+                      <input
+                        type="text"
+                        value={currentCampaign.senderCity}
+                        onChange={(e) => handleUpdateCampaign({ senderCity: e.target.value })}
+                        placeholder="Enter sender city"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Sender State
+                      </label>
+                      <select
+                        value={currentCampaign.senderState}
+                        onChange={(e) => handleUpdateCampaign({ senderState: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Select State</option>
+                        {Object.keys(statesAndCities).map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Sender Name
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCampaign.senderName}
+                      onChange={(e) => handleUpdateCampaign({ senderName: e.target.value })}
+                      placeholder="Enter sender name"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      EMD (Earnest Money Deposit)
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCampaign.emd}
+                      onChange={(e) => handleUpdateCampaign({ emd: e.target.value })}
+                      placeholder="Enter EMD amount"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Option Period
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCampaign.optionPeriod}
+                      onChange={(e) => handleUpdateCampaign({ optionPeriod: e.target.value })}
+                      placeholder="Enter option period"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
                   </div>
                 </div>
               </div>
