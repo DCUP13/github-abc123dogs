@@ -101,12 +101,21 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
 
   const handleDeleteTemplate = async (id: string) => {
     try {
-      const { error } = await supabase
+      // First, clear the content to reduce payload size for server-side processing
+      const { error: updateError } = await supabase
+        .from('templates')
+        .update({ content: '' })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      // Then delete the template
+      const { error: deleteError } = await supabase
         .from('templates')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       await fetchTemplates();
     } catch (error) {
