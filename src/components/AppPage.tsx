@@ -23,6 +23,7 @@ interface Campaign {
   senderName: string;
   emd: string;
   optionPeriod: string;
+  titleCompany: string;
   templates: {
     template: Template;
     type: 'body' | 'attachment';
@@ -190,6 +191,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
         senderName: campaign.sender_name || '',
         emd: campaign.emd || '',
         optionPeriod: campaign.option_period || '',
+        titleCompany: campaign.title_company || '',
         templates: campaign.campaign_templates.map((ct: any) => ({
           template: ct.templates,
           type: ct.template_type
@@ -224,6 +226,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       senderName: '',
       emd: '',
       optionPeriod: '',
+      titleCompany: '',
       templates: [],
       emails: [],
       lastModified: new Date().toISOString()
@@ -261,6 +264,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
             sender_name: currentCampaign.senderName,
             emd: currentCampaign.emd,
             option_period: currentCampaign.optionPeriod,
+            title_company: currentCampaign.titleCompany,
             updated_at: now
           })
           .select()
@@ -282,6 +286,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
             sender_name: currentCampaign.senderName,
             emd: currentCampaign.emd,
             option_period: currentCampaign.optionPeriod,
+            title_company: currentCampaign.titleCompany,
             updated_at: now
           })
           .eq('id', campaignId);
@@ -1007,6 +1012,19 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                       value={currentCampaign.optionPeriod}
                       onChange={(e) => handleUpdateCampaign({ optionPeriod: e.target.value })}
                       placeholder="Enter option period"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Title Company
+                    </label>
+                    <input
+                      type="text"
+                      value={currentCampaign.titleCompany}
+                      onChange={(e) => handleUpdateCampaign({ titleCompany: e.target.value })}
+                      placeholder="Enter title company name"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
