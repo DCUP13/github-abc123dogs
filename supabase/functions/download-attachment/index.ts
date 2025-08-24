@@ -78,7 +78,7 @@ serve(async (req) => {
     const bucket = s3UrlParts[0]
     const key = s3UrlParts.slice(1).join('/')
 
-    // Generate presigned URL using proper AWS v4 signing
+    // Generate presigned URL using AWS SDK approach
     const presignedUrl = await generatePresignedUrl(
       bucket, 
       key, 
@@ -120,7 +120,6 @@ async function generatePresignedUrl(
   const method = 'GET'
   const service = 's3'
   const host = `${bucket}.s3.${region}.amazonaws.com`
-  const endpoint = `https://${host}`
   
   // Create timestamp
   const now = new Date()
@@ -130,18 +129,20 @@ async function generatePresignedUrl(
   // Create credential scope
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
   
-  // Create query parameters
-  const queryParams = new URLSearchParams({
-    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-    'X-Amz-Credential': `${accessKeyId}/${credentialScope}`,
-    'X-Amz-Date': amzDate,
-    'X-Amz-Expires': '3600',
-    'X-Amz-SignedHeaders': 'host'
-  })
+  // Create query parameters in alphabetical order
+  const queryParams = new URLSearchParams()
+  queryParams.set('X-Amz-Algorithm', 'AWS4-HMAC-SHA256')
+  queryParams.set('X-Amz-Credential', `${accessKeyId}/${credentialScope}`)
+  queryParams.set('X-Amz-Date', amzDate)
+  queryParams.set('X-Amz-Expires', '3600')
+  queryParams.set('X-Amz-SignedHeaders', 'host')
+  
+  // Sort query parameters
+  const sortedParams = Array.from(queryParams.entries()).sort()
+  const canonicalQueryString = sortedParams.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
   
   // Create canonical request
-  const canonicalUri = '/' + key
-  const canonicalQueryString = queryParams.toString()
+  const canonicalUri = '/' + key.split('/').map(part => encodeURIComponent(part)).join('/')
   const canonicalHeaders = `host:${host}\n`
   const signedHeaders = 'host'
   const payloadHash = 'UNSIGNED-PAYLOAD'
@@ -169,10 +170,16 @@ async function generatePresignedUrl(
   const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service)
   const signature = await hmacSha256Hex(signingKey, stringToSign)
   
-  // Add signature to query parameters
-  queryParams.set('X-Amz-Signature', signature)
+  // Build final URL
+  const finalParams = new URLSearchParams()
+  finalParams.set('X-Amz-Algorithm', 'AWS4-HMAC-SHA256')
+  finalParams.set('X-Amz-Credential', `${accessKeyId}/${credentialScope}`)
+  finalParams.set('X-Amz-Date', amzDate)
+  finalParams.set('X-Amz-Expires', '3600')
+  finalParams.set('X-Amz-SignedHeaders', 'host')
+  finalParams.set('X-Amz-Signature', signature)
   
-  return `${endpoint}${canonicalUri}?${queryParams.toString()}`
+  return `https://${host}${canonicalUri}?${finalParams.toString()}`
 }
 
 // Helper functions for AWS signature calculation
