@@ -74,7 +74,50 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   };
 
   const hasAttachments = (attachments: any) => {
-    return attachments && (Array.isArray(attachments) ? attachments.length > 0 : Object.keys(attachments).length > 0);
+    return attachments && Array.isArray(attachments) && attachments.length > 0;
+  };
+
+  const getAttachmentIcon = (contentType: string) => {
+    if (contentType.includes('pdf')) {
+      return '📄';
+    } else if (contentType.includes('word') || contentType.includes('document')) {
+      return '📝';
+    } else if (contentType.includes('image')) {
+      return '🖼️';
+    } else if (contentType.includes('excel') || contentType.includes('spreadsheet')) {
+      return '📊';
+    } else {
+      return '📎';
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleDownloadAttachment = async (attachment: any) => {
+    try {
+      // For S3 URLs, we'll need to create a presigned URL or handle the download
+      // This is a placeholder - you'll need to implement the actual S3 download logic
+      // based on your backend setup
+      
+      // Option 1: If you have a backend endpoint to generate presigned URLs
+      // const response = await fetch(`/api/download-attachment?s3_url=${encodeURIComponent(attachment.s3_url)}`);
+      // const { downloadUrl } = await response.json();
+      // window.open(downloadUrl, '_blank');
+      
+      // Option 2: Direct S3 access (if bucket is public or you have credentials)
+      // For now, we'll show an alert with the S3 URL
+      alert(`Download functionality needs to be implemented for S3 URL: ${attachment.s3_url}`);
+      
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      alert('Failed to download attachment. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -223,10 +266,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   <div className="flex items-center gap-2 text-sm">
                     <Paperclip className="w-4 h-4 text-gray-400" />
                     <span className="text-gray-500 dark:text-gray-400">
-                      {Array.isArray(selectedEmail.attachments) 
-                        ? `${selectedEmail.attachments.length} attachment(s)`
-                        : 'Attachments available'
-                      }
+                      {selectedEmail.attachments.length} attachment{selectedEmail.attachments.length !== 1 ? 's' : ''}
+                    </span>
+                  <div className="flex items-center gap-1">
+                    <Paperclip className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {email.attachments.length}
                     </span>
                   </div>
                 )}
@@ -243,12 +288,35 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
               {hasAttachments(selectedEmail.attachments) && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                    Attachments
+                    Attachments ({selectedEmail.attachments.length})
                   </h3>
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
-                      {JSON.stringify(selectedEmail.attachments, null, 2)}
-                    </pre>
+                  <div className="space-y-2">
+                    {selectedEmail.attachments.map((attachment: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">
+                            {getAttachmentIcon(attachment.contentType)}
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              {attachment.filename}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatFileSize(attachment.size)} • {attachment.contentType.split('/')[1].toUpperCase()}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDownloadAttachment(attachment)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
