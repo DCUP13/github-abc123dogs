@@ -268,11 +268,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                     <span className="text-gray-500 dark:text-gray-400">
                       {selectedEmail.attachments.length} attachment{selectedEmail.attachments.length !== 1 ? 's' : ''}
                     </span>
-                  <div className="flex items-center gap-1">
-                    <Paperclip className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {email.attachments.length}
-                    </span>
                   </div>
                 )}
               </div>
