@@ -86,6 +86,16 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
       return '🖼️';
     } else if (contentType.includes('excel') || contentType.includes('spreadsheet')) {
       return '📊';
+    } else if (contentType.includes('text') || contentType.includes('plain')) {
+      return '📃';
+    } else if (contentType.includes('zip') || contentType.includes('compressed')) {
+      return '🗜️';
+    } else if (contentType.includes('video')) {
+      return '🎥';
+    } else if (contentType.includes('audio')) {
+      return '🎵';
+    } else if (contentType.includes('presentation') || contentType.includes('powerpoint')) {
+      return '📊';
     } else {
       return '📎';
     }
