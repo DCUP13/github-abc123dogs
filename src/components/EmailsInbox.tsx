@@ -101,22 +101,46 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
   const handleDownloadAttachment = async (attachment: any) => {
     try {
-      // For S3 URLs, we'll need to create a presigned URL or handle the download
-      // This is a placeholder - you'll need to implement the actual S3 download logic
-      // based on your backend setup
+      if (!selectedEmail) return;
+
+      // Get the current user's session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('You must be logged in to download attachments');
+        return;
+      }
+
+      // Call the Supabase Edge Function to get presigned URL
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-attachment?s3_url=${encodeURIComponent(attachment.s3_url)}&email_id=${selectedEmail.id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate download URL');
+      }
+
+      const { downloadUrl, filename } = await response.json();
       
-      // Option 1: If you have a backend endpoint to generate presigned URLs
-      // const response = await fetch(`/api/download-attachment?s3_url=${encodeURIComponent(attachment.s3_url)}`);
-      // const { downloadUrl } = await response.json();
-      // window.open(downloadUrl, '_blank');
-      
-      // Option 2: Direct S3 access (if bucket is public or you have credentials)
-      // For now, we'll show an alert with the S3 URL
-      alert(`Download functionality needs to be implemented for S3 URL: ${attachment.s3_url}`);
+      // Create a temporary link to trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
     } catch (error) {
       console.error('Error downloading attachment:', error);
-      alert('Failed to download attachment. Please try again.');
+      alert(`Failed to download attachment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
