@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail } from 'lucide-react';
+import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox } from 'lucide-react';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -7,6 +7,7 @@ interface SidebarProps {
   onAppClick: () => void;
   onTemplatesClick: () => void;
   onSettingsClick: () => void;
+  onAddressesClick: () => void;
   onEmailsClick: () => void;
 }
 
@@ -16,6 +17,7 @@ export function Sidebar({
   onAppClick, 
   onSettingsClick, 
   onTemplatesClick, 
+  onAddressesClick,
   onEmailsClick
 }: SidebarProps) {
   return (
@@ -53,8 +55,16 @@ export function Sidebar({
           onClick={onEmailsClick}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
         >
-          <Mail className="w-4 h-4" />
+          <Inbox className="w-4 h-4" />
           Emails
+        </button>
+
+        <button 
+          onClick={onAddressesClick}
+          className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Mail className="w-4 h-4" />
+          Addresses
         </button>
         
         <button 

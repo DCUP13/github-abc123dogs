@@ -16,7 +16,7 @@ export interface EmailEntry {
   isLocked?: boolean;
 }
 
-export function Emails({ onSignOut, currentView }: EmailsProps) {
+export function Addresses({ onSignOut, currentView }: EmailsProps) {
   const { sesEmails, googleEmails, refreshEmails } = useEmails();
   
   // Combine and sort emails alphabetically by address
@@ -66,7 +66,7 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sender Emails</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Email Addresses</h1>
           </div>
 
           <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
@@ -74,10 +74,10 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
               <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
               <div>
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  No Sender Emails Configured
+                  No Email Addresses Configured
                 </h3>
                 <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-400">
-                  You haven't added any sender emails yet. Go to Settings to configure your Amazon SES or Gmail SMTP sender emails.
+                  You haven't added any email addresses yet. Go to Settings to configure your Amazon SES or Gmail SMTP sender emails.
                 </p>
               </div>
             </div>
@@ -92,7 +92,7 @@ export function Emails({ onSignOut, currentView }: EmailsProps) {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sender Emails</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Email Addresses</h1>
         </div>
 
         <div className="space-y-6">
