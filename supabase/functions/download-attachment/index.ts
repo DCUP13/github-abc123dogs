@@ -64,8 +64,7 @@ serve(async (req) => {
       throw new Error('Attachment not found')
     }
 
-    // Generate presigned URL using AWS SDK
-    // You'll need to set these environment variables in Supabase
+    // Get AWS credentials
     const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
     const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
     const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
@@ -79,11 +78,14 @@ serve(async (req) => {
     const bucket = s3UrlParts[0]
     const key = s3UrlParts.slice(1).join('/')
 
-    // Create presigned URL (expires in 1 hour)
-    const expirationTime = Math.floor(Date.now() / 1000) + 3600
-    
-    // Simple presigned URL generation (you might want to use AWS SDK for more robust implementation)
-    const presignedUrl = await generatePresignedUrl(bucket, key, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, expirationTime)
+    // Generate presigned URL using proper AWS v4 signing
+    const presignedUrl = await generatePresignedUrl(
+      bucket, 
+      key, 
+      AWS_ACCESS_KEY_ID, 
+      AWS_SECRET_ACCESS_KEY, 
+      AWS_REGION
+    )
 
     return new Response(
       JSON.stringify({ 
@@ -108,52 +110,72 @@ serve(async (req) => {
   }
 })
 
-// Helper function to generate presigned URL
 async function generatePresignedUrl(
   bucket: string,
   key: string,
   accessKeyId: string,
   secretAccessKey: string,
-  region: string,
-  expiration: number
+  region: string
 ): Promise<string> {
-  // This is a simplified implementation
-  // For production, consider using the official AWS SDK
-  
   const method = 'GET'
+  const service = 's3'
   const host = `${bucket}.s3.${region}.amazonaws.com`
-  const uri = `/${key}`
+  const endpoint = `https://${host}`
+  
+  // Create timestamp
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+  
+  // Create credential scope
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
+  
+  // Create query parameters
+  const queryParams = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': `${accessKeyId}/${credentialScope}`,
+    'X-Amz-Date': amzDate,
+    'X-Amz-Expires': '3600',
+    'X-Amz-SignedHeaders': 'host'
+  })
   
   // Create canonical request
+  const canonicalUri = '/' + key
+  const canonicalQueryString = queryParams.toString()
   const canonicalHeaders = `host:${host}\n`
   const signedHeaders = 'host'
-  const canonicalRequest = `${method}\n${uri}\n\nhost:${host}\n\n${signedHeaders}\nUNSIGNED-PAYLOAD`
+  const payloadHash = 'UNSIGNED-PAYLOAD'
+  
+  const canonicalRequest = [
+    method,
+    canonicalUri,
+    canonicalQueryString,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n')
   
   // Create string to sign
   const algorithm = 'AWS4-HMAC-SHA256'
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-  const credentialScope = `${date}/${region}/s3/aws4_request`
-  const stringToSign = `${algorithm}\n${new Date().toISOString().slice(0, 19).replace(/[-:]/g, '')}Z\n${credentialScope}\n${await sha256(canonicalRequest)}`
+  const canonicalRequestHash = await sha256(canonicalRequest)
+  const stringToSign = [
+    algorithm,
+    amzDate,
+    credentialScope,
+    canonicalRequestHash
+  ].join('\n')
   
   // Calculate signature
-  const signingKey = await getSignatureKey(secretAccessKey, date, region, 's3')
-  const signature = await hmacSha256(signingKey, stringToSign)
+  const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service)
+  const signature = await hmacSha256Hex(signingKey, stringToSign)
   
-  // Build presigned URL
-  const credential = `${accessKeyId}/${credentialScope}`
-  const queryParams = new URLSearchParams({
-    'X-Amz-Algorithm': algorithm,
-    'X-Amz-Credential': credential,
-    'X-Amz-Date': new Date().toISOString().slice(0, 19).replace(/[-:]/g, '') + 'Z',
-    'X-Amz-Expires': '3600',
-    'X-Amz-SignedHeaders': signedHeaders,
-    'X-Amz-Signature': signature
-  })
+  // Add signature to query parameters
+  queryParams.set('X-Amz-Signature', signature)
   
-  return `https://${host}${uri}?${queryParams.toString()}`
+  return `${endpoint}${canonicalUri}?${queryParams.toString()}`
 }
 
-// Helper functions for AWS signature
+// Helper functions for AWS signature calculation
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(message)
@@ -162,30 +184,7 @@ async function sha256(message: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function hmacSha256(key: Uint8Array, message: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const keyObject = await crypto.subtle.importKey(
-    'raw',
-    key,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  const signature = await crypto.subtle.sign('HMAC', keyObject, encoder.encode(message))
-  const signatureArray = Array.from(new Uint8Array(signature))
-  return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function getSignatureKey(key: string, dateStamp: string, regionName: string, serviceName: string): Promise<Uint8Array> {
-  const encoder = new TextEncoder()
-  const kDate = await hmacSha256Raw(encoder.encode('AWS4' + key), dateStamp)
-  const kRegion = await hmacSha256Raw(kDate, regionName)
-  const kService = await hmacSha256Raw(kRegion, serviceName)
-  const kSigning = await hmacSha256Raw(kService, 'aws4_request')
-  return kSigning
-}
-
-async function hmacSha256Raw(key: Uint8Array, message: string): Promise<Uint8Array> {
+async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
   const encoder = new TextEncoder()
   const keyObject = await crypto.subtle.importKey(
     'raw',
@@ -196,4 +195,23 @@ async function hmacSha256Raw(key: Uint8Array, message: string): Promise<Uint8Arr
   )
   const signature = await crypto.subtle.sign('HMAC', keyObject, encoder.encode(message))
   return new Uint8Array(signature)
+}
+
+async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
+  const signature = await hmacSha256(key, message)
+  return Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function getSignatureKey(
+  key: string,
+  dateStamp: string,
+  regionName: string,
+  serviceName: string
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const kDate = await hmacSha256(encoder.encode('AWS4' + key), dateStamp)
+  const kRegion = await hmacSha256(kDate, regionName)
+  const kService = await hmacSha256(kRegion, serviceName)
+  const kSigning = await hmacSha256(kService, 'aws4_request')
+  return kSigning
 }
