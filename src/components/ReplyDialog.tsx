@@ -102,7 +102,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl h-[600px] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-5xl h-[600px] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
           <button
@@ -114,7 +114,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         </div>
         
         <form onSubmit={handleSend} className="flex-1 flex flex-col">
-          <div className="p-4 space-y-3 flex-shrink-0">
+          <div className="p-4 space-y-2 flex-shrink-0">
             {/* Original Email Info */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -123,39 +123,40 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
               </div>
             </div>
 
-            {/* From Email Selection */}
-            <div>
-              <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                From
-              </label>
-              <select
-                id="fromEmail"
-                value={fromEmail}
-                onChange={(e) => setFromEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                required
-              >
-                <option value="">Select sender email</option>
-                {availableEmails.map((email) => (
-                  <option key={email.address} value={email.address}>
-                    {email.address} ({email.provider})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* To Email (Read-only) */}
-            <div>
-              <label htmlFor="toEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                To
-              </label>
-              <input
-                id="toEmail"
-                type="email"
-                value={originalEmail.sender}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-white"
-              />
+            {/* From and To fields side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  From
+                </label>
+                <select
+                  id="fromEmail"
+                  value={fromEmail}
+                  onChange={(e) => setFromEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  required
+                >
+                  <option value="">Select sender email</option>
+                  {availableEmails.map((email) => (
+                    <option key={email.address} value={email.address}>
+                      {email.address} ({email.provider})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="toEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  To
+                </label>
+                <input
+                  id="toEmail"
+                  type="email"
+                  value={originalEmail.sender}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-white"
+                />
+              </div>
             </div>
 
             {/* Subject */}
