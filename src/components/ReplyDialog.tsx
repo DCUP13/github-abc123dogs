@@ -199,7 +199,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                 className="h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
-            />
           </div>
 
           {/* Actions */}
