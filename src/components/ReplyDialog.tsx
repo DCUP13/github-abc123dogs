@@ -102,7 +102,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl h-[600px] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
           <button
@@ -114,7 +114,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         </div>
         
         <form onSubmit={handleSend} className="flex-1 flex flex-col">
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-3 flex-shrink-0">
             {/* Original Email Info */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -175,7 +175,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           </div>
 
           {/* Message Body */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 min-h-0">
             <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Message
             </label>
@@ -183,14 +183,14 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
               id="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full h-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+              className="w-full h-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
               placeholder="Type your reply..."
               required
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
