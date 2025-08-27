@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, User } from 'lucide-react';
 import { useEmails } from '../contexts/EmailContext';
+import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
 
 interface Email {
   id: string;
@@ -24,9 +25,10 @@ interface ReplyDialogProps {
 
 export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps) {
   const { sesEmails, googleEmails } = useEmails();
+  const editorRef = React.useRef<RichTextEditorRef>(null);
   const [fromEmail, setFromEmail] = useState('');
   const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  const [initialBody, setInitialBody] = useState('');
 
   // Get configured email addresses
   const configuredEmails = [
@@ -57,12 +59,13 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     // Set reply body with original message
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `\n\n--- Original Message ---\nFrom: ${originalEmail.sender}\nDate: ${originalDate}\nSubject: ${originalEmail.subject || '(No Subject)'}\n\n${originalEmail.body || ''}`;
-    setBody(replyBody);
+    setInitialBody(replyBody);
   }, [originalEmail, availableEmails]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const body = editorRef.current?.getContent() || '';
     if (!fromEmail || !body.trim()) {
       alert('Please select a sender email and enter a message.');
       return;
@@ -185,17 +188,17 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           </div>
 
           {/* Message Body */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 flex flex-col">
             <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Message
             </label>
-            <div
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => setBody(e.currentTarget.textContent || '')}
-              className="flex-1 min-h-[300px] w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
-              style={{ whiteSpace: 'pre-wrap' }}
-              dangerouslySetInnerHTML={{ __html: body.replace(/\n/g, '<br>') }}
+            <div className="flex-1">
+              <RichTextEditor
+                ref={editorRef}
+                content={initialBody}
+                className="h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
             />
           </div>
 
