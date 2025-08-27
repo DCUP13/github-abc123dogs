@@ -114,7 +114,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-5xl h-[600px] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-5xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
           <button
