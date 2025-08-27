@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox } from 'lucide-react'../lib/supabase';
+import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface EmailsInboxProps {
   onSignOut: () => void;
