@@ -28,15 +28,24 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
 
-  const availableEmails = [
+  // Get configured email addresses
+  const configuredEmails = [
     ...sesEmails.map(email => ({ address: email.address, provider: 'Amazon SES' })),
     ...googleEmails.map(email => ({ address: email.address, provider: 'Gmail' }))
+  ];
+
+  // Add the recipient email (the email that received the original message) as an option
+  const availableEmails = [
+    // Add recipient email first (it's the most logical choice for replies)
+    { address: originalEmail.receiver, provider: 'AWS Domain' },
+    ...configuredEmails.filter(email => email.address !== originalEmail.receiver)
   ];
 
   useEffect(() => {
     // Set default from email
     if (availableEmails.length > 0) {
-      setFromEmail(availableEmails[0].address);
+      // Default to the email that received the message (most logical for replies)
+      setFromEmail(originalEmail.receiver);
     }
 
     // Set reply subject
