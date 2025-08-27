@@ -64,10 +64,8 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     setInitialBody(replyBody);
   }, [originalEmail, availableEmails]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const [isSending, setIsSending] = useState(false);
     
     const body = editorRef.current?.getContent() || '';
     if (!fromEmail || !body.trim()) {
