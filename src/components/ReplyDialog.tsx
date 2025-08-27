@@ -185,17 +185,17 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           </div>
 
           {/* Message Body */}
-          <div className="flex-1 p-4 flex flex-col">
+          <div className="flex-1 p-4">
             <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Message
             </label>
-            <textarea
-              id="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              className="flex-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-              placeholder="Type your reply..."
-              required
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              onInput={(e) => setBody(e.currentTarget.textContent || '')}
+              className="flex-1 min-h-[300px] w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+              style={{ whiteSpace: 'pre-wrap' }}
+              dangerouslySetInnerHTML={{ __html: body.replace(/\n/g, '<br>') }}
             />
           </div>
 
