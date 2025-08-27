@@ -193,8 +193,9 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
               id="body"
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full h-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+             className="w-full h-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none min-h-[200px]"
               placeholder="Type your reply..."
+             style={{ minHeight: '200px' }}
               required
             />
           </div>
