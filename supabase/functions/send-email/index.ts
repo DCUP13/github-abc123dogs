@@ -201,31 +201,24 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     throw new Error('AWS credentials not configured')
   }
 
-  // Create the email parameters
-  const params = {
-    Source: email.from_email,
-    Destination: {
-      ToAddresses: [email.to_email]
-    },
-    Message: {
-      Subject: {
-        Data: email.subject,
-        Charset: 'UTF-8'
-      },
-      Body: {
-        Html: {
-          Data: email.body,
-          Charset: 'UTF-8'
-        }
-      }
-    }
-  }
-
-  // Create AWS signature and send email
+  // Use SES v1 API with form data
   const host = `email.${AWS_REGION}.amazonaws.com`
   const service = 'ses'
   const method = 'POST'
   const endpoint = `https://${host}/`
+  
+  // Create form data for SES v1 API
+  const formData = new URLSearchParams()
+  formData.append('Action', 'SendEmail')
+  formData.append('Version', '2010-12-01')
+  formData.append('Source', email.from_email)
+  formData.append('Destination.ToAddresses.member.1', email.to_email)
+  formData.append('Message.Subject.Data', email.subject || 'No Subject')
+  formData.append('Message.Subject.Charset', 'UTF-8')
+  formData.append('Message.Body.Html.Data', email.body || '')
+  formData.append('Message.Body.Html.Charset', 'UTF-8')
+  
+  const payload = formData.toString()
   
   // Create timestamp
   const now = new Date()
@@ -233,7 +226,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   const dateStamp = amzDate.slice(0, 8)
   
   // Create the canonical request
-  const payloadHash = await sha256(JSON.stringify(params))
+  const payloadHash = await sha256(payload)
   const canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`
   const signedHeaders = 'host;x-amz-date'
   const canonicalRequest = `${method}\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
@@ -254,11 +247,10 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     method: 'POST',
     headers: {
       'Authorization': authorizationHeader,
-      'Content-Type': 'application/x-amz-json-1.0',
-      'X-Amz-Date': amzDate,
-      'X-Amz-Target': 'AWSSimpleEmailServiceV2.SendEmail'
+      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+      'X-Amz-Date': amzDate
     },
-    body: JSON.stringify(params)
+    body: payload
   })
   
   if (!response.ok) {
