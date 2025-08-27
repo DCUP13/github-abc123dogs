@@ -383,7 +383,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
         <div
           ref={editorRef}
-          className={`editor-content p-6 min-h-[500px] focus:outline-none ${className}`}
+          className={`editor-content p-6 min-h-[300px] max-h-[400px] overflow-y-auto focus:outline-none ${className}`}
           contentEditable
           suppressContentEditableWarning
           onKeyDown={(e) => {
