@@ -52,13 +52,26 @@ serve(async (req) => {
       throw new Error('Method not allowed')
     }
 
+    // Check if we're sending a specific email or processing the outbox
+    const requestBody = await req.json().catch(() => ({}))
+    const specificEmailId = requestBody.emailId
+
     // Process outbox emails
-    const { data: outboxEmails, error: fetchError } = await supabaseClient
+    let query = supabaseClient
       .from('email_outbox')
       .select('*')
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
-      .limit(10) // Process 10 emails at a time
+
+    if (specificEmailId) {
+      // Process only the specific email
+      query = query.eq('id', specificEmailId).limit(1)
+    } else {
+      // Process up to 10 emails from the outbox
+      query = query.limit(10)
+    }
+
+    const { data: outboxEmails, error: fetchError } = await query
 
     if (fetchError) throw fetchError
 

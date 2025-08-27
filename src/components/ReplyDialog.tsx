@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Send, User } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { useEmails } from '../contexts/EmailContext';
 import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
 
@@ -29,6 +30,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   const [fromEmail, setFromEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [initialBody, setInitialBody] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   // Get configured email addresses
   const configuredEmails = [
@@ -65,18 +67,80 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const [isSending, setIsSending] = useState(false);
+    
     const body = editorRef.current?.getContent() || '';
     if (!fromEmail || !body.trim()) {
       alert('Please select a sender email and enter a message.');
       return;
     }
 
-    onSend({
-      to: originalEmail.sender,
-      from: fromEmail,
-      subject: subject.trim(),
-      body: body.trim()
-    });
+    setIsSending(true);
+    
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      // First add to outbox
+      const { data: outboxEmail, error: outboxError } = await supabase
+        .from('email_outbox')
+        .insert({
+          user_id: user.data.user.id,
+          to_email: originalEmail.sender,
+          from_email: fromEmail,
+          subject: subject.trim(),
+          body: body.trim(),
+          reply_to_id: originalEmail.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (outboxError) throw outboxError;
+
+      // Immediately try to send the email
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            emailId: outboxEmail.id
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send email');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert('Reply sent successfully!');
+        onClose();
+      } else {
+        alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+        onClose();
+      }
+      
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      alert(`Failed to send reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   if (availableEmails.length === 0) {
@@ -212,10 +276,24 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
             </button>
             <button
               type="submit"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isSending}
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
+                isSending 
+                  ? 'bg-indigo-400 cursor-wait' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
             >
-              <Send className="w-4 h-4 mr-2" />
-              Send Reply
+              {isSending ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Reply
+                </>
+              )}
             </button>
           </div>
         </form>
