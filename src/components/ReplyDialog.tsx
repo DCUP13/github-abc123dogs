@@ -192,11 +192,11 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
             <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Message
             </label>
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
               <RichTextEditor
                 ref={editorRef}
                 content={initialBody}
-                className="h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="h-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white overflow-auto"
               />
             </div>
           </div>
