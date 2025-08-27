@@ -58,7 +58,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
     // Set reply body with original message
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
-    const replyBody = `\n\n--- Original Message ---\nFrom: ${originalEmail.sender}\nDate: ${originalDate}\nSubject: ${originalEmail.subject || '(No Subject)'}\n\n${originalEmail.body || ''}`;
+    const replyBody = `\n\n\n\n--- Original Message ---\nFrom: ${originalEmail.sender}\nDate: ${originalDate}\nSubject: ${originalEmail.subject || '(No Subject)'}\n\n${originalEmail.body || ''}`;
     setInitialBody(replyBody);
   }, [originalEmail, availableEmails]);
 

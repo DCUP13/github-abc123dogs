@@ -239,7 +239,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
           <select
             value={activeStyles.fontFamily}
             onChange={(e) => handleFontFamily(e.target.value)}
-            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             {fontFamilies.map((font) => (
               <option key={font.value} value={font.value}>
@@ -253,7 +253,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
           <select
             value={activeStyles.fontSize}
             onChange={(e) => handleFontSize(e.target.value)}
-            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             {fontSizes.map((size) => (
               <option key={size.value} value={size.value}>
@@ -269,7 +269,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.bold 
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400' 
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Bold"
           >
@@ -280,7 +280,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.italic
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Italic"
           >
@@ -291,7 +291,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.underline
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Underline"
           >
@@ -305,7 +305,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.align === 'left'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Align Left"
           >
@@ -316,7 +316,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.align === 'center'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Align Center"
           >
@@ -327,7 +327,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.align === 'right'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Align Right"
           >
@@ -338,7 +338,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.align === 'justify'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Justify"
           >
@@ -352,7 +352,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.list === 'unordered'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Bullet List"
           >
@@ -363,7 +363,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
             className={`p-2 rounded ${
               activeStyles.list === 'ordered'
                 ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
             }`}
             title="Numbered List"
           >
@@ -374,7 +374,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
           <button
             onClick={() => handleFormat('formatBlock', '<h2>')}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-white"
             title="Add Heading"
           >
             <Type className="w-4 h-4" />
