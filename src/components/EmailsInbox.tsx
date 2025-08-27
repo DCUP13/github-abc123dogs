@@ -52,6 +52,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showReplyDialog, setShowReplyDialog] = useState(false);
+  const [isProcessingEmails, setIsProcessingEmails] = useState(false);
 
   useEffect(() => {
     fetchAllEmails();
@@ -125,6 +126,52 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
     } catch (error) {
       console.error('Error sending reply:', error);
       alert('Failed to send reply. Please try again.');
+    }
+  };
+
+  const handleProcessOutbox = async () => {
+    setIsProcessingEmails(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('You must be logged in to process emails');
+        return;
+      }
+
+      // Call the Supabase Edge Function to process outbox emails
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process emails');
+      }
+
+      const result = await response.json();
+      console.log('Email processing result:', result);
+      
+      // Refresh the current tab to show updated status
+      await fetchAllEmails();
+      
+      if (result.processed > 0) {
+        alert(`Processed ${result.processed} emails. Check the Sent tab for successful sends.`);
+      } else {
+        alert('No pending emails to process.');
+      }
+      
+    } catch (error) {
+      console.error('Error processing emails:', error);
+      alert(`Failed to process emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessingEmails(false);
     }
   };
 
@@ -277,11 +324,35 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
               </div>
               <button
                 onClick={handleRefresh}
+                disabled={isProcessingEmails}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </button>
+              {activeTab === 'outbox' && (
+                <button
+                  onClick={handleProcessOutbox}
+                  disabled={isProcessingEmails}
+                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
+                    isProcessingEmails 
+                      ? 'bg-indigo-400 cursor-wait' 
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                >
+                  {isProcessingEmails ? (
+                    <>
+                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Emails
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {/* Tabs */}

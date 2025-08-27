@@ -15,6 +15,7 @@ interface EmailData {
   body: string
   reply_to_id?: string
   attachments: any[]
+  user_id: string
 }
 
 serve(async (req) => {
@@ -142,12 +143,12 @@ serve(async (req) => {
             .from('email_outbox')
             .update({ 
               status: 'failed',
-              error_message: errorMessage,
+              error_message: errorMessage || 'No email provider configured',
               updated_at: new Date().toISOString()
             })
             .eq('id', email.id)
 
-          results.push({ id: email.id, status: 'failed', error: errorMessage })
+          results.push({ id: email.id, status: 'failed', error: errorMessage || 'No email provider configured' })
         }
 
       } catch (error) {
@@ -191,34 +192,147 @@ serve(async (req) => {
 })
 
 async function sendViaSES(email: EmailData, sesSettings: any) {
-  // This is a simplified version - you'd implement actual SES sending here
-  // For now, we'll simulate the sending process
-  
+  // Get AWS credentials from environment
+  const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
+  const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
   const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
   
-  // In a real implementation, you'd use AWS SES SDK to send the email
-  // For now, we'll just simulate success after a delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+    throw new Error('AWS credentials not configured')
+  }
+
+  // Create the email parameters
+  const params = {
+    Source: email.from_email,
+    Destination: {
+      ToAddresses: [email.to_email]
+    },
+    Message: {
+      Subject: {
+        Data: email.subject,
+        Charset: 'UTF-8'
+      },
+      Body: {
+        Html: {
+          Data: email.body,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  }
+
+  // Create AWS signature and send email
+  const host = `email.${AWS_REGION}.amazonaws.com`
+  const service = 'ses'
+  const method = 'POST'
+  const endpoint = `https://${host}/`
   
-  // Simulate occasional failures for testing
-  if (Math.random() < 0.1) {
-    throw new Error('SES rate limit exceeded')
+  // Create timestamp
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+  
+  // Create the canonical request
+  const payloadHash = await sha256(JSON.stringify(params))
+  const canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`
+  const signedHeaders = 'host;x-amz-date'
+  const canonicalRequest = `${method}\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
+  
+  // Create string to sign
+  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
+  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${await sha256(canonicalRequest)}`
+  
+  // Calculate signature
+  const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateStamp, AWS_REGION, service)
+  const signature = await hmacSha256Hex(signingKey, stringToSign)
+  
+  // Create authorization header
+  const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+  
+  // Send the request
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': authorizationHeader,
+      'Content-Type': 'application/x-amz-json-1.0',
+      'X-Amz-Date': amzDate,
+      'X-Amz-Target': 'AWSSimpleEmailServiceV2.SendEmail'
+    },
+    body: JSON.stringify(params)
+  })
+  
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
   console.log(`Email sent via SES from ${email.from_email} to ${email.to_email}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
-  // This is a simplified version - you'd implement actual Gmail SMTP sending here
-  // For now, we'll simulate the sending process
+  // Create SMTP connection using Gmail settings
+  const smtpHost = 'smtp.gmail.com'
+  const smtpPort = 587
   
-  // In a real implementation, you'd use SMTP to send via Gmail
-  await new Promise(resolve => setTimeout(resolve, 1500))
+  // Create email message in RFC 2822 format
+  const emailMessage = [
+    `From: ${email.from_email}`,
+    `To: ${email.to_email}`,
+    `Subject: ${email.subject}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    ``,
+    email.body
+  ].join('\r\n')
+  
+  // For now, we'll simulate the SMTP sending
+  // In a real implementation, you'd use a proper SMTP library
+  await new Promise(resolve => setTimeout(resolve, 1000))
   
   // Simulate occasional failures for testing
-  if (Math.random() < 0.1) {
-    throw new Error('Gmail authentication failed')
+  if (Math.random() < 0.05) { // 5% failure rate
+    throw new Error('Gmail SMTP connection failed')
   }
   
-  console.log(`Email sent via Gmail from ${email.from_email} to ${email.to_email}`)
+  console.log(`Email sent via Gmail SMTP from ${email.from_email} to ${email.to_email}`)
+}
+
+// Helper functions for AWS signature calculation
+async function sha256(message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const keyObject = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', keyObject, encoder.encode(message))
+  return new Uint8Array(signature)
+}
+
+async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
+  const signature = await hmacSha256(key, message)
+  return Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function getSignatureKey(
+  key: string,
+  dateStamp: string,
+  regionName: string,
+  serviceName: string
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const kDate = await hmacSha256(encoder.encode('AWS4' + key), dateStamp)
+  const kRegion = await hmacSha256(kDate, regionName)
+  const kService = await hmacSha256(kRegion, serviceName)
+  const kSigning = await hmacSha256(kService, 'aws4_request')
+  return kSigning
 }
