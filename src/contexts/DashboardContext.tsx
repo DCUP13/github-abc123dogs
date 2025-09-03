@@ -82,11 +82,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
               totalEmailAccounts: payload.new.total_email_accounts,
               totalEmailsSentToday: payload.new.total_emails_sent_today,
               totalTemplates: payload.new.total_templates,
-              totalCampaigns: payload.new.total_campaigns
-            }
-            )
-            totalCampaigns: payload.new.total_campaigns,
+              totalCampaigns: payload.new.total_campaigns,
             totalDomains: payload.new.total_domains ?? 0
+            });
           }
         }
       )
