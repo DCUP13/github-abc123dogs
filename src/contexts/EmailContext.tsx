@@ -19,7 +19,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [googleEmails, setGoogleEmails] = useState<GoogleEmail[]>([]);
   const [sesDomains, setSesDomains] = useState<string[]>([]);
 
-  const refreshEmails = async () => {
+  const fetchEmails = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -70,6 +70,25 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Initial fetch and auth state management
+  useEffect(() => {
+    fetchEmails();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && user) {
+        fetchEmails();
+      } else if (event === 'SIGNED_OUT') {
+        setSesEmails([]);
+        setGoogleEmails([]);
+        setSesDomains([]);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   const value = {
     sesEmails,
     googleEmails,
@@ -77,7 +96,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     setSesEmails,
     setGoogleEmails,
     setSesDomains,
-    refreshEmails
+    refreshEmails: fetchEmails
   };
 
   return (
