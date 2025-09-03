@@ -20,15 +20,15 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [sesDomains, setSesDomains] = useState<string[]>([]);
 
   const fetchEmails = async () => {
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
+    try {
       // Fetch Amazon SES emails
       const { data: sesData, error: sesError } = await supabase
         .from('amazon_ses_emails')
         .select('*')
-        .eq('user_id', user.data.user.id)
+        .eq('user_id', user.id)
         .order('address', { ascending: true });
 
       if (sesError) throw sesError;
@@ -43,7 +43,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: googleData, error: googleError } = await supabase
         .from('google_smtp_emails')
         .select('*')
-        .eq('user_id', user.data.user.id)
+        .eq('user_id', user.id)
         .order('address', { ascending: true });
 
       if (googleError) throw googleError;
@@ -67,7 +67,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: domainsData, error: domainsError } = await supabase
         .from('amazon_ses_domains')
         .select('domain')
-        .eq('user_id', user.data.user.id)
+        .eq('user_id', user.id)
         .order('domain', { ascending: true });
 
       if (domainsError) throw domainsError;
