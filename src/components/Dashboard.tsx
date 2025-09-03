@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, FileText, Send, Users, Layout } from 'lucide-react';
+import { useDashboard } from '../contexts/DashboardContext';
 
 interface DashboardProps {
   onSignOut: () => void;
@@ -7,48 +8,50 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onSignOut, currentView }: DashboardProps) {
+  const { stats } = useDashboard();
+
   const stats_cards = [
     {
       title: 'Emails Remaining',
-      value: '0',
+      value: stats.totalEmailsRemaining.toLocaleString(),
       icon: Mail,
       color: 'text-blue-500',
-      bgColor: 'bg-blue-100',
+      bgColor: 'bg-blue-100 dark:bg-blue-900/20',
     },
     {
       title: 'Email Accounts',
-      value: '0',
+      value: stats.totalEmailAccounts.toLocaleString(),
       icon: Users,
       color: 'text-green-500',
-      bgColor: 'bg-green-100',
+      bgColor: 'bg-green-100 dark:bg-green-900/20',
     },
     {
       title: 'Emails Sent Today',
-      value: '0',
+      value: stats.totalEmailsSentToday.toLocaleString(),
       icon: Send,
       color: 'text-purple-500',
-      bgColor: 'bg-purple-100',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/20',
     },
     {
       title: 'Total Templates',
-      value: '0',
+      value: stats.totalTemplates.toLocaleString(),
       icon: FileText,
       color: 'text-orange-500',
-      bgColor: 'bg-orange-100',
+      bgColor: 'bg-orange-100 dark:bg-orange-900/20',
     },
     {
       title: 'Total Campaigns',
-      value: '0',
+      value: stats.totalCampaigns.toLocaleString(),
       icon: Layout,
       color: 'text-indigo-500',
-      bgColor: 'bg-indigo-100',
+      bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
     },
   ];
 
   return (
-    <div className="p-8 bg-white">
+    <div className="p-8 bg-white dark:bg-gray-900">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard Overview</h1>
+        <h1 className="text-3xl font-bold text-white dark:text-white mb-8">Dashboard Overview</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats_cards.map((card, index) => {
@@ -56,17 +59,17 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
             return (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
               >
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-lg ${card.bgColor}`}>
                     <Icon className={`w-6 h-6 ${card.color}`} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-gray-500">
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       {card.title}
                     </h3>
-                    <p className="text-2xl font-semibold text-gray-900 mt-1">
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                       {card.value}
                     </p>
                   </div>
