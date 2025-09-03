@@ -55,29 +55,9 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         isLocked: email.sent_emails >= email.daily_limit
       })) || []);
 
-      // Fetch SES domains
-      try {
-        const { data: domainsData, error: domainsError } = await supabase
-          .from('amazon_ses_domains')
-          .select('domain')
-          .eq('user_id', user.data.user.id)
-          .order('domain', { ascending: true });
-
-        if (domainsError) {
-          // If table doesn't exist, just set empty array
-          if (domainsError.code === '42P01') {
-            console.warn('amazon_ses_domains table does not exist yet. Please run database migrations.');
-            setSesDomains([]);
-          } else {
-            throw domainsError;
-          }
-        } else {
-          setSesDomains(domainsData?.map(d => d.domain) || []);
-        }
-      } catch (error) {
-        console.error('Error fetching SES domains:', error);
-        setSesDomains([]);
-      }
+      // Skip SES domains fetch until table is created via migration
+      // TODO: Enable this once amazon_ses_domains table migration is applied
+      setSesDomains([]);
     } catch (error) {
       console.error('Error fetching emails:', error);
     }
