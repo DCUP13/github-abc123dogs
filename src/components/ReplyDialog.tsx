@@ -278,122 +278,125 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
               </div>
             </div>
 
-            {/* From field */}
-            <div>
-              <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                From
-              </label>
-              {showCustomFrom ? (
+            {/* From and To fields side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* From field */}
+              <div>
+                <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  From
+                </label>
+                {showCustomFrom ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={customFromEmail}
+                      onChange={(e) => setCustomFromEmail(e.target.value)}
+                      placeholder="your-email@domain.com"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomFrom(false);
+                        setCustomFromEmail('');
+                        setFromEmail('');
+                      }}
+                      className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    id="fromEmail"
+                    value={fromEmail}
+                    onChange={(e) => handleFromEmailChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  >
+                    <option value="">Select sender email</option>
+                    {configuredEmails.map((email) => (
+                      <option key={email.address} value={email.address}>
+                        {email.address} ({email.provider})
+                      </option>
+                    ))}
+                    {sesDomains.length > 0 && (
+                      <optgroup label="SES Domains">
+                        {domainEmails.map((email) => (
+                          <option key={email.address} value={email.address}>
+                            {email.address}
+                          </option>
+                        ))}
+                        {sesDomains.map(domain => (
+                          <option key={`custom@${domain}`} value={`custom@${domain}`}>
+                            Custom address @{domain}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                )}
+              </div>
+              
+              {/* To field - now editable and supports multiple emails */}
+              <div>
+                <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  To
+                </label>
+                
+                {/* Display current recipients */}
+                {toEmails.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {toEmails.map((email, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-md text-sm"
+                      >
+                        {email}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveToEmail(email)}
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Add new recipient */}
                 <div className="flex gap-2">
                   <input
                     type="email"
-                    value={customFromEmail}
-                    onChange={(e) => setCustomFromEmail(e.target.value)}
-                    placeholder="your-email@domain.com"
+                    value={newToEmail}
+                    onChange={(e) => {
+                      setNewToEmail(e.target.value);
+                      setToEmailError('');
+                    }}
+                    onKeyPress={handleToEmailKeyPress}
+                    placeholder="Add recipient"
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowCustomFrom(false);
-                      setCustomFromEmail('');
-                      setFromEmail('');
-                    }}
-                    className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    onClick={handleAddToEmail}
+                    className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    Cancel
+                    Add
                   </button>
                 </div>
-              ) : (
-                <select
-                  id="fromEmail"
-                  value={fromEmail}
-                  onChange={(e) => handleFromEmailChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  required
-                >
-                  <option value="">Select sender email</option>
-                  {configuredEmails.map((email) => (
-                    <option key={email.address} value={email.address}>
-                      {email.address} ({email.provider})
-                    </option>
-                  ))}
-                  {sesDomains.length > 0 && (
-                    <optgroup label="SES Domains">
-                      {domainEmails.map((email) => (
-                        <option key={email.address} value={email.address}>
-                          {email.address}
-                        </option>
-                      ))}
-                      {sesDomains.map(domain => (
-                        <option key={`custom@${domain}`} value={`custom@${domain}`}>
-                          Custom address @{domain}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              )}
+                
+                {toEmailError && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{toEmailError}</p>
+                )}
+              </div>
             </div>
             
-            {/* To field - now editable and supports multiple emails */}
-            <div>
-              <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                To
-              </label>
-              
-              {/* Display current recipients */}
-              {toEmails.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {toEmails.map((email, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-md text-sm"
-                    >
-                      {email}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveToEmail(email)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              {/* Add new recipient */}
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={newToEmail}
-                  onChange={(e) => {
-                    setNewToEmail(e.target.value);
-                    setToEmailError('');
-                  }}
-                  onKeyPress={handleToEmailKeyPress}
-                  placeholder="Add recipient email address"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddToEmail}
-                  className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Add
-                </button>
-              </div>
-              
-              {toEmailError && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{toEmailError}</p>
-              )}
-              
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Press Enter or click Add to add multiple recipients
-              </p>
-            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Press Enter or click Add to add multiple recipients
+            </p>
 
             {/* Subject */}
             <div>
