@@ -5,8 +5,10 @@ import { supabase } from '../lib/supabase';
 interface EmailContextType {
   sesEmails: SESEmail[];
   googleEmails: GoogleEmail[];
+  sesDomains: string[];
   setSesEmails: (emails: SESEmail[]) => void;
   setGoogleEmails: (emails: GoogleEmail[]) => void;
+  setSesDomains: (domains: string[]) => void;
   refreshEmails: () => Promise<void>;
 }
 
@@ -15,6 +17,7 @@ const EmailContext = createContext<EmailContextType | undefined>(undefined);
 export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [sesEmails, setSesEmails] = useState<SESEmail[]>([]);
   const [googleEmails, setGoogleEmails] = useState<GoogleEmail[]>([]);
+  const [sesDomains, setSesDomains] = useState<string[]>([]);
 
   const fetchEmails = async () => {
     try {
@@ -51,6 +54,16 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         sentEmails: email.sent_emails,
         isLocked: email.sent_emails >= email.daily_limit
       })) || []);
+
+      // Fetch SES domains
+      const { data: domainsData, error: domainsError } = await supabase
+        .from('amazon_ses_domains')
+        .select('domain')
+        .eq('user_id', user.data.user.id)
+        .order('domain', { ascending: true });
+
+      if (domainsError) throw domainsError;
+      setSesDomains(domainsData?.map(d => d.domain) || []);
     } catch (error) {
       console.error('Error fetching emails:', error);
     }
@@ -67,6 +80,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         setSesEmails([]);
         setGoogleEmails([]);
+        setSesDomains([]);
       }
     });
 
@@ -104,8 +118,10 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const value = {
     sesEmails,
     googleEmails,
+    sesDomains,
     setSesEmails,
     setGoogleEmails,
+    setSesDomains,
     refreshEmails: fetchEmails
   };
 

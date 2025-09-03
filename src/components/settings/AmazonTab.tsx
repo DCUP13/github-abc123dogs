@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Server, Mail, Send, X, AlertCircle } from 'lucide-react';
+import { Server, Mail, Send, X, AlertCircle, Globe, Plus } from 'lucide-react';
 import { useEmails } from '../../contexts/EmailContext';
 import type { EmailSettings, SESEmail } from './types';
 import { supabase } from '../../lib/supabase';
@@ -26,10 +26,14 @@ export function AmazonTab({
   const [isLoading, setIsLoading] = useState(true);
   const [localSaveSuccess, setLocalSaveSuccess] = useState(false);
   const [dailyLimit, setDailyLimit] = useState(1440); // Default to 1440 emails per day
+  const [domains, setDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState('');
+  const [domainError, setDomainError] = useState('');
 
   useEffect(() => {
     fetchSESSettings();
     fetchSESEmails();
+    fetchSESDomains();
   }, []);
 
   const fetchSESSettings = async () => {
@@ -57,6 +61,24 @@ export function AmazonTab({
       }
     } catch (error) {
       console.error('Error fetching SES settings:', error);
+    }
+  };
+
+  const fetchSESDomains = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('amazon_ses_domains')
+        .select('domain')
+        .eq('user_id', user.data.user.id)
+        .order('domain', { ascending: true });
+
+      if (error) throw error;
+      setDomains(data?.map(d => d.domain) || []);
+    } catch (error) {
+      console.error('Error fetching SES domains:', error);
     }
   };
 
@@ -120,6 +142,75 @@ export function AmazonTab({
     } catch (error) {
       console.error('Error saving SES settings:', error);
       alert('Failed to save settings. Please try again.');
+    }
+  };
+
+  const validateDomain = (domain: string) => {
+    return domain.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9])*$/);
+  };
+
+  const handleAddDomain = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateDomain(newDomain)) {
+      setDomainError('Please enter a valid domain name');
+      return;
+    }
+
+    if (domains.includes(newDomain)) {
+      setDomainError('This domain is already in the list');
+      return;
+    }
+
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('amazon_ses_domains')
+        .insert({
+          user_id: user.data.user.id,
+          domain: newDomain
+        });
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          setDomainError('This domain is already registered');
+          return;
+        }
+        throw error;
+      }
+
+      setDomains([...domains, newDomain].sort());
+      setNewDomain('');
+      setDomainError('');
+    } catch (error) {
+      console.error('Error adding SES domain:', error);
+      alert('Failed to add domain. Please try again.');
+    }
+  };
+
+  const handleRemoveDomain = async (domain: string) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('amazon_ses_domains')
+        .delete()
+        .eq('user_id', user.data.user.id)
+        .eq('domain', domain);
+
+      if (error) throw error;
+
+      setDomains(domains.filter(d => d !== domain));
+    } catch (error) {
+      console.error('Error removing SES domain:', error);
+      alert('Failed to remove domain. Please try again.');
     }
   };
 
@@ -372,6 +463,79 @@ export function AmazonTab({
           </button>
         </div>
       </form>
+
+      {/* SES Domains Section */}
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Verified Domains
+          </h3>
+        </div>
+
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                About SES Domains
+              </h3>
+              <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                Add domains that you have verified in Amazon SES. This allows you to send emails from any address using these domains (e.g., support@yourdomain.com, info@yourdomain.com).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleAddDomain} className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newDomain}
+              onChange={(e) => {
+                setNewDomain(e.target.value);
+                setDomainError('');
+              }}
+              placeholder="example.com"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          {domainError && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{domainError}</p>
+          )}
+        </form>
+
+        <div className="space-y-2">
+          {domains.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+              No domains added yet
+            </p>
+          ) : (
+            domains.map((domain) => (
+              <div
+                key={domain}
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
+              >
+                <div className="flex items-center gap-3">
+                  <Globe className="w-5 h-5 text-gray-400" />
+                  <span className="text-gray-900 dark:text-white">{domain}</span>
+                </div>
+                <button
+                  onClick={() => handleRemoveDomain(domain)}
+                  className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
 
       {/* Sender Email Addresses Section */}
       <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">

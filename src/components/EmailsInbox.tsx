@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox } from 'lucide-react';
+import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ReplyDialog } from './ReplyDialog';
+import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { useEmails } from '../contexts/EmailContext';
 
 interface EmailsInboxProps {
@@ -53,6 +54,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showReplyDialog, setShowReplyDialog] = useState(false);
   const [isProcessingEmails, setIsProcessingEmails] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
 
   useEffect(() => {
     fetchAllEmails();
@@ -322,14 +324,23 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                 <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Emails</h1>
               </div>
-              <button
-                onClick={handleRefresh}
-                disabled={isProcessingEmails}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowComposeDialog(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Email
+                </button>
+                <button
+                  onClick={handleRefresh}
+                  disabled={isProcessingEmails}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </button>
+              </div>
               {activeTab === 'outbox' && (
                 <button
                   onClick={handleProcessOutbox}
@@ -623,6 +634,16 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
           />
         )}
       </div>
+
+      {showComposeDialog && (
+        <ComposeEmailDialog
+          onClose={() => setShowComposeDialog(false)}
+          onSend={() => {
+            // Refresh the current tab to show updated emails
+            fetchAllEmails();
+          }}
+        />
+      )}
     </div>
   );
 }
