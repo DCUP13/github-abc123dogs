@@ -56,14 +56,28 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       })) || []);
 
       // Fetch SES domains
-      const { data: domainsData, error: domainsError } = await supabase
-        .from('amazon_ses_domains')
-        .select('domain')
-        .eq('user_id', user.data.user.id)
-        .order('domain', { ascending: true });
+      try {
+        const { data: domainsData, error: domainsError } = await supabase
+          .from('amazon_ses_domains')
+          .select('domain')
+          .eq('user_id', user.data.user.id)
+          .order('domain', { ascending: true });
 
-      if (domainsError) throw domainsError;
-      setSesDomains(domainsData?.map(d => d.domain) || []);
+        if (domainsError) {
+          // If table doesn't exist, just set empty array
+          if (domainsError.code === '42P01') {
+            console.warn('amazon_ses_domains table does not exist yet. Please run database migrations.');
+            setSesDomains([]);
+          } else {
+            throw domainsError;
+          }
+        } else {
+          setSesDomains(domainsData?.map(d => d.domain) || []);
+        }
+      } catch (error) {
+        console.error('Error fetching SES domains:', error);
+        setSesDomains([]);
+      }
     } catch (error) {
       console.error('Error fetching emails:', error);
     }

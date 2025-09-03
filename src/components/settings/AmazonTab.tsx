@@ -69,16 +69,31 @@ export function AmazonTab({
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
-      const { data, error } = await supabase
-        .from('amazon_ses_domains')
-        .select('domain')
-        .eq('user_id', user.data.user.id)
-        .order('domain', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('amazon_ses_domains')
+          .select('domain')
+          .eq('user_id', user.data.user.id)
+          .order('domain', { ascending: true });
 
-      if (error) throw error;
-      setDomains(data?.map(d => d.domain) || []);
+        if (error) {
+          // If table doesn't exist, just set empty array
+          if (error.code === '42P01') {
+            console.warn('amazon_ses_domains table does not exist yet. Please run database migrations.');
+            setDomains([]);
+          } else {
+            throw error;
+          }
+        } else {
+          setDomains(data?.map(d => d.domain) || []);
+        }
+      } catch (error) {
+        console.error('Error fetching SES domains:', error);
+        setDomains([]);
+      }
     } catch (error) {
       console.error('Error fetching SES domains:', error);
+      setDomains([]);
     }
   };
 
