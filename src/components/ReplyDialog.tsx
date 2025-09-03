@@ -34,37 +34,19 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   const [customFromEmail, setCustomFromEmail] = useState('');
   const [showCustomFrom, setShowCustomFrom] = useState(false);
 
-  // Get configured email addresses
+  // Get all available email options
   const configuredEmails = [
     ...sesEmails.map(email => ({ address: email.address, provider: 'Amazon SES' })),
     ...googleEmails.map(email => ({ address: email.address, provider: 'Gmail' }))
   ];
 
-  // Generate domain-based email options
   const domainEmails = sesDomains.flatMap(domain => [
     { address: `info@${domain}`, provider: 'SES Domain', isDomain: true },
     { address: `support@${domain}`, provider: 'SES Domain', isDomain: true },
-    { address: `noreply@${domain}`, provider: 'SES Domain', isDomain: true },
-    { address: `custom@${domain}`, provider: 'SES Domain', isDomain: true, isCustom: true }
+    { address: `noreply@${domain}`, provider: 'SES Domain', isDomain: true }
   ]);
 
   const allEmailOptions = [...configuredEmails, ...domainEmails];
-
-  const handleFromEmailChange = (value: string) => {
-    if (value === 'custom') {
-      setShowCustomFrom(true);
-      setFromEmail('');
-    } else if (value.includes('custom@')) {
-      setShowCustomFrom(true);
-      const domain = value.split('@')[1];
-      setCustomFromEmail(`@${domain}`);
-      setFromEmail('');
-    } else {
-      setShowCustomFrom(false);
-      setFromEmail(value);
-      setCustomFromEmail('');
-    }
-  };
 
   useEffect(() => {
     // Set reply subject
@@ -77,6 +59,24 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `<br><br><br><br><br><br>--- Original Message ---<br><br>From: ${originalEmail.sender}<br><br>Date: ${originalDate}<br><br>Subject: ${originalEmail.subject || '(No Subject)'}<br><br>${originalEmail.body || ''}`;
     setInitialBody(replyBody);
+  }, [originalEmail]);
+
+  const handleFromEmailChange = (value: string) => {
+    if (value === 'custom') {
+      setShowCustomFrom(true);
+      setFromEmail('');
+      setCustomFromEmail('');
+    } else if (value.includes('custom@')) {
+      setShowCustomFrom(true);
+      const domain = value.split('@')[1];
+      setCustomFromEmail(`@${domain}`);
+      setFromEmail('');
+    } else {
+      setShowCustomFrom(false);
+      setFromEmail(value);
+      setCustomFromEmail('');
+    }
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +103,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         throw new Error('User not authenticated');
       }
 
-      // First add to outbox
+      // Add to outbox
       const { data: outboxEmail, error: outboxError } = await supabase
         .from('email_outbox')
         .insert({
@@ -120,7 +120,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
       if (outboxError) throw outboxError;
 
-      // Immediately try to send the email
+      // Try to send immediately
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No active session');
@@ -240,6 +240,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                       onClick={() => {
                         setShowCustomFrom(false);
                         setCustomFromEmail('');
+                        setFromEmail('');
                       }}
                       className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     >
@@ -262,7 +263,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                     ))}
                     {sesDomains.length > 0 && (
                       <optgroup label="SES Domains">
-                        {domainEmails.filter(email => !email.isCustom).map((email) => (
+                        {domainEmails.map((email) => (
                           <option key={email.address} value={email.address}>
                             {email.address}
                           </option>
