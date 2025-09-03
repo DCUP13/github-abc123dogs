@@ -67,12 +67,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   };
 
   useEffect(() => {
-    // Set default from email
-    if (allEmailOptions.length > 0) {
-      // Default to first available email instead of the receiver
-      setFromEmail(allEmailOptions[0].address);
-    }
-
     // Set reply subject
     const replySubject = originalEmail.subject?.startsWith('Re: ') 
       ? originalEmail.subject 
@@ -83,7 +77,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `<br><br><br><br><br><br>--- Original Message ---<br><br>From: ${originalEmail.sender}<br><br>Date: ${originalDate}<br><br>Subject: ${originalEmail.subject || '(No Subject)'}<br><br>${originalEmail.body || ''}`;
     setInitialBody(replyBody);
-  }, [originalEmail, allEmailOptions]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
