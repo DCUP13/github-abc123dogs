@@ -105,6 +105,13 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     }
   };
 
+  const handleToEmailBlur = () => {
+    // Add email if it's valid when clicking outside the field
+    if (newToEmail.trim() && validateEmail(newToEmail.trim())) {
+      handleAddToEmail();
+    }
+  };
+
   const handleFromEmailChange = (value: string) => {
     if (value === 'custom') {
       setShowCustomFrom(true);
@@ -368,6 +375,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                       setToEmailError('');
                     }}
                     onKeyPress={handleToEmailKeyPress}
+                   onBlur={handleToEmailBlur}
                     placeholder={toEmails.length === 0 ? "Enter email addresses..." : ""}
                     className="flex-1 min-w-[200px] outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
