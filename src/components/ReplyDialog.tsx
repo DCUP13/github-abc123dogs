@@ -259,7 +259,13 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
+              <User className="w-4 h-4" />
+              <span>Replying to: {originalEmail.sender}</span>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
@@ -270,14 +276,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         
         <form onSubmit={handleSend} className="flex-1 flex flex-col">
           <div className="p-4 space-y-4 flex-shrink-0">
-            {/* Original Email Info */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                <User className="w-4 h-4" />
-                <span>Replying to: {originalEmail.sender}</span>
-              </div>
-            </div>
-
             {/* From and To fields side by side */}
             <div className="grid grid-cols-2 gap-4">
               {/* From field */}
@@ -345,29 +343,23 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                   To
                 </label>
                 
-                {/* Display current recipients */}
-                {toEmails.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {toEmails.map((email, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-md text-sm"
+                {/* To field with inline tags */}
+                <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white dark:bg-gray-700 flex flex-wrap items-center gap-1">
+                  {toEmails.map((email, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded text-sm"
+                    >
+                      {email}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveToEmail(email)}
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
                       >
-                        {email}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveToEmail(email)}
-                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Add new recipient */}
-                <div className="flex gap-2">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
                   <input
                     type="email"
                     value={newToEmail}
@@ -376,16 +368,9 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                       setToEmailError('');
                     }}
                     onKeyPress={handleToEmailKeyPress}
-                    placeholder="Add recipient"
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder={toEmails.length === 0 ? "Enter email addresses..." : ""}
+                    className="flex-1 min-w-[200px] outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddToEmail}
-                    className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Add
-                  </button>
                 </div>
                 
                 {toEmailError && (
@@ -394,9 +379,11 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
               </div>
             </div>
             
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Press Enter or click Add to add multiple recipients
-            </p>
+            {toEmails.length > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Press Enter to add more recipients
+              </p>
+            )}
 
             {/* Subject */}
             <div>
