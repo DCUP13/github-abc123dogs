@@ -11,8 +11,6 @@ import { EmailsInbox } from './components/EmailsInbox';
 import { supabase } from './lib/supabase';
 import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
-import { EmailProvider } from './contexts/EmailContext';
-import { DashboardProvider } from './contexts/DashboardContext';
 
 type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses';
 
@@ -24,24 +22,11 @@ export const TemplatesContext = createContext<{
   fetchTemplates: async () => {},
 });
 
-const ThemeContext = createContext<{
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-}>({
-  darkMode: false,
-  toggleDarkMode: () => {},
-});
-
 export default function App() {
   const [view, setView] = useState<View>('login');
   const [isLoading, setIsLoading] = useState(true);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [supabaseError, setSupabaseError] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
 
   useEffect(() => {
     // Check Supabase connection
@@ -146,63 +131,55 @@ export default function App() {
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      <TemplatesContext.Provider value={{ templates, fetchTemplates }}>
-        <div className={darkMode ? 'dark' : ''}>
-          {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
-            <EmailProvider>
-              <DashboardProvider>
-                <div className="flex min-h-screen bg-white dark:bg-gray-900">
-                  <div className="fixed inset-y-0 left-0 w-64">
-                    <Sidebar 
-                      onSignOut={handleSignOut} 
-                      onHomeClick={() => setView('dashboard')}
-                      onAppClick={() => setView('app')}
-                      onSettingsClick={() => setView('settings')}
-                      onTemplatesClick={() => setView('templates')}
-                      onEmailsClick={() => setView('emails')}
-                      onAddressesClick={() => setView('addresses')}
-                    />
-                  </div>
-                  <div className="flex-1 ml-64">
-                    {view === 'dashboard' && (
-                      <Dashboard onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'app' && (
-                      <AppPage onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'settings' && (
-                      <Settings onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'templates' && (
-                      <TemplatesPage onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'emails' && (
-                      <EmailsInbox onSignOut={handleSignOut} currentView={view} />
-                    )}
-                    {view === 'addresses' && (
-                      <Addresses onSignOut={handleSignOut} currentView={view} />
-                    )}
-                  </div>
-                </div>
-              </DashboardProvider>
-            </EmailProvider>
-          ) : (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-                {view === 'login' ? (
-                  <Login 
-                    onRegisterClick={() => setView('register')}
-                    onLoginSuccess={handleLogin}
-                  />
-                ) : (
-                  <Register onLoginClick={() => setView('login')} />
-                )}
-              </div>
-            </div>
-          )}
+    <TemplatesContext.Provider value={{ templates, fetchTemplates }}>
+      {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
+        <div className="flex min-h-screen bg-white">
+          <div className="fixed inset-y-0 left-0 w-64">
+            <Sidebar 
+              onSignOut={handleSignOut} 
+              onHomeClick={() => setView('dashboard')}
+              onAppClick={() => setView('app')}
+              onSettingsClick={() => setView('settings')}
+              onTemplatesClick={() => setView('templates')}
+              onEmailsClick={() => setView('emails')}
+              onAddressesClick={() => setView('addresses')}
+            />
+          </div>
+          <div className="flex-1 ml-64">
+            {view === 'dashboard' && (
+              <Dashboard onSignOut={handleSignOut} currentView={view} />
+            )}
+            {view === 'app' && (
+              <AppPage onSignOut={handleSignOut} currentView={view} />
+            )}
+            {view === 'settings' && (
+              <Settings onSignOut={handleSignOut} currentView={view} />
+            )}
+            {view === 'templates' && (
+              <TemplatesPage onSignOut={handleSignOut} currentView={view} />
+            )}
+            {view === 'emails' && (
+              <EmailsInbox onSignOut={handleSignOut} currentView={view} />
+            )}
+            {view === 'addresses' && (
+              <Addresses onSignOut={handleSignOut} currentView={view} />
+            )}
+          </div>
         </div>
-      </TemplatesContext.Provider>
-    </ThemeContext.Provider>
+      ) : (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+            {view === 'login' ? (
+              <Login 
+                onRegisterClick={() => setView('register')}
+                onLoginSuccess={handleLogin}
+              />
+            ) : (
+              <Register onLoginClick={() => setView('login')} />
+            )}
+          </div>
+        </div>
+      )}
+    </TemplatesContext.Provider>
   );
 }

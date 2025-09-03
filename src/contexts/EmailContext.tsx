@@ -1,6 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { SESEmail, GoogleEmail } from '../components/settings/types';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useState } from 'react';
+
+interface SESEmail {
+  address: string;
+  dailyLimit?: number;
+  sentEmails?: number;
+  isLocked?: boolean;
+}
+
+interface GoogleEmail {
+  address: string;
+  appPassword: string;
+  dailyLimit?: number;
+  sentEmails?: number;
+  isLocked?: boolean;
+}
 
 interface EmailContextType {
   sesEmails: SESEmail[];
@@ -19,68 +32,10 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [googleEmails, setGoogleEmails] = useState<GoogleEmail[]>([]);
   const [sesDomains, setSesDomains] = useState<string[]>([]);
 
-  const fetchEmails = async () => {
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
-
-      // Fetch Amazon SES emails
-      const { data: sesData, error: sesError } = await supabase
-        .from('amazon_ses_emails')
-        .select('*')
-        .eq('user_id', user.data.user.id)
-        .order('address', { ascending: true });
-
-      if (sesError) throw sesError;
-      setSesEmails(sesData?.map(email => ({
-        address: email.address,
-        dailyLimit: email.daily_limit,
-        sentEmails: email.sent_emails,
-        isLocked: email.sent_emails >= email.daily_limit
-      })) || []);
-
-      // Fetch Google SMTP emails
-      const { data: googleData, error: googleError } = await supabase
-        .from('google_smtp_emails')
-        .select('*')
-        .eq('user_id', user.data.user.id)
-        .order('address', { ascending: true });
-
-      if (googleError) throw googleError;
-      setGoogleEmails(googleData?.map(email => ({
-        address: email.address,
-        appPassword: email.app_password,
-        dailyLimit: email.daily_limit,
-        sentEmails: email.sent_emails,
-        isLocked: email.sent_emails >= email.daily_limit
-      })) || []);
-
-      // Set empty domains for now
-      setSesDomains([]);
-    } catch (error) {
-      console.error('Error fetching emails:', error);
-    }
+  const refreshEmails = async () => {
+    // Simple refresh function - can be implemented later
+    console.log('Refreshing emails...');
   };
-
-  // Initial fetch
-  useEffect(() => {
-    fetchEmails();
-
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        fetchEmails();
-      } else if (event === 'SIGNED_OUT') {
-        setSesEmails([]);
-        setGoogleEmails([]);
-        setSesDomains([]);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const value = {
     sesEmails,
@@ -89,7 +44,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     setSesEmails,
     setGoogleEmails,
     setSesDomains,
-    refreshEmails: fetchEmails
+    refreshEmails
   };
 
   return (

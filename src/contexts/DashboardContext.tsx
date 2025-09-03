@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useState } from 'react';
 
 interface DashboardStats {
   totalEmailsRemaining: number;
@@ -33,40 +32,14 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     totalCampaigns: 0
   });
 
-  const fetchStats = async () => {
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
-
-      const { data, error } = await supabase
-        .from('dashboard_statistics')
-        .select('*')
-        .eq('user_id', user.data.user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        setStats({
-          totalEmailsRemaining: data.total_emails_remaining,
-          totalEmailAccounts: data.total_email_accounts,
-          totalEmailsSentToday: data.total_emails_sent_today,
-          totalTemplates: data.total_templates,
-          totalCampaigns: data.total_campaigns
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard statistics:', error);
-    }
+  const refreshStats = async () => {
+    // Simple refresh function - can be implemented later
+    console.log('Refreshing stats...');
   };
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   const value = {
     stats,
-    refreshStats: fetchStats
+    refreshStats
   };
 
   return (
