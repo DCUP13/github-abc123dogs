@@ -69,8 +69,8 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   useEffect(() => {
     // Set default from email
     if (allEmailOptions.length > 0) {
-      // Default to the email that received the message (most logical for replies)
-      setFromEmail(originalEmail.receiver);
+      // Default to first available email instead of the receiver
+      setFromEmail(allEmailOptions[0].address);
     }
 
     // Set reply subject
