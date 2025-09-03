@@ -33,6 +33,7 @@ export function AmazonTab({
   useEffect(() => {
     fetchSESSettings();
     fetchSESEmails();
+    fetchSESDomains();
   }, []);
 
   const fetchSESSettings = async () => {
@@ -87,6 +88,25 @@ export function AmazonTab({
       console.error('Error fetching SES emails:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSESDomains = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('amazon_ses_domains')
+        .select('domain')
+        .eq('user_id', user.data.user.id)
+        .order('domain', { ascending: true });
+
+      if (error) throw error;
+      setDomains(data?.map(d => d.domain) || []);
+    } catch (error) {
+      console.error('Error fetching SES domains:', error);
+      setDomains([]);
     }
   };
 

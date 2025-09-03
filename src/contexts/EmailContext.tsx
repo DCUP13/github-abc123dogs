@@ -61,6 +61,21 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching emails:', error);
     }
+
+    // Fetch SES domains
+    try {
+      const { data: domainsData, error: domainsError } = await supabase
+        .from('amazon_ses_domains')
+        .select('domain')
+        .eq('user_id', user.data.user.id)
+        .order('domain', { ascending: true });
+
+      if (domainsError) throw domainsError;
+      setSesDomains(domainsData?.map(d => d.domain) || []);
+    } catch (error) {
+      console.error('Error fetching SES domains:', error);
+      setSesDomains([]);
+    }
   };
 
   // Initial fetch
