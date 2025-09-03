@@ -58,37 +58,58 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
   useEffect(() => {
     fetchAllEmails();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'inbox') {
+      fetchInboxEmails();
+    } else if (activeTab === 'outbox') {
+      fetchOutboxEmails();
+    } else if (activeTab === 'sent') {
+      fetchSentEmails();
+    }
   }, [activeTab]);
 
   const fetchAllEmails = async () => {
     try {
-      if (activeTab === 'inbox') {
-        const { data, error } = await supabase
-          .from('emails')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setEmails(data || []);
-      } else if (activeTab === 'outbox') {
-        const { data, error } = await supabase
-          .from('email_outbox')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setOutboxEmails(data || []);
-      } else if (activeTab === 'sent') {
-        const { data, error } = await supabase
-          .from('email_sent')
-          .select('*')
-          .order('sent_at', { ascending: false });
-        if (error) throw error;
-        setSentEmails(data || []);
-      }
+      // Fetch all email types on initial load
+      await Promise.all([
+        fetchInboxEmails(),
+        fetchOutboxEmails(),
+        fetchSentEmails()
+      ]);
     } catch (error) {
       console.error('Error fetching emails:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchInboxEmails = async () => {
+    const { data, error } = await supabase
+      .from('emails')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    setEmails(data || []);
+  };
+
+  const fetchOutboxEmails = async () => {
+    const { data, error } = await supabase
+      .from('email_outbox')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    setOutboxEmails(data || []);
+  };
+
+  const fetchSentEmails = async () => {
+    const { data, error } = await supabase
+      .from('email_sent')
+      .select('*')
+      .order('sent_at', { ascending: false });
+    if (error) throw error;
+    setSentEmails(data || []);
   };
 
   const handleSendReply = async (replyData: {
