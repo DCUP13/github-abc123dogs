@@ -7,6 +7,7 @@ interface DashboardStats {
   totalEmailsSentToday: number;
   totalTemplates: number;
   totalCampaigns: number;
+  totalDomains: number;
 }
 
 interface DashboardContextType {
@@ -30,7 +31,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     totalEmailAccounts: 0,
     totalEmailsSentToday: 0,
     totalTemplates: 0,
-    totalCampaigns: 0
+    totalCampaigns: 0,
+    totalDomains: 0
   });
 
   const fetchStats = async () => {
@@ -52,7 +54,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           totalEmailAccounts: data.total_email_accounts,
           totalEmailsSentToday: data.total_emails_sent_today,
           totalTemplates: data.total_templates,
-          totalCampaigns: data.total_campaigns
+          totalCampaigns: data.total_campaigns,
+          totalDomains: data.total_domains || 0
         });
       }
     } catch (error) {

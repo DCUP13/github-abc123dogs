@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, FileText, Send, Users, Layout } from 'lucide-react';
+import { Mail, FileText, Send, Users, Layout, Globe } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
 
 interface DashboardProps {
@@ -45,6 +45,13 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       icon: Layout,
       color: 'text-indigo-500',
       bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
+    },
+    {
+      title: 'Total Domains',
+      value: stats.totalDomains.toLocaleString(),
+      icon: Globe,
+      color: 'text-teal-500',
+      bgColor: 'bg-teal-100 dark:bg-teal-900/20',
     },
   ];
 
