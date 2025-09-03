@@ -234,7 +234,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   // Add all recipients
   recipients.forEach((recipient, index) => {
     console.log(`Adding recipient ${index + 1}: ${recipient}`)
-    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient)
+    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient.trim())
   })
   
   formData.append('Message.Subject.Data', email.subject || 'No Subject')
@@ -243,7 +243,8 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   formData.append('Message.Body.Html.Charset', 'UTF-8')
   
   const payload = formData.toString()
-  console.log('SES API payload:', payload)
+  console.log('SES API payload (first 500 chars):', payload.substring(0, 500))
+  console.log('Full recipient list in payload:', recipients.map((r, i) => `member.${i + 1}=${r}`).join(', '))
   
   // Create timestamp
   const now = new Date()
@@ -281,11 +282,19 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   if (!response.ok) {
     const errorText = await response.text()
     console.error('SES API error response:', errorText)
+    console.error('Failed payload recipients:', recipients)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
   const responseText = await response.text()
   console.log('SES API success response:', responseText)
+  
+  // Verify the response mentions all recipients
+  if (responseText.includes('MessageId')) {
+    console.log(`✅ Email successfully sent via SES to ${recipients.length} recipients: ${recipients.join(', ')}`)
+  } else {
+    console.warn('⚠️ SES response may not confirm all recipients received the email')
+  }
   
   console.log(`Email sent via SES from ${email.from_email} to ${recipients.length} recipients: ${recipients.join(', ')}`)
 }
