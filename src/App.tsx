@@ -8,11 +8,23 @@ import { Settings } from './components/Settings';
 import { TemplatesPage } from './features/templates/TemplatesPage';
 import { Addresses } from './components/Emails';
 import { EmailsInbox } from './components/EmailsInbox';
+import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
+import { DashboardProvider } from './contexts/DashboardContext';
 
 type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses';
+
+interface ThemeContextType {
+  darkMode: boolean;
+  toggleDarkMode: () => Promise<void>;
+}
+
+export const ThemeContext = createContext<ThemeContextType>({
+  darkMode: false,
+  toggleDarkMode: async () => {},
+});
 
 export const TemplatesContext = createContext<{
   templates: Template[];
@@ -22,27 +34,31 @@ export const TemplatesContext = createContext<{
   fetchTemplates: async () => {},
 });
 
-const ThemeContext = createContext<{
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-}>({
-  darkMode: false,
-  toggleDarkMode: () => {},
-});
-
-const EmailProvider = ({ children }: { children: React.ReactNode }) => {
-  return <div>{children}</div>;
-};
-
 export default function App() {
   const [view, setView] = useState<View>('login');
+  const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [supabaseError, setSupabaseError] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+  const fetchUserSettings = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('dark_mode')
+        .eq('user_id', user.data.user.id)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setDarkMode(data.dark_mode);
+      }
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+    }
   };
 
   useEffect(() => {
@@ -64,6 +80,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setView('dashboard');
+        fetchUserSettings();
       }
       setIsLoading(false);
     });
@@ -74,8 +91,10 @@ export default function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setView('dashboard');
+        fetchUserSettings();
       } else {
         setView('login');
+        setDarkMode(false);
       }
     });
 
@@ -106,6 +125,31 @@ export default function App() {
     }
   }, [view]);
 
+  const toggleDarkMode = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const newDarkMode = !darkMode;
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ 
+          dark_mode: newDarkMode,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id);
+
+      if (error) throw error;
+      setDarkMode(newDarkMode);
+    } catch (error) {
+      console.error('Error updating dark mode:', error);
+      alert('Failed to update dark mode setting. Please try again.');
+    }
+  };
+
   const handleLogin = () => {
     setView('dashboard');
   };
@@ -117,7 +161,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -125,13 +169,13 @@ export default function App() {
 
   if (supabaseError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
-          <div className="flex items-center gap-3 text-red-600 mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md w-full">
+          <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-4">
             <AlertCircle className="w-6 h-6" />
             <h1 className="text-xl font-semibold">Connection Error</h1>
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Unable to connect to the database. Please click the "Connect to Supabase" button in the top right corner to establish a connection.
           </p>
           <div className="flex justify-end">
@@ -150,58 +194,60 @@ export default function App() {
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
       <TemplatesContext.Provider value={{ templates, fetchTemplates }}>
-        <div className={darkMode ? 'dark' : ''}>
-          {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
-            <EmailProvider>
-              <div className="flex min-h-screen bg-white dark:bg-gray-900">
-                <div className="fixed inset-y-0 left-0 w-64">
-                  <Sidebar 
-                    onSignOut={handleSignOut} 
-                    onHomeClick={() => setView('dashboard')}
-                    onAppClick={() => setView('app')}
-                    onSettingsClick={() => setView('settings')}
-                    onTemplatesClick={() => setView('templates')}
-                    onEmailsClick={() => setView('emails')}
-                    onAddressesClick={() => setView('addresses')}
-                  />
+        <EmailProvider>
+          <DashboardProvider>
+            <div className={darkMode ? 'dark' : ''}>
+              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
+                <div className="flex min-h-screen bg-white dark:bg-gray-900">
+                  <div className="fixed inset-y-0 left-0 w-64">
+                    <Sidebar 
+                      onSignOut={handleSignOut} 
+                      onHomeClick={() => setView('dashboard')}
+                      onAppClick={() => setView('app')}
+                      onSettingsClick={() => setView('settings')}
+                      onTemplatesClick={() => setView('templates')}
+                      onEmailsClick={() => setView('emails')}
+                      onAddressesClick={() => setView('addresses')}
+                    />
+                  </div>
+                  <div className="flex-1 ml-64">
+                    {view === 'dashboard' && (
+                      <Dashboard onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'app' && (
+                      <AppPage onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'settings' && (
+                      <Settings onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'templates' && (
+                      <TemplatesPage onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'emails' && (
+                      <EmailsInbox onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'addresses' && (
+                      <Addresses onSignOut={handleSignOut} currentView={view} />
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 ml-64">
-                  {view === 'dashboard' && (
-                    <Dashboard onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'app' && (
-                    <AppPage onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'settings' && (
-                    <Settings onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'templates' && (
-                    <TemplatesPage onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'emails' && (
-                    <EmailsInbox onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'addresses' && (
-                    <Addresses onSignOut={handleSignOut} currentView={view} />
-                  )}
+              ) : (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
+                    {view === 'login' ? (
+                      <Login 
+                        onRegisterClick={() => setView('register')}
+                        onLoginSuccess={handleLogin}
+                      />
+                    ) : (
+                      <Register onLoginClick={() => setView('login')} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            </EmailProvider>
-          ) : (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
-                {view === 'login' ? (
-                  <Login 
-                    onRegisterClick={() => setView('register')}
-                    onLoginSuccess={handleLogin}
-                  />
-                ) : (
-                  <Register onLoginClick={() => setView('login')} />
-                )}
-              </div>
+              )}
             </div>
-          )}
-        </div>
+          </DashboardProvider>
+        </EmailProvider>
       </TemplatesContext.Provider>
     </ThemeContext.Provider>
   );
