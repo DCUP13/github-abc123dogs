@@ -1,6 +1,5 @@
 import React from 'react';
 import { Mail, FileText, Send, Users, Layout } from 'lucide-react';
-import { useDashboard } from '../contexts/DashboardContext';
 
 interface DashboardProps {
   onSignOut: () => void;
@@ -8,7 +7,13 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onSignOut, currentView }: DashboardProps) {
-  const { stats } = useDashboard();
+  const stats = {
+    totalEmailsRemaining: 0,
+    totalEmailAccounts: 0,
+    totalEmailsSentToday: 0,
+    totalTemplates: 0,
+    totalCampaigns: 0
+  };
 
   const stats_cards = [
     {
