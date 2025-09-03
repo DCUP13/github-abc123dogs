@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { SESEmail, GoogleEmail } from '../components/settings/types';
 import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 interface EmailContextType {
   sesEmails: SESEmail[];
@@ -18,17 +19,18 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [sesEmails, setSesEmails] = useState<SESEmail[]>([]);
   const [googleEmails, setGoogleEmails] = useState<GoogleEmail[]>([]);
   const [sesDomains, setSesDomains] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const fetchEmails = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const fetchEmails = async (user?: User) => {
+    const userToUse = user || currentUser;
+    if (!userToUse) return;
 
     try {
       // Fetch Amazon SES emails
       const { data: sesData, error: sesError } = await supabase
         .from('amazon_ses_emails')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userToUse.id)
         .order('address', { ascending: true });
 
       if (sesError) throw sesError;
@@ -43,7 +45,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: googleData, error: googleError } = await supabase
         .from('google_smtp_emails')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userToUse.id)
         .order('address', { ascending: true });
 
       if (googleError) throw googleError;
@@ -67,7 +69,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       const { data: domainsData, error: domainsError } = await supabase
         .from('amazon_ses_domains')
         .select('domain')
-        .eq('user_id', user.id)
+        .eq('user_id', userToUse.id)
         .order('domain', { ascending: true });
 
       if (domainsError) throw domainsError;
@@ -80,18 +82,41 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
 
   // Initial fetch
   useEffect(() => {
-    fetchEmails();
+    const initializeAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      if (user) {
+        await fetchEmails(user);
+      }
+    };
 
+    initializeAuth();
+  }, []);
+
+  // Handle auth state changes
+  useEffect(() => {
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        fetchEmails();
+      const user = session?.user || null;
+      setCurrentUser(user);
+      
+      if (event === 'SIGNED_IN' && user) {
+        fetchEmails(user);
       } else if (event === 'SIGNED_OUT') {
         setSesEmails([]);
         setGoogleEmails([]);
         setSesDomains([]);
       }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Handle realtime subscriptions
+  useEffect(() => {
+    if (!currentUser) return;
 
     // Subscribe to realtime changes for amazon_ses_emails
     const sesSubscription = supabase
@@ -118,11 +143,10 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
       sesSubscription.unsubscribe();
       googleSubscription.unsubscribe();
     };
-  }, []);
+  }, [currentUser]);
 
   const value = {
     sesEmails,
