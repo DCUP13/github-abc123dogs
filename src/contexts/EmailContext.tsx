@@ -73,20 +73,6 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   // Initial fetch and auth state management
   useEffect(() => {
     fetchEmails();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && user) {
-        fetchEmails();
-      } else if (event === 'SIGNED_OUT') {
-        setSesEmails([]);
-        setGoogleEmails([]);
-        setSesDomains([]);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const value = {
