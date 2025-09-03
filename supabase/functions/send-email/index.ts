@@ -220,12 +220,20 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   const method = 'POST'
   const endpoint = `https://${host}/`
   
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(email => email.trim()).filter(email => email.length > 0)
+  
   // Create form data for SES v1 API
   const formData = new URLSearchParams()
   formData.append('Action', 'SendEmail')
   formData.append('Version', '2010-12-01')
   formData.append('Source', email.from_email)
-  formData.append('Destination.ToAddresses.member.1', email.to_email)
+  
+  // Add all recipients
+  recipients.forEach((recipient, index) => {
+    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient)
+  })
+  
   formData.append('Message.Subject.Data', email.subject || 'No Subject')
   formData.append('Message.Subject.Charset', 'UTF-8')
   formData.append('Message.Body.Html.Data', email.body || '')
@@ -279,10 +287,13 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   const smtpHost = 'smtp.gmail.com'
   const smtpPort = 587
   
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(email => email.trim()).filter(email => email.length > 0)
+  
   // Create email message in RFC 2822 format
   const emailMessage = [
     `From: ${email.from_email}`,
-    `To: ${email.to_email}`,
+    `To: ${recipients.join(', ')}`, // Join all recipients
     `Subject: ${email.subject}`,
     `Content-Type: text/html; charset=UTF-8`,
     ``,
@@ -298,7 +309,7 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     throw new Error('Gmail SMTP connection failed')
   }
   
-  console.log(`Email sent via Gmail SMTP from ${email.from_email} to ${email.to_email}`)
+  console.log(`Email sent via Gmail SMTP from ${email.from_email} to ${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`)
 }
 
 // Helper functions for AWS signature calculation

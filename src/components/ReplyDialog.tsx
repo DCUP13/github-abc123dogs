@@ -158,67 +158,51 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         throw new Error('User not authenticated');
       }
 
-      const outboxEmails = [];
-      
-      for (const toEmail of toEmails) {
-        const { data: outboxEmail, error: outboxError } = await supabase
-          .from('email_outbox')
-          .insert({
-            user_id: user.data.user.id,
-            to_email: toEmail,
-            from_email: finalFromEmail,
-            subject: subject.trim(),
-            body: body.trim(),
-            reply_to_id: originalEmail.id,
-            status: 'pending'
-          })
-          .select()
-          .single();
+      // Create a single email with multiple recipients (comma-separated)
+      const { data: outboxEmail, error: outboxError } = await supabase
+        .from('email_outbox')
+        .insert({
+          user_id: user.data.user.id,
+          to_email: toEmails.join(', '), // Join all recipients with comma
+          from_email: finalFromEmail,
+          subject: subject.trim(),
+          body: body.trim(),
+          reply_to_id: originalEmail.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
 
-        if (outboxError) throw outboxError;
-        outboxEmails.push(outboxEmail);
-      }
+      if (outboxError) throw outboxError;
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No active session');
       }
 
-      let successCount = 0;
-      let failCount = 0;
-
-      for (const outboxEmail of outboxEmails) {
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                emailId: outboxEmail.id
-              })
-            }
-          );
-
-          if (response.ok) {
-            successCount++;
-          } else {
-            failCount++;
+      // Send the single email with multiple recipients
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              emailId: outboxEmail.id
+            })
           }
-        } catch {
-          failCount++;
-        }
-      }
+        );
 
-      if (successCount === toEmails.length) {
-        alert(`Reply sent successfully to ${successCount} recipient${successCount > 1 ? 's' : ''}!`);
-      } else if (successCount > 0) {
-        alert(`${successCount} email${successCount > 1 ? 's' : ''} sent successfully, ${failCount} failed. Check the outbox for details.`);
-      } else {
-        alert('Emails added to outbox but failed to send immediately. Check the outbox for details.');
+        if (response.ok) {
+          alert(`Reply sent successfully to ${toEmails.length} recipient${toEmails.length > 1 ? 's' : ''}!`);
+        } else {
+          alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+        }
+      } catch {
+        alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
       }
       
       onClose();
