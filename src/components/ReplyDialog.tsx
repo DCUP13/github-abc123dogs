@@ -106,7 +106,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
   };
 
   const handleToEmailBlur = () => {
-    // Add email if it's valid when clicking outside the field
     if (newToEmail.trim() && validateEmail(newToEmail.trim())) {
       handleAddToEmail();
     }
@@ -140,7 +139,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
       return;
     }
 
-    // Validate custom email format
     if (showCustomFrom && !customFromEmail.includes('@')) {
       alert('Please enter a valid email address.');
       return;
@@ -154,7 +152,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         throw new Error('User not authenticated');
       }
 
-      // Add each recipient as a separate email to outbox
       const outboxEmails = [];
       
       for (const toEmail of toEmails) {
@@ -176,7 +173,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         outboxEmails.push(outboxEmail);
       }
 
-      // Try to send all emails immediately
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No active session');
@@ -259,6 +255,12 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
@@ -277,7 +279,6 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         
         <form onSubmit={handleSend} className="flex-1 flex flex-col">
           <div className="p-4 space-y-4 flex-shrink-0">
-            {/* From and To fields side by side */}
             <div className="grid grid-cols-2 gap-4">
               {/* From field */}
               <div>
@@ -338,13 +339,11 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                 )}
               </div>
               
-              {/* To field - now editable and supports multiple emails */}
+              {/* To field */}
               <div>
                 <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   To
                 </label>
-                
-                {/* To field with inline tags */}
                 <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white dark:bg-gray-700 flex flex-wrap items-center gap-1">
                   {toEmails.map((email, index) => (
                     <span
@@ -369,29 +368,19 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                       setToEmailError('');
                     }}
                     onKeyPress={handleToEmailKeyPress}
-                   onBlur={handleToEmailBlur}
+                    onBlur={handleToEmailBlur}
                     placeholder={toEmails.length === 0 ? "Enter email addresses..." : ""}
                     className="flex-1 min-w-[200px] outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
-                
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Press Enter to add more recipients
+                </p>
                 {toEmailError && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{toEmailError}</p>
                 )}
               </div>
             </div>
-            
-            {toEmails.length > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Press Enter to add more recipients
-              </p>
-            )}
-            
-            {toEmails.length > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Press Enter to add more recipients
-              </p>
-            )}
 
             {/* Subject */}
             <div>
