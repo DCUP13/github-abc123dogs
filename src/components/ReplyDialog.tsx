@@ -277,8 +277,9 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           </button>
         </div>
         
-        <form onSubmit={handleSend} className="flex-1 flex flex-col">
-          <div className="p-4 space-y-4 flex-shrink-0">
+        <form onSubmit={handleSend} className="flex-1 flex flex-col p-4">
+          <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-1 flex flex-col">
+            <div className="p-4 space-y-4 flex-shrink-0 bg-gray-50 dark:bg-gray-700/30">
             <div className="grid grid-cols-2 gap-4">
               {/* From field */}
               <div>
@@ -398,22 +399,23 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
             </div>
           </div>
 
-          {/* Message Body */}
-          <div className="flex-1 p-4 flex flex-col min-h-0">
-            <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Message
-            </label>
-            <div className="flex-1 min-h-0">
-              <RichTextEditor
-                ref={editorRef}
-                content={initialBody}
-                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
+            {/* Message Body */}
+            <div className="flex-1 p-4 flex flex-col min-h-0 border-t border-gray-300 dark:border-gray-600">
+              <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Message
+              </label>
+              <div className="flex-1 min-h-0">
+                <RichTextEditor
+                  ref={editorRef}
+                  content={initialBody}
+                  className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-0"
+                />
+              </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex justify-end gap-2 pt-4 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
