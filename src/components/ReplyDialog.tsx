@@ -25,12 +25,14 @@ interface ReplyDialogProps {
 }
 
 export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps) {
-  const { sesEmails, googleEmails } = useEmails();
+  const { sesEmails, googleEmails, sesDomains } = useEmails();
   const editorRef = React.useRef<RichTextEditorRef>(null);
   const [fromEmail, setFromEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [initialBody, setInitialBody] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [customFromEmail, setCustomFromEmail] = useState('');
+  const [showCustomFrom, setShowCustomFrom] = useState(false);
 
   // Get configured email addresses
   const configuredEmails = [
@@ -38,16 +40,35 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     ...googleEmails.map(email => ({ address: email.address, provider: 'Gmail' }))
   ];
 
-  // Add the recipient email (the email that received the original message) as an option
-  const availableEmails = [
-    // Add recipient email first (it's the most logical choice for replies)
-    { address: originalEmail.receiver, provider: 'AWS Domain' },
-    ...configuredEmails.filter(email => email.address !== originalEmail.receiver)
-  ];
+  // Generate domain-based email options
+  const domainEmails = sesDomains.flatMap(domain => [
+    { address: `info@${domain}`, provider: 'SES Domain', isDomain: true },
+    { address: `support@${domain}`, provider: 'SES Domain', isDomain: true },
+    { address: `noreply@${domain}`, provider: 'SES Domain', isDomain: true },
+    { address: `custom@${domain}`, provider: 'SES Domain', isDomain: true, isCustom: true }
+  ]);
+
+  const allEmailOptions = [...configuredEmails, ...domainEmails];
+
+  const handleFromEmailChange = (value: string) => {
+    if (value === 'custom') {
+      setShowCustomFrom(true);
+      setFromEmail('');
+    } else if (value.includes('custom@')) {
+      setShowCustomFrom(true);
+      const domain = value.split('@')[1];
+      setCustomFromEmail(`@${domain}`);
+      setFromEmail('');
+    } else {
+      setShowCustomFrom(false);
+      setFromEmail(value);
+      setCustomFromEmail('');
+    }
+  };
 
   useEffect(() => {
     // Set default from email
-    if (availableEmails.length > 0) {
+    if (allEmailOptions.length > 0) {
       // Default to the email that received the message (most logical for replies)
       setFromEmail(originalEmail.receiver);
     }
@@ -62,14 +83,22 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `<br><br><br><br><br><br>--- Original Message ---<br><br>From: ${originalEmail.sender}<br><br>Date: ${originalDate}<br><br>Subject: ${originalEmail.subject || '(No Subject)'}<br><br>${originalEmail.body || ''}`;
     setInitialBody(replyBody);
-  }, [originalEmail, availableEmails]);
+  }, [originalEmail, allEmailOptions]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const body = editorRef.current?.getContent() || '';
-    if (!fromEmail || !body.trim()) {
+    const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
+    
+    if (!finalFromEmail || !body.trim()) {
       alert('Please select a sender email and enter a message.');
+      return;
+    }
+
+    // Validate custom email format
+    if (showCustomFrom && !customFromEmail.includes('@')) {
+      alert('Please enter a valid email address.');
       return;
     }
 
@@ -87,7 +116,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
         .insert({
           user_id: user.data.user.id,
           to_email: originalEmail.sender,
-          from_email: fromEmail,
+          from_email: finalFromEmail,
           subject: subject.trim(),
           body: body.trim(),
           reply_to_id: originalEmail.id,
@@ -141,7 +170,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     }
   };
 
-  if (availableEmails.length === 0) {
+  if (allEmailOptions.length === 0) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md">
@@ -203,20 +232,57 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
                 <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   From
                 </label>
-                <select
-                  id="fromEmail"
-                  value={fromEmail}
-                  onChange={(e) => setFromEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  required
-                >
-                  <option value="">Select sender email</option>
-                  {availableEmails.map((email) => (
-                    <option key={email.address} value={email.address}>
-                      {email.address} ({email.provider})
-                    </option>
-                  ))}
-                </select>
+                {showCustomFrom ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={customFromEmail}
+                      onChange={(e) => setCustomFromEmail(e.target.value)}
+                      placeholder="your-email@domain.com"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomFrom(false);
+                        setCustomFromEmail('');
+                      }}
+                      className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    id="fromEmail"
+                    value={fromEmail}
+                    onChange={(e) => handleFromEmailChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  >
+                    <option value="">Select sender email</option>
+                    {configuredEmails.map((email) => (
+                      <option key={email.address} value={email.address}>
+                        {email.address} ({email.provider})
+                      </option>
+                    ))}
+                    {sesDomains.length > 0 && (
+                      <optgroup label="SES Domains">
+                        {domainEmails.filter(email => !email.isCustom).map((email) => (
+                          <option key={email.address} value={email.address}>
+                            {email.address}
+                          </option>
+                        ))}
+                        {sesDomains.map(domain => (
+                          <option key={`custom@${domain}`} value={`custom@${domain}`}>
+                            Custom address @{domain}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                )}
               </div>
               
               <div>
