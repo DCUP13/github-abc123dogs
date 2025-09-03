@@ -221,7 +221,9 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   const endpoint = `https://${host}/`
   
   // Parse multiple recipients from comma-separated string
-  const recipients = email.to_email.split(',').map(email => email.trim()).filter(email => email.length > 0)
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending email to ${recipients.length} recipients:`, recipients)
   
   // Create form data for SES v1 API
   const formData = new URLSearchParams()
@@ -231,6 +233,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   // Add all recipients
   recipients.forEach((recipient, index) => {
+    console.log(`Adding recipient ${index + 1}: ${recipient}`)
     formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient)
   })
   
@@ -240,6 +243,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   formData.append('Message.Body.Html.Charset', 'UTF-8')
   
   const payload = formData.toString()
+  console.log('SES API payload:', payload)
   
   // Create timestamp
   const now = new Date()
@@ -276,10 +280,14 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('SES API error response:', errorText)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-  console.log(`Email sent via SES from ${email.from_email} to ${email.to_email}`)
+  const responseText = await response.text()
+  console.log('SES API success response:', responseText)
+  
+  console.log(`Email sent via SES from ${email.from_email} to ${recipients.length} recipients: ${recipients.join(', ')}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
@@ -288,7 +296,9 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   const smtpPort = 587
   
   // Parse multiple recipients from comma-separated string
-  const recipients = email.to_email.split(',').map(email => email.trim()).filter(email => email.length > 0)
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending Gmail email to ${recipients.length} recipients:`, recipients)
   
   // Create email message in RFC 2822 format
   const emailMessage = [
@@ -299,6 +309,8 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     ``,
     email.body
   ].join('\r\n')
+  
+  console.log('Gmail email message format:', emailMessage.split('\r\n').slice(0, 6).join('\r\n'))
   
   // For now, we'll simulate the SMTP sending
   // In a real implementation, you'd use a proper SMTP library
