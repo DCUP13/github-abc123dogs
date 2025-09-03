@@ -44,7 +44,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.data.user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
         setStats({
@@ -62,33 +62,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchStats();
-
-    // Subscribe to changes in dashboard_statistics
-    const channel = supabase.channel('dashboard_stats')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'dashboard_statistics'
-        },
-        (payload) => {
-          if (payload.new) {
-            setStats({
-              totalEmailsRemaining: payload.new.total_emails_remaining,
-              totalEmailAccounts: payload.new.total_email_accounts,
-              totalEmailsSentToday: payload.new.total_emails_sent_today,
-              totalTemplates: payload.new.total_templates,
-              totalCampaigns: payload.new.total_campaigns
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
   }, []);
 
   const value = {

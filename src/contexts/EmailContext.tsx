@@ -55,8 +55,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
         isLocked: email.sent_emails >= email.daily_limit
       })) || []);
 
-      // Skip SES domains fetch until table is created via migration
-      // TODO: Enable this once amazon_ses_domains table migration is applied
+      // Set empty domains for now
       setSesDomains([]);
     } catch (error) {
       console.error('Error fetching emails:', error);
@@ -78,34 +77,8 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Subscribe to realtime changes for amazon_ses_emails
-    const sesSubscription = supabase
-      .channel('amazon_ses_emails_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'amazon_ses_emails'
-      }, () => {
-        fetchEmails();
-      })
-      .subscribe();
-
-    // Subscribe to realtime changes for google_smtp_emails
-    const googleSubscription = supabase
-      .channel('google_smtp_emails_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'google_smtp_emails'
-      }, () => {
-        fetchEmails();
-      })
-      .subscribe();
-
     return () => {
       subscription.unsubscribe();
-      sesSubscription.unsubscribe();
-      googleSubscription.unsubscribe();
     };
   }, []);
 
