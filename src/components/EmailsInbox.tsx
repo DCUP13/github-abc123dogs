@@ -333,7 +333,7 @@ async function sendIndividualSESEmail(
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-    to: recipient,
+  console.log(`✅ SES Email sent successfully to ${actualRecipient}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any, allRecipients: string[]) {
