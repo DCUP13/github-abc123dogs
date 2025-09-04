@@ -26,6 +26,7 @@ interface ReplyDialogProps {
 }
 
 export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps) {
+export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: ReplyDialogProps) {
   const { sesEmails, googleEmails, sesDomains } = useEmails();
   const editorRef = useRef<RichTextEditorRef>(null);
   
