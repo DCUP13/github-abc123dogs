@@ -252,34 +252,12 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  const reorderedRecipients = [recipient]
-  const emailContent = [
-    `From: ${email.from_email}`,
     `To: ${recipient}`,
-    `Subject: ${email.subject}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    email.body
-  ].join('\r\n')
-  
-  const now = new Date()
-  const payload = JSON.stringify({
-    FromEmailAddress: email.from_email,
-    Destination: {
-      ToAddresses: [recipient]
-    },
-    Content: {
-      Raw: {
-        Data: btoa(emailContent) // Base64 encode the raw email
-      }
-    }
   })
   
-  console.log('SES v2 API payload:', {
+    `To: ${recipient}`,
     to: recipient,
-    from: email.from_email
-  })
-  
+    to: recipient,
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
   const dateStamp = amzDate.slice(0, 8)
   
@@ -317,10 +295,7 @@ async function sendIndividualSESEmail(
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-  const responseText = await response.text()
-  console.log(`SES API success response for ${recipient}:`, responseText)
-  
-  if (response.ok) {
+    to: recipient,
     console.log(`✅ SES confirmed email sent to ${recipient}`)
   } else {
     console.warn('⚠️ SES response format unexpected:', responseText)
@@ -363,8 +338,6 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
     ``,
     email.body
   ].join('\r\n')
-  
-  const allRecipients = [recipient]
   
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
