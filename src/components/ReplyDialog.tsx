@@ -271,17 +271,10 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {isReplyAll ? 'Reply All' : 'Reply'}
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
                 <User className="w-4 h-4" />
-                <span>
-                  {isReplyAll 
-                    ? `Replying to all: ${originalEmail.sender} and ${Array.isArray(originalEmail.receiver) ? originalEmail.receiver.length : 1} other${Array.isArray(originalEmail.receiver) && originalEmail.receiver.length > 1 ? 's' : ''}`
-                    : `Replying to: ${originalEmail.sender}`
-                  }
-                </span>
+                <span>Replying to: {originalEmail.sender}</span>
               </div>
             </div>
             <button
