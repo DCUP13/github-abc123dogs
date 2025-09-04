@@ -211,26 +211,26 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   console.log(`Sending email to ${recipients.length} recipients via SES SMTP:`, recipients)
   
-  // Send via SMTP
-  await sendRealSMTPEmail(email, sesSettings, recipients)
+  // Get SES credentials from Supabase secrets
+  const sesCredentials = {
+    smtp_server: Deno.env.get('SES_SMTP_SERVER') || 'email-smtp.us-east-1.amazonaws.com',
+    smtp_port: Deno.env.get('SES_SMTP_PORT') || '587',
+    smtp_username: Deno.env.get('SES_SMTP_USERNAME'),
+    smtp_password: Deno.env.get('SES_SMTP_PASSWORD')
+  }
+  
+  if (!sesCredentials.smtp_username || !sesCredentials.smtp_password) {
+    throw new Error('SES SMTP credentials not found in Supabase secrets. Please set SES_SMTP_USERNAME and SES_SMTP_PASSWORD.')
+  }
+  
+  // Send via SMTP using secrets
+  await sendRealSMTPEmail(email, sesCredentials, recipients)
   
   console.log(`✅ Successfully sent email to all ${recipients.length} recipients via SES`)
 }
 
 async function sendRealSMTPEmail(email: EmailData, sesSettings: any, recipients: string[]) {
-  // Use the correct SES SMTP endpoint based on region
-  let host = sesSettings.smtp_server
-  
-  // If the host doesn't include a region, default to us-east-1
-  if (host === 'email-smtp.amazonaws.com') {
-    host = 'email-smtp.us-east-1.amazonaws.com'
-  } else if (host === 'email-smtp.us-east-1.amazonaws.com' || host.includes('email-smtp.')) {
-    // Host is already properly formatted
-  } else {
-    // Fallback to us-east-1 if format is unexpected
-    host = 'email-smtp.us-east-1.amazonaws.com'
-  }
-  
+  const host = sesSettings.smtp_server
   const port = parseInt(sesSettings.smtp_port)
   const username = sesSettings.smtp_username
   const password = sesSettings.smtp_password
@@ -282,7 +282,18 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   console.log(`Sending email to ${recipients.length} recipients via Gmail SMTP:`, recipients)
-  console.log(`Gmail settings - Address: ${gmailSettings.address}, App Password: ${gmailSettings.app_password ? 'SET' : 'NOT SET'}`)
+  
+  // Get Gmail credentials from Supabase secrets
+  const gmailCredentials = {
+    address: Deno.env.get('GMAIL_ADDRESS') || email.from_email,
+    app_password: Deno.env.get('GMAIL_APP_PASSWORD')
+  }
+  
+  if (!gmailCredentials.app_password) {
+    throw new Error('Gmail app password not found in Supabase secrets. Please set GMAIL_APP_PASSWORD.')
+  }
+  
+  console.log(`Gmail settings - Address: ${gmailCredentials.address}, App Password: ${gmailCredentials.app_password ? 'SET' : 'NOT SET'}`)
   
   try {
     // Create SMTP client for Gmail
@@ -292,8 +303,8 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     await client.connectTLS({
       hostname: 'smtp.gmail.com',
       port: 587,
-      username: gmailSettings.address,
-      password: gmailSettings.app_password,
+      username: gmailCredentials.address,
+      password: gmailCredentials.app_password,
     })
     
     console.log('✅ Connected to Gmail SMTP server')
@@ -320,8 +331,8 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     console.error('Gmail Settings:', { 
       hostname: 'smtp.gmail.com', 
       port: 587, 
-      username: gmailSettings.address,
-      password: gmailSettings.app_password ? 'SET' : 'NOT SET'
+      username: gmailCredentials.address,
+      password: gmailCredentials.app_password ? 'SET' : 'NOT SET'
     })
     throw new Error(`Gmail SMTP sending failed: ${error.message}`)
   }
