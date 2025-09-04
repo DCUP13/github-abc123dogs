@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -210,25 +211,13 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   console.log(`Sending email to ${recipients.length} recipients via SES SMTP:`, recipients)
   
-  // Create SMTP transporter for SES
-  const transporter = {
-    host: sesSettings.smtp_server,
-    port: parseInt(sesSettings.smtp_port),
-    secure: sesSettings.smtp_port === '465',
-    auth: {
-      user: sesSettings.smtp_username,
-      pass: sesSettings.smtp_password,
-    },
-  }
-  
   // Send via SMTP
-  await sendSMTPEmail(email, sesSettings, recipients)
+  await sendRealSMTPEmail(email, sesSettings, recipients)
   
   console.log(`✅ Successfully sent email to all ${recipients.length} recipients via SES`)
 }
 
-async function sendSMTPEmail(email: EmailData, sesSettings: any, recipients: string[]) {
-  // Create raw SMTP connection using TCP
+async function sendRealSMTPEmail(email: EmailData, sesSettings: any, recipients: string[]) {
   const host = sesSettings.smtp_server
   const port = parseInt(sesSettings.smtp_port)
   const username = sesSettings.smtp_username
@@ -237,35 +226,37 @@ async function sendSMTPEmail(email: EmailData, sesSettings: any, recipients: str
   console.log(`Connecting to SMTP server: ${host}:${port}`)
   
   try {
-    // Use a simple HTTP-based email service instead of direct SMTP
-    // This is a workaround since Deno doesn't have great SMTP support
-    const emailData = {
-      from: email.from_email,
-      to: recipients,
-      subject: email.subject,
-      html: email.body,
-      smtp: {
-        host: host,
-        port: port,
-        username: username,
-        password: password
-      }
-    }
+    // Create SMTP client
+    const client = new SmtpClient()
     
-    // For now, let's use a simple approach - send via external service
-    // You might want to use a service like SendGrid, Mailgun, or implement proper SMTP
-    console.log('Email data prepared:', {
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject,
-      bodyLength: emailData.html.length
+    // Connect to SMTP server
+    await client.connectTLS({
+      hostname: host,
+      port: port,
+      username: username,
+      password: password,
     })
     
-    // Simulate successful sending for now
-    // In production, you'd implement actual SMTP or use a service
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log('✅ Connected to SMTP server')
     
-    console.log('✅ Email sent successfully via SMTP simulation')
+    // Convert HTML to plain text for text version
+    const textBody = email.body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+    
+    // Send email to all recipients (they will all see each other in To: field)
+    await client.send({
+      from: email.from_email,
+      to: recipients, // Array of recipients - all will see each other
+      subject: email.subject,
+      content: textBody,
+      html: email.body,
+    })
+    
+    console.log(`✅ Email sent successfully to: ${recipients.join(', ')}`)
+    
+    // Close connection
+    await client.close()
+    
+    console.log('✅ SMTP connection closed')
     
   } catch (error) {
     console.error('SMTP sending failed:', error)
@@ -274,9 +265,46 @@ async function sendSMTPEmail(email: EmailData, sesSettings: any, recipients: str
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
-  // Placeholder function for Gmail sending
-  console.log('Sending via Gmail - not implemented yet')
-  throw new Error('Gmail sending not implemented')
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending email to ${recipients.length} recipients via Gmail SMTP:`, recipients)
+  
+  try {
+    // Create SMTP client for Gmail
+    const client = new SmtpClient()
+    
+    // Connect to Gmail SMTP server
+    await client.connectTLS({
+      hostname: 'smtp.gmail.com',
+      port: 587,
+      username: gmailSettings.address,
+      password: gmailSettings.app_password,
+    })
+    
+    console.log('✅ Connected to Gmail SMTP server')
+    
+    // Convert HTML to plain text for text version
+    const textBody = email.body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+    
+    // Send email to all recipients
+    await client.send({
+      from: email.from_email,
+      to: recipients, // Array of recipients - all will see each other
+      subject: email.subject,
+      content: textBody,
+      html: email.body,
+    })
+    
+    console.log(`✅ Email sent successfully via Gmail to: ${recipients.join(', ')}`)
+    
+    // Close connection
+    await client.close()
+    
+  } catch (error) {
+    console.error('Gmail SMTP sending failed:', error)
+    throw new Error(`Gmail SMTP sending failed: ${error.message}`)
+  }
 }
 
 // Helper functions for AWS signature calculation
