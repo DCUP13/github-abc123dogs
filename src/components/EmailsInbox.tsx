@@ -253,10 +253,12 @@ async function sendIndividualSESEmail(
   const endpoint = `https://${host}/`
   
   // Create reordered recipients list with actual recipient first
+  const otherRecipients = allRecipients.filter(addr => addr.toLowerCase() !== actualRecipient.toLowerCase())
+  const reorderedRecipients = [actualRecipient, ...otherRecipients]
+  const toHeaderValue = reorderedRecipients.join(', ')
   
   console.log(`📧 SES: Sending to ${actualRecipient}`)
   console.log(`   All Recipients:`, allRecipients)
-    `To: ${recipient}`,
   console.log(`   To Header Will Show:`, toHeaderValue)
   
   // Create raw email message with full recipient list in To header
@@ -334,7 +336,7 @@ async function sendIndividualSESEmail(
   }
   
   console.log(`✅ SES Email sent successfully to ${actualRecipient}`)
-
+}
 
 async function sendViaGmail(email: EmailData, gmailSettings: any, allRecipients: string[]) {
   console.log(`🔄 Gmail: Sending individual emails to ${allRecipients.length} recipients:`, allRecipients)
