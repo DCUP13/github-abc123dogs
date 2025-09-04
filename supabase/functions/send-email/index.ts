@@ -252,51 +252,10 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  // Create email content
-  const emailContent = [
-    `From: ${email.from_email}`,
     `To: ${recipient}`,
-    `Subject: ${email.subject}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    email.body
-  ].join('\r\n')
-  
-  const payload = JSON.stringify({
-    FromEmailAddress: email.from_email,
-    Destination: {
-      ToAddresses: [recipient]
-    },
-    Content: {
-      Raw: {
-        Data: btoa(emailContent) // Base64 encode the raw email
-      }
-    }
-  })
-  
-  console.log('SES v2 API payload:', {
-    from: email.from_email,
-    to: recipient,
-    subject: email.subject
-  })
-  
-  const now = new Date()
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
-  const dateStamp = amzDate.slice(0, 8)
-  
-  // Create the canonical request
-  const payloadHash = await sha256(payload)
-  const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`
-  const signedHeaders = 'content-type;host;x-amz-date'
-  const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
-  
-  // Create string to sign
-  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${await sha256(canonicalRequest)}`
-  
   // Calculate signature
   const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateStamp, AWS_REGION, service)
-  const signature = await hmacSha256Hex(signingKey, stringToSign)
+    `To: ${recipient}`,
   
   // Create authorization header
   const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
@@ -318,18 +277,10 @@ async function sendIndividualSESEmail(
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-  const responseText = await response.text()
-  console.log(`SES response for ${recipient}:`, responseText)
-  
-  if (response.ok) {
-    console.log(`✅ SES confirmed email sent to ${recipient}`)
-  } else {
-    console.warn('⚠️ SES response format unexpected:', responseText)
-  }
-  
-  console.log(`📧 SES Email Summary:`)
+    to: recipient,
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
+  console.log(`   To Header: ${reorderedRecipients.join(', ')}`)
+  console.log(`   Actual Recipient: ${recipient}`)
   console.log(`   Subject: ${email.subject}`)
 }
 
@@ -366,7 +317,8 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
-  console.log(`  To: ${recipient}`)
+  console.log(`  To: ${allRecipients.join(', ')}`)
+  console.log(`  Actual Recipient: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
   
   // For now, we'll simulate the SMTP sending
@@ -380,8 +332,8 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`📧 Gmail Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
-  console.log(`   Subject: ${email.subject}`)
+  console.log(`   To: ${allRecipients.join(', ')}`)
+  console.log(`   Actual Recipient: ${recipient}`)
 }
 
 // Helper functions for AWS signature calculation
