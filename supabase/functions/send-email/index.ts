@@ -214,21 +214,48 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     throw new Error('AWS credentials not configured')
   }
 
-  // Use SES v2 API with JSON for better multiple recipient support
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending individual emails to ${recipients.length} recipients:`, recipients)
+  
+  // Send individual email to each recipient
+  const sendPromises = recipients.map(async (recipient) => {
+    return await sendIndividualSESEmail(email, sesSettings, recipient, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
+  })
+  
+  // Wait for all emails to be sent
+  const results = await Promise.allSettled(sendPromises)
+  
+  // Check if any failed
+  const failures = results.filter(result => result.status === 'rejected')
+  if (failures.length > 0) {
+    const failureReasons = failures.map(f => (f as PromiseRejectedResult).reason.message).join(', ')
+    throw new Error(`Failed to send to ${failures.length} recipients: ${failureReasons}`)
+  }
+  
+  console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
+}
+
+async function sendIndividualSESEmail(
+  email: EmailData, 
+  sesSettings: any, 
+  recipient: string,
+  AWS_ACCESS_KEY_ID: string,
+  AWS_SECRET_ACCESS_KEY: string,
+  AWS_REGION: string
+) {
   const host = `email.${AWS_REGION}.amazonaws.com`
   const service = 'ses'
   const method = 'POST'
   const endpoint = `https://${host}/v2/email/outbound-emails`
   
-  // Parse multiple recipients from comma-separated string
-  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  console.log(`Sending individual email to: ${recipient}`)
   
-  console.log(`Sending email to ${recipients.length} recipients:`, recipients)
-  
-  // Create email content with proper headers showing all recipients
+  // Create email content for individual recipient
   const emailContent = [
     `From: ${email.from_email}`,
-    `To: ${recipients.join(', ')}`,
+    `To: ${recipient}`,
     `Subject: ${email.subject || 'No Subject'}`,
     `Content-Type: text/html; charset=UTF-8`,
     `MIME-Version: 1.0`,
@@ -240,7 +267,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   const payload = JSON.stringify({
     FromEmailAddress: email.from_email,
     Destination: {
-      ToAddresses: recipients
+      ToAddresses: [recipient]
     },
     Content: {
       Raw: {
@@ -251,9 +278,8 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   console.log('SES v2 API payload:', {
     from: email.from_email,
-    to: recipients,
-    subject: email.subject,
-    recipientCount: recipients.length
+    to: recipient,
+    subject: email.subject
   })
   
   // Create timestamp
@@ -291,26 +317,22 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('SES API error response:', errorText)
-    console.error('SES API error - Recipients that failed:', recipients)
+    console.error(`SES API error response for ${recipient}:`, errorText)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
   const responseText = await response.text()
-  console.log('SES API success response:', responseText)
-  console.log('SES API success - All recipients should have received:', recipients)
+  console.log(`SES API success response for ${recipient}:`, responseText)
   
-  // Verify the response is successful
   if (response.ok) {
-    console.log(`✅ SES confirmed email sent to ${recipients.length} recipients`)
-    console.log(`✅ Each recipient should see: To: ${recipients.join(', ')}`)
+    console.log(`✅ SES confirmed email sent to ${recipient}`)
   } else {
     console.warn('⚠️ SES response format unexpected:', responseText)
   }
   
   console.log(`📧 SES Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipients.join(', ')} (${recipients.length} recipients)`)
+  console.log(`   To: ${recipient}`)
   console.log(`   Subject: ${email.subject}`)
 }
 
@@ -322,21 +344,32 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   // Parse multiple recipients from comma-separated string
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
-  console.log(`Sending Gmail email to ${recipients.length} recipients:`, recipients)
+  console.log(`Sending individual Gmail emails to ${recipients.length} recipients:`, recipients)
   
-  // Create email message in RFC 2822 format
+  // Send individual email to each recipient
+  for (const recipient of recipients) {
+    await sendIndividualGmailEmail(email, gmailSettings, recipient)
+  }
+  
+  console.log(`✅ Successfully sent individual Gmail emails to all ${recipients.length} recipients`)
+}
+
+async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
+  console.log(`Sending individual Gmail email to: ${recipient}`)
+  
+  // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
-    `To: ${recipients.join(', ')}`, // Join all recipients
+    `To: ${recipient}`,
     `Subject: ${email.subject}`,
     `Content-Type: text/html; charset=UTF-8`,
     ``,
     email.body
   ].join('\r\n')
   
-  console.log('Gmail email message headers:')
+  console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
-  console.log(`  To: ${recipients.join(', ')} (${recipients.length} recipients)`)
+  console.log(`  To: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
   
   // For now, we'll simulate the SMTP sending
@@ -350,8 +383,7 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   
   console.log(`📧 Gmail Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipients.join(', ')} (${recipients.length} recipients)`)
-  console.log(`   Each recipient will see all recipients in the To field`)
+  console.log(`   To: ${recipient}`)
 }
 
 // Helper functions for AWS signature calculation
