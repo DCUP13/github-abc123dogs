@@ -13,7 +13,7 @@ interface EmailsInboxProps {
 interface Email {
   id: string;
   sender: string;
-  receiver: string;
+  receiver: string | string[];
   subject: string;
   body: string;
   attachments: any;
