@@ -334,7 +334,7 @@ async function sendIndividualSESEmail(
   }
   
   console.log(`✅ SES Email sent successfully to ${actualRecipient}`)
-}
+
 
 async function sendViaGmail(email: EmailData, gmailSettings: any, allRecipients: string[]) {
   console.log(`🔄 Gmail: Sending individual emails to ${allRecipients.length} recipients:`, allRecipients)
