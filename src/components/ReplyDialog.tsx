@@ -56,6 +56,29 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
 
   // Initialize form data
   useEffect(() => {
+    // Find which of our configured emails was in the original recipients
+    const allConfiguredAddresses = allEmailOptions.map(opt => opt.address.toLowerCase());
+    let myEmailAddress = '';
+    
+    // Check if any of our configured emails were in the original recipients
+    const originalRecipients = Array.isArray(originalEmail.receiver) 
+      ? originalEmail.receiver 
+      : [originalEmail.receiver];
+    
+    for (const recipient of originalRecipients) {
+      if (allConfiguredAddresses.includes(recipient.toLowerCase())) {
+        myEmailAddress = allEmailOptions.find(opt => 
+          opt.address.toLowerCase() === recipient.toLowerCase()
+        )?.address || '';
+        break;
+      }
+    }
+    
+    // Set the from email to the address that received the original email
+    if (myEmailAddress) {
+      setFromEmail(myEmailAddress);
+    }
+
     if (isReplyAll) {
       // Include sender and all original recipients
       const allRecipients = [originalEmail.sender];
@@ -64,8 +87,10 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
       } else if (originalEmail.receiver) {
         allRecipients.push(originalEmail.receiver);
       }
-      // Remove duplicates
-      const uniqueRecipients = [...new Set(allRecipients)];
+      // Remove duplicates and exclude our own email address
+      const uniqueRecipients = [...new Set(allRecipients)].filter(email => 
+        email.toLowerCase() !== myEmailAddress.toLowerCase()
+      );
       setToEmails(uniqueRecipients);
     } else {
       // Just reply to sender
