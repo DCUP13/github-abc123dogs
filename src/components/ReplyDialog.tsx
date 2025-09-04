@@ -58,25 +58,38 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
   useEffect(() => {
     // Find which of our configured emails was in the original recipients
     const allConfiguredAddresses = allEmailOptions.map(opt => opt.address.toLowerCase());
-    let myEmailAddress = '';
+    let foundEmailAddress = '';
     
     // Check if any of our configured emails were in the original recipients
     const originalRecipients = Array.isArray(originalEmail.receiver) 
       ? originalEmail.receiver 
       : [originalEmail.receiver];
     
+    console.log('Original recipients:', originalRecipients);
+    console.log('Configured addresses:', allConfiguredAddresses);
+    
     for (const recipient of originalRecipients) {
-      if (allConfiguredAddresses.includes(recipient.toLowerCase())) {
-        myEmailAddress = allEmailOptions.find(opt => 
-          opt.address.toLowerCase() === recipient.toLowerCase()
+      const recipientLower = recipient.toLowerCase().trim();
+      console.log('Checking recipient:', recipientLower);
+      
+      if (allConfiguredAddresses.includes(recipientLower)) {
+        foundEmailAddress = allEmailOptions.find(opt => 
+          opt.address.toLowerCase() === recipientLower
         )?.address || '';
+        console.log('Found matching email:', foundEmailAddress);
         break;
       }
     }
     
     // Set the from email to the address that received the original email
-    if (myEmailAddress) {
-      setFromEmail(myEmailAddress);
+    if (foundEmailAddress) {
+      setFromEmail(foundEmailAddress);
+      console.log('Set from email to:', foundEmailAddress);
+    } else {
+      console.log('No matching email found, using first available');
+      if (allEmailOptions.length > 0) {
+        setFromEmail(allEmailOptions[0].address);
+      }
     }
 
     if (isReplyAll) {
@@ -89,7 +102,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
       }
       // Remove duplicates and exclude our own email address
       const uniqueRecipients = [...new Set(allRecipients)].filter(email => 
-        email.toLowerCase() !== myEmailAddress.toLowerCase()
+        email.toLowerCase().trim() !== foundEmailAddress.toLowerCase()
       );
       setToEmails(uniqueRecipients);
     } else {
