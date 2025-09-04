@@ -273,6 +273,8 @@ async function sendIndividualSESEmail(
   console.log('SES v2 API payload:', {
     to: recipient,
     to: recipient,
+  }
+  )
   // Create timestamp
   const now = new Date()
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
