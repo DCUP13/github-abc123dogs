@@ -218,18 +218,30 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
 }
 
 async function sendRealSMTPEmail(email: EmailData, sesSettings: any, recipients: string[]) {
-  const host = sesSettings.smtp_server
+  // Use the correct SES SMTP endpoint based on region
+  let host = sesSettings.smtp_server
+  
+  // If the host doesn't include a region, default to us-east-1
+  if (host === 'email-smtp.amazonaws.com') {
+    host = 'email-smtp.us-east-1.amazonaws.com'
+  } else if (host === 'email-smtp.us-east-1.amazonaws.com' || host.includes('email-smtp.')) {
+    // Host is already properly formatted
+  } else {
+    // Fallback to us-east-1 if format is unexpected
+    host = 'email-smtp.us-east-1.amazonaws.com'
+  }
+  
   const port = parseInt(sesSettings.smtp_port)
   const username = sesSettings.smtp_username
   const password = sesSettings.smtp_password
   
-  console.log(`Connecting to SMTP server: ${host}:${port}`)
+  console.log(`Connecting to SES SMTP server: ${host}:${port} with username: ${username}`)
   
   try {
     // Create SMTP client
     const client = new SmtpClient()
     
-    // Connect to SMTP server
+    // Connect to SES SMTP server with TLS
     await client.connectTLS({
       hostname: host,
       port: port,
@@ -237,7 +249,7 @@ async function sendRealSMTPEmail(email: EmailData, sesSettings: any, recipients:
       password: password,
     })
     
-    console.log('✅ Connected to SMTP server')
+    console.log('✅ Connected to SES SMTP server')
     
     // Convert HTML to plain text for text version
     const textBody = email.body.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
@@ -256,11 +268,12 @@ async function sendRealSMTPEmail(email: EmailData, sesSettings: any, recipients:
     // Close connection
     await client.close()
     
-    console.log('✅ SMTP connection closed')
+    console.log('✅ SES SMTP connection closed')
     
   } catch (error) {
-    console.error('SMTP sending failed:', error)
-    throw new Error(`SMTP sending failed: ${error.message}`)
+    console.error('SES SMTP sending failed:', error)
+    console.error('SMTP Settings:', { host, port, username: username ? 'SET' : 'NOT SET', password: password ? 'SET' : 'NOT SET' })
+    throw new Error(`SES SMTP sending failed: ${error.message}`)
   }
 }
 
@@ -269,6 +282,7 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   console.log(`Sending email to ${recipients.length} recipients via Gmail SMTP:`, recipients)
+  console.log(`Gmail settings - Address: ${gmailSettings.address}, App Password: ${gmailSettings.app_password ? 'SET' : 'NOT SET'}`)
   
   try {
     // Create SMTP client for Gmail
@@ -303,6 +317,12 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     
   } catch (error) {
     console.error('Gmail SMTP sending failed:', error)
+    console.error('Gmail Settings:', { 
+      hostname: 'smtp.gmail.com', 
+      port: 587, 
+      username: gmailSettings.address,
+      password: gmailSettings.app_password ? 'SET' : 'NOT SET'
+    })
     throw new Error(`Gmail SMTP sending failed: ${error.message}`)
   }
 }
