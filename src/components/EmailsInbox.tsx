@@ -252,6 +252,8 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
+  const reorderedRecipients = [recipient]
+  
   const payload = JSON.stringify({
     FromEmailAddress: email.from_email,
     Destination: {
@@ -270,7 +272,13 @@ async function sendIndividualSESEmail(
           }
         }
       }
-    }
+    },
+    EmailTags: [
+      {
+        Name: 'To',
+        Value: recipient
+      }
+    ]
   })
   
   const now = new Date()
@@ -315,6 +323,7 @@ async function sendIndividualSESEmail(
   }
   
   console.log(`✅ SES Email sent successfully to ${recipient}`)
+  console.log(`   Email shows To: ${reorderedRecipients.join(', ')}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
