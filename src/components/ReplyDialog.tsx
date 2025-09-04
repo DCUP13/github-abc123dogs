@@ -63,7 +63,9 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
     // Check if any of our configured emails were in the original recipients
     const originalRecipients = Array.isArray(originalEmail.receiver) 
       ? originalEmail.receiver 
-      : [originalEmail.receiver];
+      : typeof originalEmail.receiver === 'string' 
+        ? originalEmail.receiver.split(',').map(email => email.trim())
+        : [];
     
     console.log('Original recipients:', originalRecipients);
     console.log('Configured addresses:', allConfiguredAddresses);
@@ -95,11 +97,8 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
     if (isReplyAll) {
       // Include sender and all original recipients
       const allRecipients = [originalEmail.sender];
-      if (Array.isArray(originalEmail.receiver)) {
-        allRecipients.push(...originalEmail.receiver);
-      } else if (originalEmail.receiver) {
-        allRecipients.push(originalEmail.receiver);
-      }
+      allRecipients.push(...originalRecipients);
+      
       // Remove duplicates and exclude our own email address
       const uniqueRecipients = [...new Set(allRecipients)].filter(email => 
         email.toLowerCase().trim() !== foundEmailAddress.toLowerCase()
