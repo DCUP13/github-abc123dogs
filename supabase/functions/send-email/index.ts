@@ -252,16 +252,10 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  // Create email content for individual recipient
-  const emailContent = [
-    `From: ${email.from_email}`,
     `To: ${recipient}`,
-    `Subject: ${email.subject || 'No Subject'}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    `MIME-Version: 1.0`,
     ``,
     email.body || ''
-  ].join('\r\n')
+    `To: ${recipient}`,
   
   // Create SES v2 API payload
   const payload = JSON.stringify({
@@ -278,9 +272,7 @@ async function sendIndividualSESEmail(
   
   console.log('SES v2 API payload:', {
     to: recipient,
-    subject: email.subject
-  })
-  
+    to: recipient,
   // Create timestamp
   const now = new Date()
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
