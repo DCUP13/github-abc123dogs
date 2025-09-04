@@ -63,7 +63,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
         ? originalEmail.receiver.split(',').map(email => email.trim())
         : [];
     
-    // Use the first recipient email as the From address
+    // Always use the first recipient email as the From address for both Reply and Reply All
     const firstRecipient = originalRecipients[0]?.trim();
     if (firstRecipient) {
       setFromEmail(firstRecipient);
@@ -94,7 +94,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `<br><br><br><br><br><br>--- Original Message ---<br><br>From: ${originalEmail.sender}<br><br>Date: ${originalDate}<br><br>Subject: ${originalEmail.subject || '(No Subject)'}<br><br>${originalEmail.body || ''}`;
     setInitialBody(replyBody);
-  }, [originalEmail, isReplyAll]);
+  }, [originalEmail, isReplyAll, allEmailOptions.length]);
 
   // Email validation
   const validateEmail = (email: string) => {
