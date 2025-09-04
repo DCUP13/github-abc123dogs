@@ -255,6 +255,8 @@ async function sendIndividualSESEmail(
   // Create email content for individual recipient
   const emailContent = [
     `From: ${email.from_email}`,
+  ]
+}
 
 // Helper functions for AWS signature calculation
 async function sha256(message: string): Promise<string> {
