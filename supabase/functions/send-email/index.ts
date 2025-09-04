@@ -88,10 +88,6 @@ serve(async (req) => {
           })
           .eq('id', email.id)
 
-        // Parse all recipients from the comma-separated string
-        const allRecipients = email.to_email.split(',').map((addr: string) => addr.trim()).filter((addr: string) => addr.length > 0)
-        console.log(`📧 Processing email to ${allRecipients.length} recipients:`, allRecipients)
-
         // Get user's email settings (Amazon SES or Gmail)
         const { data: sesSettings } = await supabaseClient
           .from('amazon_ses_settings')
@@ -112,7 +108,7 @@ serve(async (req) => {
         // Try to send via Amazon SES first
         if (sesSettings && !emailSent) {
           try {
-            await sendViaSES(email, sesSettings, allRecipients)
+            await sendViaSES(email, sesSettings)
             emailSent = true
           } catch (error) {
             console.error('SES sending failed:', error)
@@ -123,7 +119,7 @@ serve(async (req) => {
         // Try Gmail if SES failed or not configured
         if (gmailSettings && !emailSent) {
           try {
-            await sendViaGmail(email, gmailSettings, allRecipients)
+            await sendViaGmail(email, gmailSettings)
             emailSent = true
           } catch (error) {
             console.error('Gmail sending failed:', error)
@@ -208,7 +204,7 @@ serve(async (req) => {
   }
 })
 
-async function sendViaSES(email: EmailData, sesSettings: any, allRecipients: string[]) {
+async function sendViaSES(email: EmailData, sesSettings: any) {
   // Get AWS credentials from environment
   const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
   const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
@@ -218,11 +214,14 @@ async function sendViaSES(email: EmailData, sesSettings: any, allRecipients: str
     throw new Error('AWS credentials not configured')
   }
 
-  console.log(`🔄 SES: Sending individual emails to ${allRecipients.length} recipients:`, allRecipients)
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending individual emails to ${recipients.length} recipients:`, recipients)
   
   // Send individual email to each recipient
-  const sendPromises = allRecipients.map(async (recipient) => {
-    return await sendIndividualSESEmail(email, sesSettings, recipient, allRecipients, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
+  const sendPromises = recipients.map(async (recipient) => {
+    return await sendIndividualSESEmail(email, sesSettings, recipient, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
   })
   
   // Wait for all emails to be sent
@@ -235,14 +234,13 @@ async function sendViaSES(email: EmailData, sesSettings: any, allRecipients: str
     throw new Error(`Failed to send to ${failures.length} recipients: ${failureReasons}`)
   }
   
-  console.log(`✅ SES: Successfully sent individual emails to all ${allRecipients.length} recipients`)
+  console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
 }
 
 async function sendIndividualSESEmail(
   email: EmailData, 
   sesSettings: any, 
-  actualRecipient: string,
-  allRecipients: string[],
+  recipient: string,
   AWS_ACCESS_KEY_ID: string,
   AWS_SECRET_ACCESS_KEY: string,
   AWS_REGION: string
@@ -250,50 +248,38 @@ async function sendIndividualSESEmail(
   const host = `email.${AWS_REGION}.amazonaws.com`
   const service = 'ses'
   const method = 'POST'
-  const endpoint = `https://${host}/`
+  const endpoint = `https://${host}/v2/email/outbound-emails`
   
-  // Create reordered recipients list with actual recipient first
-  const otherRecipients = allRecipients.filter(addr => addr.toLowerCase() !== actualRecipient.toLowerCase())
-  const reorderedRecipients = [actualRecipient, ...otherRecipients]
-  const toHeaderValue = reorderedRecipients.join(', ')
+  console.log(`Sending individual email to: ${recipient}`)
   
-  console.log(`📧 SES: Sending to ${actualRecipient}`)
-  console.log(`   All Recipients:`, allRecipients)
-  console.log(`   Reordered Recipients:`, reorderedRecipients)
-  console.log(`   To Header Will Show:`, toHeaderValue)
+  const reorderedRecipients = [recipient]
   
-  // Create raw email message with full recipient list in To header
-  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  const rawMessage = [
-    `From: ${email.from_email}`,
-    `To: ${toHeaderValue}`,
-    `Subject: ${email.subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
-    ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    email.body,
-    ``,
-    `--${boundary}--`
-  ].join('\r\n')
-  
-  console.log(`📧 SES Raw Message Headers for ${actualRecipient}:`)
-  console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${toHeaderValue}`)
-  console.log(`   Actual Recipient (envelope): ${actualRecipient}`)
-  
-  // Encode the raw message
-  const encodedMessage = btoa(rawMessage)
-  
-  const payload = new URLSearchParams({
-    'Action': 'SendRawEmail',
-    'Version': '2010-12-01',
-    'Destinations.member.1': actualRecipient,
-    'RawMessage.Data': encodedMessage
-  }).toString()
+  const payload = JSON.stringify({
+    FromEmailAddress: email.from_email,
+    Destination: {
+      ToAddresses: [recipient]
+    },
+    Content: {
+      Simple: {
+        Subject: {
+          Data: email.subject,
+          Charset: 'UTF-8'
+        },
+        Body: {
+          Html: {
+            Data: email.body,
+            Charset: 'UTF-8'
+          }
+        }
+      }
+    },
+    EmailTags: [
+      {
+        Name: 'To',
+        Value: recipient
+      }
+    ]
+  })
   
   const now = new Date()
   const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '')
@@ -308,7 +294,7 @@ async function sendIndividualSESEmail(
   
   const signedHeaders = 'host;x-amz-date'
   
-  const canonicalRequest = `${method}\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
+  const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
   
   const algorithm = 'AWS4-HMAC-SHA256'
   const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
@@ -324,7 +310,7 @@ async function sendIndividualSESEmail(
     method: 'POST',
     headers: {
       'Authorization': authorizationHeader,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
       'X-Amz-Date': amzDate
     },
     body: payload
@@ -332,50 +318,49 @@ async function sendIndividualSESEmail(
   
   if (!response.ok) {
     const errorText = await response.text()
-    console.error(`SES API error response for ${actualRecipient}:`, errorText)
+    console.error(`SES API error response for ${recipient}:`, errorText)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-  console.log(`✅ SES Email sent successfully to ${actualRecipient}`)
-  console.log(`   Email shows To: ${toHeaderValue}`)
+  console.log(`✅ SES Email sent successfully to ${recipient}`)
+  console.log(`   Email shows To: ${reorderedRecipients.join(', ')}`)
 }
 
-async function sendViaGmail(email: EmailData, gmailSettings: any, allRecipients: string[]) {
-  console.log(`🔄 Gmail: Sending individual emails to ${allRecipients.length} recipients:`, allRecipients)
+async function sendViaGmail(email: EmailData, gmailSettings: any) {
+  const smtpHost = 'smtp.gmail.com'
+  const smtpPort = 587
+  
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending individual Gmail emails to ${recipients.length} recipients:`, recipients)
   
   // Send individual email to each recipient
-  for (const actualRecipient of allRecipients) {
-    await sendIndividualGmailEmail(email, gmailSettings, actualRecipient, allRecipients)
+  for (const recipient of recipients) {
+    await sendIndividualGmailEmail(email, gmailSettings, recipient)
   }
   
-  console.log(`✅ Gmail: Successfully sent individual emails to all ${allRecipients.length} recipients`)
+  console.log(`✅ Successfully sent individual Gmail emails to all ${recipients.length} recipients`)
 }
 
-async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, actualRecipient: string, allRecipients: string[]) {
-  // Create reordered recipients list with actual recipient first
-  const otherRecipients = allRecipients.filter(addr => addr.toLowerCase() !== actualRecipient.toLowerCase())
-  const reorderedRecipients = [actualRecipient, ...otherRecipients]
-  const toHeaderValue = reorderedRecipients.join(', ')
+async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
+  console.log(`Sending individual Gmail email to: ${recipient}`)
   
-  console.log(`📧 Gmail: Sending to ${actualRecipient}`)
-  console.log(`   All Recipients:`, allRecipients)
-  console.log(`   Reordered Recipients:`, reorderedRecipients)
-  console.log(`   To Header Will Show:`, toHeaderValue)
-  
-  // Create email message with full recipient list in To header
+  // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
-    `To: ${toHeaderValue}`,
+    `To: ${recipient}`,
     `Subject: ${email.subject}`,
     `Content-Type: text/html; charset=UTF-8`,
     ``,
     email.body
   ].join('\r\n')
   
-  console.log(`📧 Gmail email message headers for ${actualRecipient}:`)
-  console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${toHeaderValue}`)
-  console.log(`   Actual Recipient (envelope): ${actualRecipient}`)
+  console.log(`Gmail email message headers for ${recipient}:`)
+  console.log(`  From: ${email.from_email}`)
+  console.log(`  To: ${recipient}`)
+  console.log(`  Actual Recipient: ${recipient}`)
+  console.log(`  Subject: ${email.subject}`)
   
   // For now, we'll simulate the SMTP sending
   // In a real implementation, you'd use a proper SMTP library
@@ -386,8 +371,10 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, ac
     throw new Error('Gmail SMTP connection failed')
   }
   
-  console.log(`✅ Gmail Email sent successfully to ${actualRecipient}`)
-  console.log(`   Email shows To: ${toHeaderValue}`)
+  console.log(`📧 Gmail Email Summary:`)
+  console.log(`   From: ${email.from_email}`)
+  console.log(`   To: ${recipient}`)
+  console.log(`   Actual Recipient: ${recipient}`)
 }
 
 // Helper functions for AWS signature calculation
