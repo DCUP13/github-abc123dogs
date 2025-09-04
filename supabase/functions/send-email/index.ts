@@ -252,13 +252,10 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  // Parse all recipients for the To field
-  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
-  
   // Create email content for individual recipient
   const emailContent = [
     `From: ${email.from_email}`,
-    `To: ${allRecipients.join(', ')}`,
+    `To: ${recipient}`,
     `Subject: ${email.subject || 'No Subject'}`,
     `Content-Type: text/html; charset=UTF-8`,
     `MIME-Version: 1.0`,
@@ -280,9 +277,7 @@ async function sendIndividualSESEmail(
   })
   
   console.log('SES v2 API payload:', {
-    from: email.from_email,
-    to: allRecipients.join(', '),
-    actualRecipient: recipient,
+    to: recipient,
     subject: email.subject
   })
   
@@ -336,7 +331,8 @@ async function sendIndividualSESEmail(
   
   console.log(`📧 SES Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
+  console.log(`   To Header: ${reorderedRecipients.join(', ')}`)
+  console.log(`   Actual Recipient: ${recipient}`)
   console.log(`   Subject: ${email.subject}`)
 }
 
@@ -361,13 +357,10 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
   
-  // Parse all recipients for the To field
-  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
-  
   // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
-    `To: ${allRecipients.join(', ')}`,
+    `To: ${recipient}`,
     `Subject: ${email.subject}`,
     `Content-Type: text/html; charset=UTF-8`,
     ``,
