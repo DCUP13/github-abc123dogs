@@ -235,27 +235,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   }
   
   console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
-}
 
-async function sendIndividualSESEmail(
-  email: EmailData, 
-  sesSettings: any, 
-  recipient: string,
-  AWS_ACCESS_KEY_ID: string,
-  AWS_SECRET_ACCESS_KEY: string,
-  AWS_REGION: string
-) {
-  const host = `email.${AWS_REGION}.amazonaws.com`
-  const service = 'ses'
-  const method = 'POST'
-  const endpoint = `https://${host}/v2/email/outbound-emails`
-  
-  console.log(`Sending individual email to: ${recipient}`)
-  
-  // Create email content for individual recipient
-  const emailContent = [
-    `From: ${email.from_email}`,
-  ]
 }
 
 // Helper functions for AWS signature calculation
