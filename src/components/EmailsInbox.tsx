@@ -13,7 +13,7 @@ interface EmailsInboxProps {
 interface Email {
   id: string;
   sender: string;
-  receiver: string | string[];
+  receiver: string[];
   subject: string;
   body: string;
   attachments: any;
@@ -44,6 +44,20 @@ interface SentEmail {
 
 type TabType = 'inbox' | 'outbox' | 'sent';
 
+const formatReceiverList = (receiver: string | string[]): string => {
+  if (Array.isArray(receiver)) {
+    return receiver.join(', ');
+  }
+  return receiver || '';
+};
+
+const getFirstReceiver = (receiver: string | string[]): string => {
+  if (Array.isArray(receiver)) {
+    return receiver[0] || '';
+  }
+  return receiver || '';
+};
+
 export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [outboxEmails, setOutboxEmails] = useState<OutboxEmail[]>([]);
@@ -72,7 +86,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
   const fetchAllEmails = async () => {
     try {
-      // Fetch all email types on initial load
       await Promise.all([
         fetchInboxEmails(),
         fetchOutboxEmails(),
@@ -124,7 +137,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
         throw new Error('User not authenticated');
       }
 
-      // Add to outbox
       const { error } = await supabase
         .from('email_outbox')
         .insert({
@@ -142,7 +154,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
       setShowReplyDialog(false);
       alert('Reply added to outbox and will be sent shortly.');
       
-      // Refresh outbox if we're on that tab
       if (activeTab === 'outbox') {
         fetchAllEmails();
       }
@@ -161,7 +172,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
         return;
       }
 
-      // Call the Supabase Edge Function to process outbox emails
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
         {
@@ -181,7 +191,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
       const result = await response.json();
       console.log('Email processing result:', result);
       
-      // Refresh the current tab to show updated status
       await fetchAllEmails();
       
       if (result.processed > 0) {
@@ -205,11 +214,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
   const getFilteredEmails = () => {
     if (activeTab === 'inbox') {
-      return emails.filter(email =>
-        email.sender.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        email.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        email.receiver?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      return emails.filter(email => {
+        const receiverText = formatReceiverList(email.receiver);
+        return email.sender.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               email.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               receiverText.toLowerCase().includes(searchQuery.toLowerCase());
+      });
     } else if (activeTab === 'outbox') {
       return outboxEmails.filter(email =>
         email.to_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,14 +296,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
     try {
       if (!selectedEmail) return;
 
-      // Get the current user's session
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         alert('You must be logged in to download attachments');
         return;
       }
 
-      // Call the Supabase Edge Function to get presigned URL
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-attachment?s3_url=${encodeURIComponent(attachment.s3_url)}&email_id=${selectedEmail.id}`,
         {
@@ -312,7 +320,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
       const { downloadUrl, filename } = await response.json();
       
-      // Create a temporary link to trigger download
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = filename;
@@ -361,30 +368,30 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh
                 </button>
+                {activeTab === 'outbox' && (
+                  <button
+                    onClick={handleProcessOutbox}
+                    disabled={isProcessingEmails}
+                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
+                      isProcessingEmails 
+                        ? 'bg-indigo-400 cursor-wait' 
+                        : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
+                  >
+                    {isProcessingEmails ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Emails
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-              {activeTab === 'outbox' && (
-                <button
-                  onClick={handleProcessOutbox}
-                  disabled={isProcessingEmails}
-                  className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
-                    isProcessingEmails 
-                      ? 'bg-indigo-400 cursor-wait' 
-                      : 'bg-indigo-600 hover:bg-indigo-700'
-                  }`}
-                >
-                  {isProcessingEmails ? (
-                    <>
-                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Emails
-                    </>
-                  )}
-                </button>
-              )}
             </div>
 
             {/* Tabs */}
@@ -492,7 +499,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                               <span>to</span>
                               <span>
-                                {activeTab === 'inbox' ? (email as Email).receiver : 
+                                {activeTab === 'inbox' ? formatReceiverList((email as Email).receiver) : 
                                  activeTab === 'outbox' ? (email as OutboxEmail).to_email :
                                  (email as SentEmail).to_email}
                               </span>
@@ -501,11 +508,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                               <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                   (email as OutboxEmail).status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
-                                 {activeTab === 'inbox' ? 
-                                   Array.isArray((email as Email).receiver) 
-                                     ? (email as Email).receiver.join(', ')
-                                     : (email as Email).receiver
-                                   : 
+                                  (email as OutboxEmail).status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
                                   'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                 }`}>
                                   {(email as OutboxEmail).status}
@@ -588,7 +591,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-gray-400">To:</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {activeTab === 'inbox' ? (selectedEmail as Email).receiver : 
+                      {activeTab === 'inbox' ? formatReceiverList((selectedEmail as Email).receiver) : 
                        'to_email' in selectedEmail ? (selectedEmail as any).to_email : 'Unknown'}
                     </span>
                   </div>
@@ -664,7 +667,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
         <ComposeEmailDialog
           onClose={() => setShowComposeDialog(false)}
           onSend={() => {
-            // Refresh the current tab to show updated emails
             fetchAllEmails();
           }}
         />
