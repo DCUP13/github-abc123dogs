@@ -252,22 +252,10 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  const payload = JSON.stringify({
-    FromEmailAddress: email.from_email,
-    Destination: {
-      ToAddresses: [recipient]
-    },
-    Content: {
-      Simple: {
-        Subject: {
-          Data: email.subject,
-          Charset: 'UTF-8'
-        },
-        Body: {
-          Html: {
+    `To: ${recipient}`,
             Data: email.body,
             Charset: 'UTF-8'
-          }
+    `To: ${recipient}`,
         }
       }
     }
@@ -312,12 +300,9 @@ async function sendIndividualSESEmail(
     const errorText = await response.text()
     console.error(`SES API error response for ${recipient}:`, errorText)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
-  }
-  
   console.log(`✅ SES Email sent successfully to ${recipient}`)
-}
-
-async function sendViaGmail(email: EmailData, gmailSettings: any) {
+  console.log(`   Email shows To: ${reorderedRecipients.join(', ')}`)
+    to: recipient,
   // Create SMTP connection using Gmail settings
   const smtpHost = 'smtp.gmail.com'
   const smtpPort = 587
