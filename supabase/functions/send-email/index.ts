@@ -252,32 +252,33 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  // Create email content
-  const emailContent = [
-    `From: ${email.from_email}`,
-    `To: ${recipient}`,
-    `Subject: ${email.subject}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    email.body
-  ].join('\r\n')
+  // Create the reordered recipients list with the actual recipient first
+  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  const reorderedRecipients = [recipient, ...allRecipients.filter(addr => addr !== recipient)]
   
+  // Create email payload
   const payload = JSON.stringify({
     FromEmailAddress: email.from_email,
     Destination: {
       ToAddresses: [recipient]
     },
     Content: {
-      Raw: {
-        Data: btoa(emailContent) // Base64 encode the raw email
+      Simple: {
+        Subject: {
+          Data: email.subject,
+          Charset: 'UTF-8'
+        },
+        Body: {
+          Html: {
+            Data: email.body,
+            Charset: 'UTF-8'
+          }
+        },
+        Headers: [
+          `To: ${recipient}`,
+        ]
       }
     }
-  })
-  
-  console.log('SES v2 API payload:', {
-    from: email.from_email,
-    to: recipient,
-    subject: email.subject
   })
   
   const now = new Date()
@@ -319,9 +320,7 @@ async function sendIndividualSESEmail(
   }
   
   const responseText = await response.text()
-  console.log(`SES response for ${recipient}:`, responseText)
-  
-  if (response.ok) {
+  if (responseText.includes('MessageId')) {
     console.log(`✅ SES confirmed email sent to ${recipient}`)
   } else {
     console.warn('⚠️ SES response format unexpected:', responseText)
@@ -329,7 +328,8 @@ async function sendIndividualSESEmail(
   
   console.log(`📧 SES Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
+  console.log(`   To Header: ${reorderedRecipients.join(', ')}`)
+  console.log(`   Actual Recipient: ${recipient}`)
   console.log(`   Subject: ${email.subject}`)
 }
 
@@ -354,6 +354,9 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
   
+  // Create the reordered recipients list with the actual recipient first
+  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
   // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
@@ -366,7 +369,8 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
-  console.log(`  To: ${recipient}`)
+  console.log(`  To: ${allRecipients.join(', ')}`)
+  console.log(`  Actual Recipient: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
   
   // For now, we'll simulate the SMTP sending
@@ -380,8 +384,8 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`📧 Gmail Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
-  console.log(`   Subject: ${email.subject}`)
+  console.log(`   To: ${allRecipients.join(', ')}`)
+  console.log(`   Actual Recipient: ${recipient}`)
 }
 
 // Helper functions for AWS signature calculation
