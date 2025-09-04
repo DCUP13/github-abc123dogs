@@ -67,28 +67,36 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
         ? originalEmail.receiver.split(',').map(email => email.trim())
         : [];
     
-    console.log('Original recipients:', originalRecipients);
-    console.log('Configured addresses:', allConfiguredAddresses);
+    console.log('=== EMAIL MATCHING DEBUG ===');
+    console.log('Original email object:', originalEmail);
+    console.log('Original recipients raw:', originalEmail.receiver);
+    console.log('Original recipients parsed:', originalRecipients);
+    console.log('All configured addresses:', allConfiguredAddresses);
+    console.log('All email options:', allEmailOptions);
     
     for (const recipient of originalRecipients) {
       const recipientLower = recipient.toLowerCase().trim();
-      console.log('Checking recipient:', recipientLower);
+      console.log('Checking recipient:', recipientLower, 'against configured addresses');
       
       if (allConfiguredAddresses.includes(recipientLower)) {
         foundEmailAddress = allEmailOptions.find(opt => 
           opt.address.toLowerCase() === recipientLower
         )?.address || '';
-        console.log('Found matching email:', foundEmailAddress);
+        console.log('✅ MATCH FOUND:', foundEmailAddress);
         break;
+      } else {
+        console.log('❌ No match for:', recipientLower);
       }
     }
+    
+    console.log('Final foundEmailAddress:', foundEmailAddress);
+    console.log('=== END DEBUG ===');
     
     // Set the from email to the address that received the original email
     if (foundEmailAddress) {
       setFromEmail(foundEmailAddress);
-      console.log('Set from email to:', foundEmailAddress);
     } else {
-      console.log('No matching email found, using first available');
+      console.log('⚠️ No matching email found, using first available:', allEmailOptions[0]?.address);
       if (allEmailOptions.length > 0) {
         setFromEmail(allEmailOptions[0].address);
       }
