@@ -205,7 +205,43 @@ serve(async (req) => {
 })
 
 async function sendViaSES(email: EmailData, sesSettings: any) {
-  // Get AWS credentials from environment
+  // Parse multiple recipients from comma-separated string
+  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  
+  console.log(`Sending email to ${recipients.length} recipients via SES SMTP:`, recipients)
+  
+  // Create SMTP transporter for SES
+  const transporter = {
+    host: sesSettings.smtp_server,
+    port: parseInt(sesSettings.smtp_port),
+    secure: sesSettings.smtp_port === '465',
+    auth: {
+      user: sesSettings.smtp_username,
+      pass: sesSettings.smtp_password,
+    },
+  }
+  
+  // Prepare email content
+  const mailOptions = {
+    from: email.from_email,
+    to: recipients.join(', '), // All recipients visible to each other
+    subject: email.subject,
+    html: email.body,
+    text: email.body.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+  }
+  
+  console.log('Mail options:', mailOptions)
+  
+  // Send via SMTP using fetch (since we can't use nodemailer in Deno)
+  await sendSMTPEmail(transporter, mailOptions)
+  
+  console.log(`✅ Successfully sent email to all ${recipients.length} recipients via SES`)
+}
+
+async function sendSMTPEmail(transporter: any, mailOptions: any) {
+  // Since we can't use nodemailer in Deno, we'll use a simple SMTP implementation
+  // For now, let's use the AWS SES API instead
+  
   const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
   const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
   const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
@@ -213,28 +249,85 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
     throw new Error('AWS credentials not configured')
   }
-
-  // Parse multiple recipients from comma-separated string
-  const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
-  console.log(`Sending individual emails to ${recipients.length} recipients:`, recipients)
+  // Parse recipients
+  const recipients = mailOptions.to.split(',').map((addr: string) => addr.trim())
   
-  // Send individual email to each recipient
-  const sendPromises = recipients.map(async (recipient) => {
-    return await sendIndividualSESEmail(email, sesSettings, recipient, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
-  })
+  // Create the email message
+  const message = [
+    `From: ${mailOptions.from}`,
+    `To: ${mailOptions.to}`,
+    `Subject: ${mailOptions.subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/html; charset=UTF-8',
+    '',
+    mailOptions.html
+  ].join('\r\n')
   
-  // Wait for all emails to be sent
-  const results = await Promise.allSettled(sendPromises)
-  
-  // Check if any failed
-  const failures = results.filter(result => result.status === 'rejected')
-  if (failures.length > 0) {
-    const failureReasons = failures.map(f => (f as PromiseRejectedResult).reason.message).join(', ')
-    throw new Error(`Failed to send to ${failures.length} recipients: ${failureReasons}`)
+  // Use SES SendRawEmail API
+  const params = {
+    RawMessage: {
+      Data: btoa(message)
+    },
+    Destinations: recipients
   }
   
-  console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
+  const endpoint = `https://email.${AWS_REGION}.amazonaws.com/`
+  const service = 'ses'
+  const method = 'POST'
+  const headers = {
+    'Content-Type': 'application/x-amz-json-1.0',
+    'X-Amz-Target': 'AWSSimpleEmailService.SendRawEmail'
+  }
+  
+  // Create AWS signature
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+  
+  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
+  const canonicalHeaders = `content-type:${headers['Content-Type']}\nhost:email.${AWS_REGION}.amazonaws.com\nx-amz-date:${amzDate}\nx-amz-target:${headers['X-Amz-Target']}\n`
+  const signedHeaders = 'content-type;host;x-amz-date;x-amz-target'
+  
+  const payloadHash = await sha256(JSON.stringify(params))
+  const canonicalRequest = [
+    method,
+    '/',
+    '',
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n')
+  
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    await sha256(canonicalRequest)
+  ].join('\n')
+  
+  const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateStamp, AWS_REGION, service)
+  const signature = await hmacSha256Hex(signingKey, stringToSign)
+  
+  const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+  
+  // Send the request
+  const response = await fetch(endpoint, {
+    method: method,
+    headers: {
+      ...headers,
+      'Authorization': authorizationHeader,
+      'X-Amz-Date': amzDate
+    },
+    body: JSON.stringify(params)
+  })
+  
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`SES API error: ${response.status} ${errorText}`)
+  }
+  
+  console.log('SES API response:', await response.text())
 
 }
 
