@@ -214,48 +214,46 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     throw new Error('AWS credentials not configured')
   }
 
-  // Use SES v1 API with form data
+  // Use SES v2 API with JSON for better multiple recipient support
   const host = `email.${AWS_REGION}.amazonaws.com`
   const service = 'ses'
   const method = 'POST'
-  const endpoint = `https://${host}/`
+  const endpoint = `https://${host}/v2/email/outbound-emails`
   
   // Parse multiple recipients from comma-separated string
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   console.log(`Sending email to ${recipients.length} recipients:`, recipients)
   
-  // Create form data for SES v1 API
-  const formData = new URLSearchParams()
-  formData.append('Action', 'SendEmail')
-  formData.append('Version', '2010-12-01')
-  formData.append('Source', email.from_email)
+  // Create email content with proper headers showing all recipients
+  const emailContent = [
+    `From: ${email.from_email}`,
+    `To: ${recipients.join(', ')}`,
+    `Subject: ${email.subject || 'No Subject'}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `MIME-Version: 1.0`,
+    ``,
+    email.body || ''
+  ].join('\r\n')
   
-  // Add all recipients
-  recipients.forEach((recipient, index) => {
-    console.log(`Adding recipient ${index + 1}: ${recipient}`)
-    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient)
+  // Create SES v2 API payload
+  const payload = JSON.stringify({
+    FromEmailAddress: email.from_email,
+    Destination: {
+      ToAddresses: recipients
+    },
+    Content: {
+      Raw: {
+        Data: btoa(emailContent) // Base64 encode the raw email
+      }
+    }
   })
   
-  formData.append('Message.Subject.Data', email.subject || 'No Subject')
-  formData.append('Message.Subject.Charset', 'UTF-8')
-  formData.append('Message.Body.Html.Data', email.body || '')
-  formData.append('Message.Body.Html.Charset', 'UTF-8')
-  
-  const payload = formData.toString()
-  console.log('SES API payload (first 500 chars):', payload.substring(0, 500))
-  console.log('SES payload recipients check:', recipients.map((r, i) => {
-    const key = `Destination.ToAddresses.member.${i + 1}`
-    const value = formData.get(key)
-    return `${key}=${value}`
-  }).join(', '))
-  
-  // Debug: Check if all recipients are in the payload
-  const payloadString = payload.toString()
-  recipients.forEach((recipient, index) => {
-    const memberKey = `Destination.ToAddresses.member.${index + 1}`
-    const isInPayload = payloadString.includes(`${memberKey}=${encodeURIComponent(recipient)}`)
-    console.log(`Recipient ${index + 1} (${recipient}): ${isInPayload ? '✅ Found in payload' : '❌ Missing from payload'}`)
+  console.log('SES v2 API payload:', {
+    from: email.from_email,
+    to: recipients,
+    subject: email.subject,
+    recipientCount: recipients.length
   })
   
   // Create timestamp
@@ -265,9 +263,9 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   // Create the canonical request
   const payloadHash = await sha256(payload)
-  const canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`
-  const signedHeaders = 'host;x-amz-date'
-  const canonicalRequest = `${method}\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
+  const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`
+  const signedHeaders = 'content-type;host;x-amz-date'
+  const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
   
   // Create string to sign
   const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
@@ -285,7 +283,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     method: 'POST',
     headers: {
       'Authorization': authorizationHeader,
-      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+      'Content-Type': 'application/json',
       'X-Amz-Date': amzDate
     },
     body: payload
@@ -295,7 +293,6 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     const errorText = await response.text()
     console.error('SES API error response:', errorText)
     console.error('SES API error - Recipients that failed:', recipients)
-    console.error('SES API error - Full payload:', payload)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
@@ -303,8 +300,8 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   console.log('SES API success response:', responseText)
   console.log('SES API success - All recipients should have received:', recipients)
   
-  // Verify the response mentions all recipients
-  if (responseText.includes('MessageId')) {
+  // Verify the response is successful
+  if (response.ok) {
     console.log(`✅ SES confirmed email sent to ${recipients.length} recipients`)
     console.log(`✅ Each recipient should see: To: ${recipients.join(', ')}`)
   } else {
