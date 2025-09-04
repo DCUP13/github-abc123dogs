@@ -273,6 +273,10 @@ async function sendSMTPEmail(email: EmailData, sesSettings: any, recipients: str
   }
 }
 
+async function sendViaGmail(email: EmailData, gmailSettings: any) {
+  // Placeholder function for Gmail sending
+  console.log('Sending via Gmail - not implemented yet')
+  throw new Error('Gmail sending not implemented')
 }
 
 // Helper functions for AWS signature calculation
@@ -283,38 +287,35 @@ async function sha256(message: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
-async function sendGmailSMTP(email: EmailData, gmailSettings: any, recipients: string[]) {
-  console.log(`Sending email via Gmail SMTP to: ${recipients.join(', ')}`)
-  
-  try {
-    // Gmail SMTP settings
-    const emailData = {
-      from: email.from_email,
-      to: recipients,
-      subject: email.subject,
-      html: email.body,
-      smtp: {
-        host: 'smtp.gmail.com',
-        port: 587,
-        username: gmailSettings.address,
-        password: gmailSettings.app_password
-      }
-    }
-    
-    console.log('Gmail email data prepared:', {
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject,
-      bodyLength: emailData.html.length
-    })
-    
-    // Simulate successful sending for now
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    console.log('✅ Email sent successfully via Gmail SMTP simulation')
-    
-  } catch (error) {
-    console.error('Gmail SMTP sending failed:', error)
-    throw new Error(`Gmail SMTP sending failed: ${error.message}`)
-  }
+
+async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const keyObject = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', keyObject, encoder.encode(message))
+  return new Uint8Array(signature)
+}
+
+async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
+  const signature = await hmacSha256(key, message)
+  return Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function getSignatureKey(
+  key: string,
+  dateStamp: string,
+  regionName: string,
+  serviceName: string
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const kDate = await hmacSha256(encoder.encode('AWS4' + key), dateStamp)
+  const kRegion = await hmacSha256(kDate, regionName)
+  const kService = await hmacSha256(kRegion, serviceName)
+  const kSigning = await hmacSha256(kService, 'aws4_request')
+  return kSigning
 }
