@@ -252,10 +252,49 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-    `To: ${recipient}`,
+  // Create timestamp
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.substr(0, 8)
+  
+  // Reorder recipients to put the actual recipient first
+  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  const reorderedRecipients = [recipient, ...allRecipients.filter(addr => addr !== recipient)]
+  
+  // Create payload
+  const payload = JSON.stringify({
+    FromEmailAddress: email.from_email,
+    Destination: {
+      ToAddresses: [recipient]
+    },
+    Content: {
+      Simple: {
+        Subject: {
+          Data: email.subject,
+          Charset: 'UTF-8'
+        },
+        Body: {
+          Html: {
+            Data: email.body,
+            Charset: 'UTF-8'
+          }
+        }
+      }
+    }
+  })
+  
+  const signedHeaders = 'content-type;host;x-amz-date'
+  const payloadHash = await sha256(payload)
+  const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`
+  const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
+  
+  // Create string to sign
+  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
+  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${await sha256(canonicalRequest)}`
+  
   // Calculate signature
   const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateStamp, AWS_REGION, service)
-    `To: ${recipient}`,
+  const signature = await hmacSha256Hex(signingKey, stringToSign)
   
   // Create authorization header
   const authorizationHeader = `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
@@ -277,7 +316,9 @@ async function sendIndividualSESEmail(
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-    to: recipient,
+  const result = await response.json()
+  
+  console.log(`📧 SES Email Summary:`)
   console.log(`   From: ${email.from_email}`)
   console.log(`   To Header: ${reorderedRecipients.join(', ')}`)
   console.log(`   Actual Recipient: ${recipient}`)
@@ -304,6 +345,9 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
 
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
+  
+  // Get all recipients for the To header
+  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   // Create email message for individual recipient
   const emailMessage = [
