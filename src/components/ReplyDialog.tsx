@@ -52,7 +52,20 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
     { address: `noreply@${domain}`, provider: 'SES Domain', isDomain: true }
   ]);
 
-  const allEmailOptions = [...configuredEmails, ...domainEmails];
+  // Add the first recipient email to the options if it's not already there
+  const firstRecipient = Array.isArray(originalEmail.receiver) 
+    ? originalEmail.receiver[0]?.trim()
+    : typeof originalEmail.receiver === 'string' 
+      ? originalEmail.receiver.split(',')[0]?.trim()
+      : '';
+
+  const recipientEmailOption = firstRecipient ? [{ 
+    address: firstRecipient, 
+    provider: 'Recipient Email',
+    isRecipient: true 
+  }] : [];
+
+  const allEmailOptions = [...recipientEmailOption, ...configuredEmails, ...domainEmails];
 
   // Initialize form data
   useEffect(() => {
@@ -341,6 +354,11 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                         required
                       >
                         <option value="">Select sender email</option>
+                        {recipientEmailOption.map((email) => (
+                          <option key={email.address} value={email.address}>
+                            {email.address} ({email.provider})
+                          </option>
+                        ))}
                         {configuredEmails.map((email) => (
                           <option key={email.address} value={email.address}>
                             {email.address} ({email.provider})
