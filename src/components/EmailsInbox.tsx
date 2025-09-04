@@ -501,7 +501,11 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                               <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                   (email as OutboxEmail).status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
-                                  (email as OutboxEmail).status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                 {activeTab === 'inbox' ? 
+                                   Array.isArray((email as Email).receiver) 
+                                     ? (email as Email).receiver.join(', ')
+                                     : (email as Email).receiver
+                                   : 
                                   'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                 }`}>
                                   {(email as OutboxEmail).status}
