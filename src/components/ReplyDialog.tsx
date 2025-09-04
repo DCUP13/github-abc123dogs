@@ -15,6 +15,7 @@ interface Email {
 
 interface ReplyDialogProps {
   originalEmail: Email;
+  isReplyAll: boolean;
   onSend: (replyData: {
     to: string;
     from: string;
@@ -55,7 +56,21 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
 
   // Initialize form data
   useEffect(() => {
-    setToEmails([originalEmail.sender]);
+    if (isReplyAll) {
+      // Include sender and all original recipients
+      const allRecipients = [originalEmail.sender];
+      if (Array.isArray(originalEmail.receiver)) {
+        allRecipients.push(...originalEmail.receiver);
+      } else if (originalEmail.receiver) {
+        allRecipients.push(originalEmail.receiver);
+      }
+      // Remove duplicates
+      const uniqueRecipients = [...new Set(allRecipients)];
+      setToEmails(uniqueRecipients);
+    } else {
+      // Just reply to sender
+      setToEmails([originalEmail.sender]);
+    }
     
     const replySubject = originalEmail.subject?.startsWith('Re: ') 
       ? originalEmail.subject 
@@ -65,7 +80,7 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
     const originalDate = new Date(originalEmail.created_at).toLocaleString();
     const replyBody = `<br><br><br><br><br><br>--- Original Message ---<br><br>From: ${originalEmail.sender}<br><br>Date: ${originalDate}<br><br>Subject: ${originalEmail.subject || '(No Subject)'}<br><br>${originalEmail.body || ''}`;
     setInitialBody(replyBody);
-  }, [originalEmail]);
+  }, [originalEmail, isReplyAll]);
 
   // Email validation
   const validateEmail = (email: string) => {
@@ -256,10 +271,17 @@ export function ReplyDialog({ originalEmail, onSend, onClose }: ReplyDialogProps
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                {isReplyAll ? 'Reply All' : 'Reply'}
+              </h3>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
                 <User className="w-4 h-4" />
-                <span>Replying to: {originalEmail.sender}</span>
+                <span>
+                  {isReplyAll 
+                    ? `Replying to all: ${originalEmail.sender} and ${Array.isArray(originalEmail.receiver) ? originalEmail.receiver.length : 1} other${Array.isArray(originalEmail.receiver) && originalEmail.receiver.length > 1 ? 's' : ''}`
+                    : `Replying to: ${originalEmail.sender}`
+                  }
+                </span>
               </div>
             </div>
             <button

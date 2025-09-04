@@ -69,6 +69,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [showReplyDialog, setShowReplyDialog] = useState(false);
   const [isProcessingEmails, setIsProcessingEmails] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [isReplyAll, setIsReplyAll] = useState(false);
 
   useEffect(() => {
     fetchAllEmails();
@@ -556,13 +557,28 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                 </button>
                 <div className="flex items-center gap-4">
                   {activeTab === 'inbox' && (
-                    <button
-                      onClick={() => setShowReplyDialog(true)}
-                      className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                    >
-                      <Reply className="w-4 h-4 mr-2" />
-                      Reply
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsReplyAll(false);
+                          setShowReplyDialog(true);
+                        }}
+                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                      >
+                        <Reply className="w-4 h-4 mr-2" />
+                        Reply
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsReplyAll(true);
+                          setShowReplyDialog(true);
+                        }}
+                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                      >
+                        <Reply className="w-4 h-4 mr-2" />
+                        Reply All
+                      </button>
+                    </>
                   )}
                   <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                     <Clock className="w-4 h-4" />
@@ -657,8 +673,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
         {showReplyDialog && selectedEmail && (
           <ReplyDialog
             originalEmail={selectedEmail as Email}
+            isReplyAll={isReplyAll}
             onSend={handleSendReply}
-            onClose={() => setShowReplyDialog(false)}
+            onClose={() => {
+              setShowReplyDialog(false);
+              setIsReplyAll(false);
+            }}
           />
         )}
       </div>
