@@ -252,16 +252,11 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  const reorderedRecipients = [
-    `To: ${recipient}`,
-    to: recipient,
-    to: recipient,
-    `To: ${recipient}`,
-  ]
+  // Create reordered recipients list with current recipient first
+  const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  const reorderedRecipients = [recipient, ...allRecipients.filter(addr => addr !== recipient)]
   
-  const amzDate = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '')
-  const dateStamp = amzDate.slice(0, 8)
-  
+  // Create email payload for individual recipient
   const payload = JSON.stringify({
     FromEmailAddress: email.from_email,
     Destination: {
@@ -278,12 +273,21 @@ async function sendIndividualSESEmail(
             Data: email.body,
             Charset: 'UTF-8'
           }
-        }
+        },
+        Headers: [
+          {
+            Name: 'To',
+            Value: reorderedRecipients.join(', ')
+          }
+        ]
       }
     }
   })
   
-  // Create the canonical request
+  // Create AWS signature
+  const amzDate = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.slice(0, 8)
+  
   const payloadHash = await sha256(payload)
   const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`
   const signedHeaders = 'content-type;host;x-amz-date'
@@ -318,12 +322,10 @@ async function sendIndividualSESEmail(
   }
   
   const responseText = await response.text()
-  console.log(`✅ SES response for ${recipient}:`, responseText)
-  
-  if (responseText.includes('MessageId')) {
-    console.log(`📧 Email sent successfully to ${recipient}`)
-    to: recipient,
-  } else {
+  let responseData
+  try {
+    responseData = JSON.parse(responseText)
+  } catch (e) {
     console.warn('⚠️ SES response format unexpected:', responseText)
   }
   
@@ -355,12 +357,14 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
   
+  // Create reordered recipients list with current recipient first
   const allRecipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
+  const reorderedRecipients = [recipient, ...allRecipients.filter(addr => addr !== recipient)]
   
   // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
-    `To: ${recipient}`,
+    `To: ${reorderedRecipients.join(', ')}`,
     `Subject: ${email.subject}`,
     `Content-Type: text/html; charset=UTF-8`,
     ``,
@@ -369,7 +373,7 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
-  console.log(`  To: ${allRecipients.join(', ')}`)
+  console.log(`  To: ${reorderedRecipients.join(', ')}`)
   console.log(`  Actual Recipient: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
   
@@ -384,7 +388,7 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   
   console.log(`📧 Gmail Email Summary:`)
   console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${allRecipients.join(', ')}`)
+  console.log(`   To: ${reorderedRecipients.join(', ')}`)
   console.log(`   Actual Recipient: ${recipient}`)
 }
 
