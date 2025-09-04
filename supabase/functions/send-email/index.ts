@@ -234,7 +234,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   // Add all recipients
   recipients.forEach((recipient, index) => {
     console.log(`Adding recipient ${index + 1}: ${recipient}`)
-    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient.trim())
+    formData.append(`Destination.ToAddresses.member.${index + 1}`, recipient)
   })
   
   formData.append('Message.Subject.Data', email.subject || 'No Subject')
@@ -244,7 +244,19 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   
   const payload = formData.toString()
   console.log('SES API payload (first 500 chars):', payload.substring(0, 500))
-  console.log('Full recipient list in payload:', recipients.map((r, i) => `member.${i + 1}=${r}`).join(', '))
+  console.log('SES payload recipients check:', recipients.map((r, i) => {
+    const key = `Destination.ToAddresses.member.${i + 1}`
+    const value = formData.get(key)
+    return `${key}=${value}`
+  }).join(', '))
+  
+  // Debug: Check if all recipients are in the payload
+  const payloadString = payload.toString()
+  recipients.forEach((recipient, index) => {
+    const memberKey = `Destination.ToAddresses.member.${index + 1}`
+    const isInPayload = payloadString.includes(`${memberKey}=${encodeURIComponent(recipient)}`)
+    console.log(`Recipient ${index + 1} (${recipient}): ${isInPayload ? '✅ Found in payload' : '❌ Missing from payload'}`)
+  })
   
   // Create timestamp
   const now = new Date()
@@ -282,21 +294,27 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   if (!response.ok) {
     const errorText = await response.text()
     console.error('SES API error response:', errorText)
-    console.error('Failed payload recipients:', recipients)
+    console.error('SES API error - Recipients that failed:', recipients)
+    console.error('SES API error - Full payload:', payload)
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
   const responseText = await response.text()
   console.log('SES API success response:', responseText)
+  console.log('SES API success - All recipients should have received:', recipients)
   
   // Verify the response mentions all recipients
   if (responseText.includes('MessageId')) {
-    console.log(`✅ Email successfully sent via SES to ${recipients.length} recipients: ${recipients.join(', ')}`)
+    console.log(`✅ SES confirmed email sent to ${recipients.length} recipients`)
+    console.log(`✅ Each recipient should see: To: ${recipients.join(', ')}`)
   } else {
-    console.warn('⚠️ SES response may not confirm all recipients received the email')
+    console.warn('⚠️ SES response format unexpected:', responseText)
   }
   
-  console.log(`Email sent via SES from ${email.from_email} to ${recipients.length} recipients: ${recipients.join(', ')}`)
+  console.log(`📧 SES Email Summary:`)
+  console.log(`   From: ${email.from_email}`)
+  console.log(`   To: ${recipients.join(', ')} (${recipients.length} recipients)`)
+  console.log(`   Subject: ${email.subject}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
@@ -319,7 +337,10 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     email.body
   ].join('\r\n')
   
-  console.log('Gmail email message format:', emailMessage.split('\r\n').slice(0, 6).join('\r\n'))
+  console.log('Gmail email message headers:')
+  console.log(`  From: ${email.from_email}`)
+  console.log(`  To: ${recipients.join(', ')} (${recipients.length} recipients)`)
+  console.log(`  Subject: ${email.subject}`)
   
   // For now, we'll simulate the SMTP sending
   // In a real implementation, you'd use a proper SMTP library
@@ -330,7 +351,10 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     throw new Error('Gmail SMTP connection failed')
   }
   
-  console.log(`Email sent via Gmail SMTP from ${email.from_email} to ${recipients.length} recipient${recipients.length > 1 ? 's' : ''}`)
+  console.log(`📧 Gmail Email Summary:`)
+  console.log(`   From: ${email.from_email}`)
+  console.log(`   To: ${recipients.join(', ')} (${recipients.length} recipients)`)
+  console.log(`   Each recipient will see all recipients in the To field`)
 }
 
 // Helper functions for AWS signature calculation
