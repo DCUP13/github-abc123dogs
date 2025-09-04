@@ -252,13 +252,10 @@ async function sendIndividualSESEmail(
   
   console.log(`Sending individual email to: ${recipient}`)
   
-  const payload = JSON.stringify({
-    FromEmailAddress: email.from_email,
-    Destination: {
       ToAddresses: [recipient]
     },
     Content: {
-      Simple: {
+    `To: ${recipient}`,
         Subject: {
           Data: email.subject,
           Charset: 'UTF-8'
@@ -314,8 +311,7 @@ async function sendIndividualSESEmail(
     throw new Error(`SES API error: ${response.status} - ${errorText}`)
   }
   
-  console.log(`📧 SES Email Summary:`)
-  console.log(`   From: ${email.from_email}`)
+    to: recipient,
   console.log(`   To: ${recipient}`)
   console.log(`   Actual Recipient: ${recipient}`)
   console.log(`   Subject: ${email.subject}`)
