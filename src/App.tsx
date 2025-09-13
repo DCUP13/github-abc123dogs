@@ -15,7 +15,6 @@ import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses';
 type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts';
 
 interface ThemeContextType {
@@ -199,7 +198,6 @@ export default function App() {
         <EmailProvider>
           <DashboardProvider>
             <div className={darkMode ? 'dark' : ''}>
-              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
               {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' || view === 'prompts' ? (
                 <div className="flex min-h-screen bg-white dark:bg-gray-900">
                   <div className="fixed inset-y-0 left-0 w-64">
