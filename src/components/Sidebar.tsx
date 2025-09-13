@@ -19,7 +19,7 @@ export function Sidebar({
   onSettingsClick, 
   onTemplatesClick, 
   onAddressesClick,
-  onEmailsClick
+  onEmailsClick,
   onPromptsClick
 }: SidebarProps) {
   return (
