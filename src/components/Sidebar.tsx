@@ -20,7 +20,6 @@ export function Sidebar({
   onTemplatesClick, 
   onAddressesClick,
   onEmailsClick
-  onEmailsClick,
   onPromptsClick
 }: SidebarProps) {
   return (
