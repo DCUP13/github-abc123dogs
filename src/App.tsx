@@ -8,6 +8,7 @@ import { Settings } from './components/Settings';
 import { TemplatesPage } from './features/templates/TemplatesPage';
 import { Addresses } from './components/Emails';
 import { EmailsInbox } from './components/EmailsInbox';
+import { Prompts } from './components/Prompts';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import type { Template } from './features/templates/types';
@@ -15,6 +16,7 @@ import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
 type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses';
+type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -198,6 +200,7 @@ export default function App() {
           <DashboardProvider>
             <div className={darkMode ? 'dark' : ''}>
               {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' ? (
+              {view === 'dashboard' || view === 'app' || view === 'settings' || view === 'templates' || view === 'emails' || view === 'addresses' || view === 'prompts' ? (
                 <div className="flex min-h-screen bg-white dark:bg-gray-900">
                   <div className="fixed inset-y-0 left-0 w-64">
                     <Sidebar 
@@ -208,6 +211,7 @@ export default function App() {
                       onTemplatesClick={() => setView('templates')}
                       onEmailsClick={() => setView('emails')}
                       onAddressesClick={() => setView('addresses')}
+                      onPromptsClick={() => setView('prompts')}
                     />
                   </div>
                   <div className="flex-1 ml-64">
@@ -228,6 +232,9 @@ export default function App() {
                     )}
                     {view === 'addresses' && (
                       <Addresses onSignOut={handleSignOut} currentView={view} />
+                    )}
+                    {view === 'prompts' && (
+                      <Prompts onSignOut={handleSignOut} currentView={view} />
                     )}
                   </div>
                 </div>
