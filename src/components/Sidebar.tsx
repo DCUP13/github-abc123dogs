@@ -1,5 +1,4 @@
 import React from 'react';
-import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox } from 'lucide-react';
 import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, MessageSquare } from 'lucide-react';
 
 interface SidebarProps {
