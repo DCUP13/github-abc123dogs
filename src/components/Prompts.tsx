@@ -374,8 +374,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
-              <div className="flex items-center justify-between mb-6">
-              <div className="p-6 pb-0">
+              <div className="flex items-center justify-between p-6 pb-0">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
                 </h3>
@@ -383,9 +382,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   onClick={resetForm}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <Plus className="w-5 h-5 rotate-45" />
+                  <X className="w-5 h-5" />
                 </button>
-              </div>
               </div>
 
               <div className="flex-1 overflow-y-auto pl-6 pr-4">
