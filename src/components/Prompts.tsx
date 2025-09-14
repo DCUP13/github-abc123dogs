@@ -386,7 +386,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto pl-6 pr-4">
+              <div className="flex-1 overflow-y-auto pl-6 pr-4 pt-4">
                 <form id="prompt-form" onSubmit={handleSavePrompt} className="space-y-4">
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
