@@ -78,24 +78,37 @@ export default function App() {
     checkConnection();
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error);
+        // Don't set supabaseError to true here since other parts work
+        setView('login');
+      } else if (session) {
         setView('dashboard');
         fetchUserSettings();
       }
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Auth session check failed:', error);
+      setView('login');
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setView('dashboard');
-        fetchUserSettings();
-      } else {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      try {
+        if (session) {
+          setView('dashboard');
+          fetchUserSettings();
+        } else {
+          setView('login');
+          setDarkMode(false);
+        }
+      } catch (error) {
+        console.error('Auth state change error:', error);
         setView('login');
-        setDarkMode(false);
       }
     });
 
