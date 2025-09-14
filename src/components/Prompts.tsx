@@ -54,20 +54,35 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
-      const { data: promptsData, error } = await supabase
+      // Fetch prompts first
+      const { data: promptsData, error: promptsError } = await supabase
         .from('prompts')
-        .select(`
-          *,
-          prompt_domains(domain)
-        `)
+        .select('*')
         .eq('user_id', user.data.user.id)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (promptsError) throw promptsError;
+
+      // Fetch prompt domains separately
+      const { data: domainsData, error: domainsError } = await supabase
+        .from('prompt_domains')
+        .select('prompt_id, domain')
+        .eq('user_id', user.data.user.id);
+
+      if (domainsError) throw domainsError;
+
+      // Group domains by prompt_id
+      const domainsByPrompt = (domainsData || []).reduce((acc, item) => {
+        if (!acc[item.prompt_id]) {
+          acc[item.prompt_id] = [];
+        }
+        acc[item.prompt_id].push(item.domain);
+        return acc;
+      }, {} as Record<string, string[]>);
       
       const transformedPrompts = promptsData?.map(prompt => ({
         ...prompt,
-        domains: prompt.prompt_domains?.map((pd: any) => pd.domain) || []
+        domains: domainsByPrompt[prompt.id] || []
       })) || [];
       
       setPrompts(transformedPrompts);
