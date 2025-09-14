@@ -32,6 +32,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const { sesDomains } = useEmails();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [autoresponderDomains, setAutoresponderDomains] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -47,7 +48,28 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
   useEffect(() => {
     fetchPrompts();
+    fetchAutoresponderDomains();
   }, []);
+
+  const fetchAutoresponderDomains = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('amazon_ses_domains')
+        .select('domain')
+        .eq('user_id', user.data.user.id)
+        .eq('autoresponder_enabled', true);
+
+      if (error) throw error;
+      
+      const enabledDomains = new Set(data?.map(d => d.domain) || []);
+      setAutoresponderDomains(enabledDomains);
+    } catch (error) {
+      console.error('Error fetching autoresponder domains:', error);
+    }
+  };
 
   const fetchPrompts = async () => {
     try {
@@ -348,7 +370,11 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                     {prompt.domains.map(domain => (
                       <span
                         key={domain}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded"
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded ${
+                          autoresponderDomains.has(domain)
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
                       >
                         <Globe className="w-3 h-3" />
                         {domain}
