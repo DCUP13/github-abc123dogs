@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Plus, Edit, Trash2, Search, Copy, Check } from 'lucide-react';
+import { MessageSquare, Plus, Edit, Trash2, Search, Copy, Check, X, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useEmails } from '../contexts/EmailContext';
 
 interface PromptsProps {
   onSignOut: () => void;
@@ -14,6 +15,7 @@ interface Prompt {
   category: string;
   created_at: string;
   updated_at: string;
+  domains: string[];
 }
 
 const categories = [
@@ -27,6 +29,7 @@ const categories = [
 ];
 
 export function Prompts({ onSignOut, currentView }: PromptsProps) {
+  const { sesDomains } = useEmails();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +41,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'General'
+    category: 'General',
+    domains: [] as string[]
   });
 
   useEffect(() => {
@@ -50,14 +54,23 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
-      const { data, error } = await supabase
+      const { data: promptsData, error } = await supabase
         .from('prompts')
-        .select('*')
+        .select(`
+          *,
+          prompt_domains(domain)
+        `)
         .eq('user_id', user.data.user.id)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setPrompts(data || []);
+      
+      const transformedPrompts = promptsData?.map(prompt => ({
+        ...prompt,
+        domains: prompt.prompt_domains?.map((pd: any) => pd.domain) || []
+      })) || [];
+      
+      setPrompts(transformedPrompts);
     } catch (error) {
       console.error('Error fetching prompts:', error);
     } finally {
@@ -82,6 +95,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         updated_at: new Date().toISOString()
       };
 
+      let promptId: string;
+
       if (editingPrompt) {
         const { error } = await supabase
           .from('prompts')
@@ -89,18 +104,43 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           .eq('id', editingPrompt.id);
 
         if (error) throw error;
+        promptId = editingPrompt.id;
+        
+        // Delete existing domain associations
+        await supabase
+          .from('prompt_domains')
+          .delete()
+          .eq('prompt_id', editingPrompt.id);
       } else {
-        const { error } = await supabase
+        const { data: newPrompt, error } = await supabase
           .from('prompts')
-          .insert(promptData);
+          .insert(promptData)
+          .select()
+          .single();
 
         if (error) throw error;
+        promptId = newPrompt.id;
+      }
+
+      // Insert domain associations
+      if (formData.domains.length > 0) {
+        const domainInserts = formData.domains.map(domain => ({
+          prompt_id: promptId,
+          domain,
+          user_id: user.data.user.id
+        }));
+
+        const { error: domainError } = await supabase
+          .from('prompt_domains')
+          .insert(domainInserts);
+
+        if (domainError) throw domainError;
       }
 
       await fetchPrompts();
       setShowCreateModal(false);
       setEditingPrompt(null);
-      setFormData({ title: '', content: '', category: 'General' });
+      setFormData({ title: '', content: '', category: 'General', domains: [] });
     } catch (error) {
       console.error('Error saving prompt:', error);
       alert('Failed to save prompt. Please try again.');
@@ -112,7 +152,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     setFormData({
       title: prompt.title,
       content: prompt.content,
-      category: prompt.category
+      category: prompt.category,
+      domains: prompt.domains || []
     });
     setShowCreateModal(true);
   };
@@ -145,6 +186,22 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     }
   };
 
+  const handleAddDomain = (domain: string) => {
+    if (!formData.domains.includes(domain)) {
+      setFormData(prev => ({
+        ...prev,
+        domains: [...prev.domains, domain]
+      }));
+    }
+  };
+
+  const handleRemoveDomain = (domain: string) => {
+    setFormData(prev => ({
+      ...prev,
+      domains: prev.domains.filter(d => d !== domain)
+    }));
+  };
+
   const filteredPrompts = prompts.filter(prompt => {
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          prompt.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -153,7 +210,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   });
 
   const resetForm = () => {
-    setFormData({ title: '', content: '', category: 'General' });
+    setFormData({ title: '', content: '', category: 'General', domains: [] });
     setEditingPrompt(null);
     setShowCreateModal(false);
   };
@@ -232,45 +289,67 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                      {prompt.title}
-                    </h3>
-                    <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300 rounded-full">
-                      {prompt.category}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleCopyPrompt(prompt.content, prompt.id)}
-                      className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                      title="Copy prompt"
-                    >
-                      {copiedId === prompt.id ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        {prompt.title}
+                      </h3>
+                      <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300 rounded-full">
+                        {prompt.category}
+                      </span>
+                      {prompt.domains && prompt.domains.length > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full">
+                          <Globe className="w-3 h-3" />
+                          {prompt.domains.length} domain{prompt.domains.length !== 1 ? 's' : ''}
+                        </span>
                       )}
-                    </button>
-                    <button
-                      onClick={() => handleEditPrompt(prompt)}
-                      className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                      title="Edit prompt"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeletePrompt(prompt.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                      title="Delete prompt"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleCopyPrompt(prompt.content, prompt.id)}
+                        className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        title="Copy prompt"
+                      >
+                        {copiedId === prompt.id ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleEditPrompt(prompt)}
+                        className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        title="Edit prompt"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePrompt(prompt.id)}
+                        className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        title="Delete prompt"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
                 <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
                   {prompt.content}
                 </p>
+                
+                {prompt.domains && prompt.domains.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {prompt.domains.map(domain => (
+                      <span
+                        key={domain}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded"
+                      >
+                        <Globe className="w-3 h-3" />
+                        {domain}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 
                 <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
                   Updated {new Date(prompt.updated_at).toLocaleDateString()}
@@ -325,6 +404,72 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       <option key={category} value={category}>{category}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label htmlFor="domains" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Applicable Domains
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <select
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAddDomain(e.target.value);
+                            e.target.value = '';
+                          }
+                        }}
+                        value=""
+                      >
+                        <option value="">Select a domain</option>
+                        {sesDomains
+                          .filter(domain => !formData.domains.includes(domain))
+                          .map(domain => (
+                            <option key={domain} value={domain}>
+                              {domain}
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                    
+                    {sesDomains.length === 0 && (
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
+                        <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                          No verified domains found. Add domains in Settings → Amazon SES to use this feature.
+                        </p>
+                      </div>
+                    )}
+                    
+                    {formData.domains.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Selected domains:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.domains.map(domain => (
+                            <span
+                              key={domain}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded text-sm"
+                            >
+                              <Globe className="w-3 h-3" />
+                              {domain}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDomain(domain)}
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Select which domains this prompt applies to. Leave empty to apply to all domains.
+                    </p>
+                  </div>
                 </div>
 
                 <div>
