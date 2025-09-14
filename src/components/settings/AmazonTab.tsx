@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Server, Mail, Send, X, AlertCircle, Globe, Plus } from 'lucide-react';
 import { useEmails } from '../../contexts/EmailContext';
+import { Toggle } from './Toggle';
 import type { EmailSettings, SESEmail } from './types';
 import { supabase } from '../../lib/supabase';
 
@@ -29,6 +30,7 @@ export function AmazonTab({
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [domainError, setDomainError] = useState('');
+  const [domainSettings, setDomainSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
 
   useEffect(() => {
     fetchSESSettings();
@@ -71,12 +73,23 @@ export function AmazonTab({
 
       const { data, error } = await supabase
         .from('amazon_ses_domains')
-        .select('domain')
+        .select('domain, autoresponder_enabled')
         .eq('user_id', user.data.user.id)
         .order('domain', { ascending: true });
 
       if (error) throw error;
-      setDomains(data?.map(d => d.domain) || []);
+      
+      const domainsData = data || [];
+      setDomains(domainsData.map(d => d.domain));
+      
+      const settings = domainsData.reduce((acc, domain) => {
+        acc[domain.domain] = {
+          autoresponderEnabled: domain.autoresponder_enabled || false
+        };
+        return acc;
+      }, {} as Record<string, { autoresponderEnabled: boolean }>);
+      
+      setDomainSettings(settings);
     } catch (error) {
       console.error('Error fetching SES domains:', error);
     }
@@ -172,7 +185,8 @@ export function AmazonTab({
         .from('amazon_ses_domains')
         .insert({
           user_id: user.data.user.id,
-          domain: newDomain
+          domain: newDomain,
+          autoresponder_enabled: false
         });
 
       if (error) {
@@ -184,6 +198,10 @@ export function AmazonTab({
       }
 
       setDomains([...domains, newDomain].sort());
+      setDomainSettings(prev => ({
+        ...prev,
+        [newDomain]: { autoresponderEnabled: false }
+      }));
       setNewDomain('');
       setDomainError('');
     } catch (error) {
@@ -208,9 +226,42 @@ export function AmazonTab({
       if (error) throw error;
 
       setDomains(domains.filter(d => d !== domain));
+      setDomainSettings(prev => {
+        const newSettings = { ...prev };
+        delete newSettings[domain];
+        return newSettings;
+      });
     } catch (error) {
       console.error('Error removing SES domain:', error);
       alert('Failed to remove domain. Please try again.');
+    }
+  };
+
+  const handleToggleAutoresponder = async (domain: string, enabled: boolean) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('amazon_ses_domains')
+        .update({ 
+          autoresponder_enabled: enabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id)
+        .eq('domain', domain);
+
+      if (error) throw error;
+
+      setDomainSettings(prev => ({
+        ...prev,
+        [domain]: { autoresponderEnabled: enabled }
+      }));
+    } catch (error) {
+      console.error('Error updating autoresponder setting:', error);
+      alert('Failed to update autoresponder setting. Please try again.');
     }
   };
 
@@ -519,18 +570,29 @@ export function AmazonTab({
             domains.map((domain) => (
               <div
                 key={domain}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
               >
-                <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-900 dark:text-white">{domain}</span>
+                <div className="flex items-center gap-3 flex-1">
+                  <Globe className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <span className="text-gray-900 dark:text-white flex-1">{domain}</span>
                 </div>
-                <button
-                  onClick={() => handleRemoveDomain(domain)}
-                  className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Autoresponder
+                    </span>
+                    <Toggle
+                      checked={domainSettings[domain]?.autoresponderEnabled || false}
+                      onChange={() => handleToggleAutoresponder(domain, !domainSettings[domain]?.autoresponderEnabled)}
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleRemoveDomain(domain)}
+                    className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             ))
           )}
