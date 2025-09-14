@@ -1,148 +1,78 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+Deno.serve(async (req: Request) => {
+  console.log("🚀 AUTORESPONDER FUNCTION CALLED!")
+  console.log("📅 Timestamp:", new Date().toISOString())
+  console.log("🔗 Request URL:", req.url)
+  console.log("📝 Request method:", req.method)
+  
+  if (req.method === "OPTIONS") {
+    console.log("✅ Handling CORS preflight request")
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    console.log('🚀 Autoresponder function called!')
-    console.log('Request method:', req.method)
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()))
-
-    if (req.method !== 'POST') {
-      console.log('❌ Invalid method:', req.method)
-      throw new Error('Method not allowed')
-    }
-
-    const requestBody = await req.json()
-    console.log('📧 Request body:', requestBody)
-
-    const { emailId } = requestBody
+    console.log("📦 Reading request body...")
+    const body = await req.text()
+    console.log("📄 Raw request body:", body)
     
-    if (!emailId) {
-      console.log('❌ No email ID provided')
-      throw new Error('Email ID is required')
+    let parsedBody
+    try {
+      parsedBody = JSON.parse(body)
+      console.log("✅ Parsed JSON body:", parsedBody)
+    } catch (parseError) {
+      console.log("⚠️ Failed to parse JSON, using raw body")
+      parsedBody = { rawBody: body }
     }
 
-    console.log('📬 Processing email ID:', emailId)
+    console.log("🎉 AUTORESPONDER FUNCTION EXECUTED SUCCESSFULLY!")
+    console.log("📊 Request processed at:", new Date().toISOString())
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    console.log('🔗 Supabase client initialized')
-
-    // Get the incoming email
-    const { data: email, error: emailError } = await supabaseClient
-      .from('emails')
-      .select('*')
-      .eq('id', emailId)
-      .single()
-
-    if (emailError) {
-      console.log('❌ Error fetching email:', emailError)
-      throw new Error(`Email not found: ${emailError.message}`)
+    const response = {
+      success: true,
+      message: "Autoresponder function called successfully!",
+      timestamp: new Date().toISOString(),
+      receivedData: parsedBody
     }
 
-    if (!email) {
-      console.log('❌ Email not found for ID:', emailId)
-      throw new Error('Email not found')
-    }
-
-    console.log('✅ Email found!')
-    console.log('📧 Email details:')
-    console.log('  - ID:', email.id)
-    console.log('  - From:', email.sender)
-    console.log('  - To:', email.receiver)
-    console.log('  - Subject:', email.subject)
-    console.log('  - Body length:', email.body?.length || 0, 'characters')
-    console.log('  - Created at:', email.created_at)
-
-    // Log receiver details
-    const receivers = Array.isArray(email.receiver) ? email.receiver : [email.receiver]
-    console.log('📮 Processing receivers:', receivers)
-
-    for (const receiverEmail of receivers) {
-      if (!receiverEmail) {
-        console.log('⚠️ Empty receiver email, skipping')
-        continue
-      }
-
-      console.log('🎯 Processing receiver:', receiverEmail)
-      
-      // Extract domain from receiver email
-      const domain = receiverEmail.split('@')[1]
-      if (!domain) {
-        console.log('⚠️ No domain found in receiver email:', receiverEmail)
-        continue
-      }
-
-      console.log('🌐 Extracted domain:', domain)
-
-      // Check if this domain has autoresponder enabled
-      const { data: domainData, error: domainError } = await supabaseClient
-        .from('amazon_ses_domains')
-        .select('autoresponder_enabled, user_id')
-        .eq('domain', domain)
-        .eq('autoresponder_enabled', true)
-        .maybeSingle()
-
-      if (domainError) {
-        console.log('❌ Error checking domain:', domainError)
-        continue
-      }
-
-      if (!domainData) {
-        console.log('📭 No autoresponder enabled for domain:', domain)
-        continue
-      }
-
-      console.log('🤖 Autoresponder enabled for domain:', domain)
-      console.log('👤 Domain owner user ID:', domainData.user_id)
-      
-      // For now, just log that we would send an autoresponse
-      console.log('✨ AUTORESPONDER WOULD TRIGGER HERE!')
-      console.log('  - Would reply to:', email.sender)
-      console.log('  - From domain:', domain)
-      console.log('  - Original subject:', email.subject)
-    }
-
-    console.log('🎉 Autoresponder processing completed successfully!')
+    console.log("📤 Sending response:", response)
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Autoresponder processing completed',
-        emailId: emailId,
-        processed: true
-      }),
+      JSON.stringify(response),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 200
       }
-    )
+    );
 
   } catch (error) {
-    console.error('💥 Error in autoresponder function:', error)
+    console.error("💥 ERROR in autoresponder function:", error)
+    console.error("📍 Error details:", error.message)
+    console.error("🔍 Error stack:", error.stack)
+
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        success: false 
+        success: false,
+        timestamp: new Date().toISOString()
       }),
       {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
     )
   }
-})
+});
