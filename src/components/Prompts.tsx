@@ -308,12 +308,6 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300 rounded-full">
                         {prompt.category}
                       </span>
-                      {prompt.domains && prompt.domains.length > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full">
-                          <Globe className="w-3 h-3" />
-                          {prompt.domains.length} domain{prompt.domains.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
