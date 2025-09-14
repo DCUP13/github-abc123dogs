@@ -373,7 +373,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4 max-h-[calc(100vh-2rem)] flex flex-col">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
               <div className="flex items-center justify-between mb-6">
               <div className="p-6 pb-0">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -388,7 +388,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-6">
+              <div className="flex-1 overflow-y-auto pl-6 pr-4">
                 <form id="prompt-form" onSubmit={handleSavePrompt} className="space-y-4">
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
