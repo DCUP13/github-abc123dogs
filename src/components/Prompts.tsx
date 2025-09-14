@@ -54,7 +54,6 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
-      // Fetch prompts first
       const { data: promptsData, error: promptsError } = await supabase
         .from('prompts')
         .select('*')
@@ -63,7 +62,6 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
       if (promptsError) throw promptsError;
 
-      // Fetch prompt domains separately
       const { data: domainsData, error: domainsError } = await supabase
         .from('prompt_domains')
         .select('prompt_id, domain')
@@ -71,7 +69,6 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
       if (domainsError) throw domainsError;
 
-      // Group domains by prompt_id
       const domainsByPrompt = (domainsData || []).reduce((acc, item) => {
         if (!acc[item.prompt_id]) {
           acc[item.prompt_id] = [];
