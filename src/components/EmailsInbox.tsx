@@ -213,6 +213,55 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
     fetchAllEmails();
   };
 
+  const handleDeleteEmail = async (emailId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent row click from selecting email
+    
+    try {
+      setIsLoading(true);
+      let error;
+      
+      if (activeTab === 'inbox') {
+        ({ error } = await supabase
+          .from('emails')
+          .delete()
+          .eq('id', emailId));
+      } else if (activeTab === 'outbox') {
+        ({ error } = await supabase
+          .from('email_outbox')
+          .delete()
+          .eq('id', emailId));
+      } else if (activeTab === 'sent') {
+        ({ error } = await supabase
+          .from('email_sent')
+          .delete()
+          .eq('id', emailId));
+      }
+
+      if (error) throw error;
+
+      // Refresh the appropriate email list
+      if (activeTab === 'inbox') {
+        await fetchInboxEmails();
+      } else if (activeTab === 'outbox') {
+        await fetchOutboxEmails();
+      } else {
+        await fetchSentEmails();
+      }
+
+      // If the deleted email was selected, clear the selection
+      if (selectedEmail?.id === emailId) {
+        setSelectedEmail(null);
+      }
+
+      alert('Email deleted successfully');
+    } catch (error) {
+      console.error('Error deleting email replacethis:', error);
+      alert('Failed to delete email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getFilteredEmails = () => {
     if (activeTab === 'inbox') {
       return emails.filter(email => {
@@ -536,6 +585,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                               activeTab === 'sent' ? (email as SentEmail).sent_at : email.created_at
                             )}
                           </div>
+                          <button
+                            onClick={(e) => handleDeleteEmail(email.id, e)}
+                            className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
