@@ -49,6 +49,7 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
         .from('user_settings')
         .insert({
           user_id: user.data.user.id,
+          dark_mode: false,
           notifications: true,
           two_factor_auth: false,
           newsletter: false,

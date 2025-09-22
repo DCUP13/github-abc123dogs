@@ -51,11 +51,32 @@ export default function App() {
         .from('user_settings')
         .select('dark_mode')
         .eq('user_id', user.data.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      
       if (data) {
         setDarkMode(data.dark_mode);
+      } else {
+        // Create default settings if none exist
+        const { error: insertError } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: user.data.user.id,
+            dark_mode: false,
+            notifications: true,
+            two_factor_auth: false,
+            newsletter: false,
+            public_profile: true,
+            debugging: false,
+            clean_up_loi: false
+          });
+        
+        if (insertError) {
+          console.error('Error creating default settings:', insertError);
+        } else {
+          setDarkMode(false);
+        }
       }
     } catch (error) {
       console.error('Error fetching user settings:', error);
