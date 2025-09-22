@@ -47,6 +47,33 @@ export default function App() {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
+      // First, ensure a profile exists for this user
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.data.user.id)
+        .maybeSingle();
+
+      if (profileCheckError) throw profileCheckError;
+
+      // If no profile exists, create one
+      if (!existingProfile) {
+        const { error: profileInsertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.data.user.id,
+            email: user.data.user.email || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (profileInsertError) {
+          console.error('Error creating profile:', profileInsertError);
+          throw profileInsertError;
+        }
+      }
+
+      // Now fetch or create user settings
       const { data, error } = await supabase
         .from('user_settings')
         .select('dark_mode')
