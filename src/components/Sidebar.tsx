@@ -4,10 +4,10 @@ import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, 
 interface SidebarProps {
   onSignOut: () => void;
   onHomeClick: () => void;
-  onTemplatesClick: () => void;
   onSettingsClick: () => void;
   onAddressesClick: () => void;
   onEmailsClick: () => void;
+  onPromptsClick: () => void;
 }
 
 export function Sidebar({ 
@@ -33,22 +33,6 @@ export function Sidebar({
           Home
         </button>
         
-        <button 
-          onClick={onAppClick}
-          className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
-        >
-          <Layout className="w-4 h-4" />
-          Campaigns
-        </button>
-        
-        <button 
-          onClick={onTemplatesClick}
-          className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
-        >
-          <FileText className="w-4 h-4" />
-          Templates
-        </button>
-
         <button 
           onClick={onEmailsClick}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
