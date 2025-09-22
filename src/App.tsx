@@ -11,7 +11,6 @@ import { EmailsInbox } from './components/EmailsInbox';
 import { Prompts } from './components/Prompts';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
-import type { Template } from './features/templates/types';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
@@ -25,14 +24,6 @@ interface ThemeContextType {
 export const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
   toggleDarkMode: async () => {},
-});
-
-export const TemplatesContext = createContext<{
-  templates: Template[];
-  fetchTemplates: () => Promise<void>;
-}>({
-  templates: [],
-  fetchTemplates: async () => {},
 });
 
 export default function App() {
@@ -161,30 +152,6 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchTemplates = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('templates')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      setTemplates(data.map(template => ({
-        ...template,
-        lastModified: template.updated_at
-      })));
-    } catch (error) {
-      console.error('Error fetching templates:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (view !== 'login' && view !== 'register') {
-      fetchTemplates();
-    }
-  }, [view]);
 
   const toggleDarkMode = async () => {
     try {
