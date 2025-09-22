@@ -40,13 +40,6 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       bgColor: 'bg-orange-100 dark:bg-orange-900/20',
     },
     {
-      title: 'Total Campaigns',
-      value: stats.totalCampaigns.toLocaleString(),
-      icon: Layout,
-      color: 'text-indigo-500',
-      bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
-    },
-    {
       title: 'Total Domains',
       value: stats.totalDomains.toLocaleString(),
       icon: Globe,

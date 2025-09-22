@@ -4,20 +4,16 @@ import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, 
 interface SidebarProps {
   onSignOut: () => void;
   onHomeClick: () => void;
-  onAppClick: () => void;
   onTemplatesClick: () => void;
   onSettingsClick: () => void;
   onAddressesClick: () => void;
   onEmailsClick: () => void;
-  onPromptsClick: () => void;
 }
 
 export function Sidebar({ 
   onSignOut, 
   onHomeClick, 
-  onAppClick, 
   onSettingsClick, 
-  onTemplatesClick, 
   onAddressesClick,
   onEmailsClick,
   onPromptsClick
