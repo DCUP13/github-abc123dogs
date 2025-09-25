@@ -50,11 +50,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         setStats({
-          totalEmailsRemaining: data.total_emails_remaining,
-          totalEmailAccounts: data.total_email_accounts,
-          totalEmailsSentToday: data.total_emails_sent_today,
-          totalTemplates: data.total_templates,
-          totalCampaigns: data.total_campaigns,
+          totalEmailsRemaining: data.total_emails_remaining ?? 0,
+          totalEmailAccounts: data.total_email_accounts ?? 0,
+          totalEmailsSentToday: data.total_emails_sent_today ?? 0,
+          totalTemplates: data.total_templates ?? 0,
+          totalCampaigns: data.total_campaigns ?? 0,
           totalDomains: data.total_domains || 0
         });
       }
@@ -78,11 +78,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         (payload) => {
           if (payload.new) {
             setStats({
-              totalEmailsRemaining: payload.new.total_emails_remaining,
-              totalEmailAccounts: payload.new.total_email_accounts,
-              totalEmailsSentToday: payload.new.total_emails_sent_today,
-              totalTemplates: payload.new.total_templates,
-              totalCampaigns: payload.new.total_campaigns,
+              totalEmailsRemaining: payload.new.total_emails_remaining ?? 0,
+              totalEmailAccounts: payload.new.total_email_accounts ?? 0,
+              totalEmailsSentToday: payload.new.total_emails_sent_today ?? 0,
+              totalTemplates: payload.new.total_templates ?? 0,
+              totalCampaigns: payload.new.total_campaigns ?? 0,
             totalDomains: payload.new.total_domains ?? 0
             });
           }
