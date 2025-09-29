@@ -152,7 +152,17 @@ Deno.serve(async (req) => {
     // Parse the AI response
     let gradingResult: GradingResult;
     try {
-      const parsed = JSON.parse(openaiResult);
+      // Clean the response by removing markdown code blocks if present
+      let cleanedResult = openaiResult.trim();
+      
+      // Remove markdown code block markers
+      if (cleanedResult.startsWith('```json')) {
+        cleanedResult = cleanedResult.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (cleanedResult.startsWith('```')) {
+        cleanedResult = cleanedResult.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      const parsed = JSON.parse(cleanedResult);
       gradingResult = {
         overall_score: Math.max(1, Math.min(100, parsed.overall_score || 50)),
         financial_score: Math.max(1, Math.min(100, parsed.financial_score || 50)),
@@ -164,6 +174,8 @@ Deno.serve(async (req) => {
       };
     } catch (parseError) {
       console.error('Failed to parse AI response, using fallback scores:', parseError);
+      console.error('Original AI response:', openaiResult);
+      console.error('Cleaned response attempt:', cleanedResult);
       // Fallback scoring if AI response is malformed
       gradingResult = {
         overall_score: 50,
