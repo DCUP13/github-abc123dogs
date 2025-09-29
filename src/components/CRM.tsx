@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Filter, X, Save, MessageSquare, Clock, FileText } from 'lucide-react';
+import { Users, Plus, Search, Filter, Mail, Phone, MapPin, DollarSign, Calendar, Edit, Trash2, X, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ClientCard, type Client } from './crm/ClientCard';
 
