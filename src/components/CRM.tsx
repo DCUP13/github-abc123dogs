@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Search, Filter, Phone, Mail, MapPin, DollarSign, Calendar, Building, User, Edit, Trash2, X, Save, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { ClientCard, type Client } from './crm/ClientCard';
+import { ClientCard, type Client, type ClientGrade } from './crm/ClientCard';
 
 interface CRMProps {
   onSignOut: () => void;
@@ -40,6 +40,7 @@ const propertyTypes = [
 
 export function CRM({ onSignOut, currentView }: CRMProps) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientGrades, setClientGrades] = useState<Record<string, ClientGrade>>({});
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientForm, setShowClientForm] = useState(false);
@@ -81,6 +82,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   useEffect(() => {
     fetchClients();
+    fetchClientGrades();
   }, []);
 
   useEffect(() => {
@@ -106,6 +108,29 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       console.error('Error fetching clients:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchClientGrades = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('client_grades')
+        .select('*')
+        .eq('user_id', user.data.user.id);
+
+      if (error) throw error;
+      
+      const gradesMap = (data || []).reduce((acc, grade) => {
+        acc[grade.client_id] = grade;
+        return acc;
+      }, {} as Record<string, ClientGrade>);
+      
+      setClientGrades(gradesMap);
+    } catch (error) {
+      console.error('Error fetching client grades:', error);
     }
   };
 
@@ -158,6 +183,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       }
 
       await fetchClients();
+      await fetchClientGrades();
       resetClientForm();
     } catch (error) {
       console.error('Error saving client:', error);
@@ -210,6 +236,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
       if (error) throw error;
       await fetchClients();
+      await fetchClientGrades();
       
       if (selectedClient?.id === id) {
         setSelectedClient(null);
@@ -442,83 +469,15 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredClients.map((client) => {
-                    const typeInfo = getClientTypeInfo(client.client_type);
-                    const statusInfo = getClientStatusInfo(client.status);
-
-                    return (
-                      <div
-                        key={client.id}
-                        onClick={() => setSelectedClient(client)}
-                        className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                {client.first_name} {client.last_name}
-                              </h3>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeInfo.color}`}>
-                                {typeInfo.label}
-                              </span>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
-                              {client.email && (
-                                <div className="flex items-center gap-2">
-                                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                                  {client.email}
-                                </div>
-                              )}
-                              {client.phone && (
-                                <div className="flex items-center gap-2">
-                                  <Phone className="w-4 h-4 text-gray-400" />
-                                  {client.phone}
-                                </div>
-                              )}
-                              {(client.city || client.state) && (
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-gray-400" />
-                                  {[client.city, client.state].filter(Boolean).join(', ')}
-                                </div>
-                              )}
-                            </div>
-
-                            {(client.budget_min || client.budget_max) && (
-                              <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                <DollarSign className="w-4 h-4 text-gray-400" />
-                                Budget: {client.budget_min ? formatCurrency(client.budget_min) : 'No min'} - {client.budget_max ? formatCurrency(client.budget_max) : 'No max'}
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClient(client);
-                              }}
-                              className="p-2 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClient(client.id);
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {filteredClients.map((client) => (
+                    <ClientCard
+                      key={client.id}
+                      client={client}
+                      grade={clientGrades[client.id]}
+                      onEdit={handleEditClient}
+                      onDelete={handleDeleteClient}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -719,407 +678,3 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                                   handleDeleteInteraction(interaction.id);
                                 }}
                                 className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Client Form Modal */}
-        {showClientForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {editingClient ? 'Edit Client' : 'Add New Client'}
-                </h3>
-                <button
-                  onClick={resetClientForm}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveClient} className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={clientForm.first_name}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={clientForm.last_name}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={clientForm.email}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={clientForm.phone}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Address
-                  </label>
-                  <input
-                    type="text"
-                    value={clientForm.address}
-                    onChange={(e) => setClientForm(prev => ({ ...prev, address: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={clientForm.city}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      value={clientForm.state}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      ZIP Code
-                    </label>
-                    <input
-                      type="text"
-                      value={clientForm.zip_code}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, zip_code: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Client Type
-                    </label>
-                    <select
-                      value={clientForm.client_type}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, client_type: e.target.value as any }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {clientTypes.map(type => (
-                        <option key={type.value} value={type.value}>{type.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Status
-                    </label>
-                    <select
-                      value={clientForm.status}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, status: e.target.value as any }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {clientStatuses.map(status => (
-                        <option key={status.value} value={status.value}>{status.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Budget Min
-                    </label>
-                    <input
-                      type="number"
-                      value={clientForm.budget_min}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, budget_min: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="Minimum budget"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Budget Max
-                    </label>
-                    <input
-                      type="number"
-                      value={clientForm.budget_max}
-                      onChange={(e) => setClientForm(prev => ({ ...prev, budget_max: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      placeholder="Maximum budget"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Property Type
-                  </label>
-                  <select
-                    value={clientForm.property_type}
-                    onChange={(e) => setClientForm(prev => ({ ...prev, property_type: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    <option value="">Select property type</option>
-                    {propertyTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Preferred Areas
-                  </label>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newPreferredArea}
-                        onChange={(e) => setNewPreferredArea(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPreferredArea())}
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        placeholder="Add preferred area"
-                      />
-                      <button
-                        type="button"
-                        onClick={addPreferredArea}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                      >
-                        Add
-                      </button>
-                    </div>
-                    {clientForm.preferred_areas.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {clientForm.preferred_areas.map((area, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded text-sm"
-                          >
-                            {area}
-                            <button
-                              type="button"
-                              onClick={() => removePreferredArea(area)}
-                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Source
-                  </label>
-                  <input
-                    type="text"
-                    value={clientForm.source}
-                    onChange={(e) => setClientForm(prev => ({ ...prev, source: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="How did you meet this client?"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Notes
-                  </label>
-                  <textarea
-                    value={clientForm.notes}
-                    onChange={(e) => setClientForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Additional notes about this client"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetClientForm}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingClient ? 'Update Client' : 'Save Client'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Interaction Form Modal */}
-        {showInteractionForm && selectedClient && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Add Interaction
-                </h3>
-                <button
-                  onClick={resetInteractionForm}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveInteraction} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Interaction Type
-                  </label>
-                  <select
-                    value={interactionForm.interaction_type}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_type: e.target.value as any }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    {interactionTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    value={interactionForm.subject}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Brief subject or title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Interaction Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={interactionForm.interaction_date}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Follow-up Date (Optional)
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={interactionForm.follow_up_date}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, follow_up_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Notes
-                  </label>
-                  <textarea
-                    value={interactionForm.notes}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Interaction details and notes"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetInteractionForm}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Interaction
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}

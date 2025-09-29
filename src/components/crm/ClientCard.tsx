@@ -1,9 +1,5 @@
 import React from 'react';
-import { User, Mail, Phone, MapPin, DollarSign, Calendar, Edit, Trash2, Star, TrendingUp, Clock, MessageCircle, CreditCard } from 'lucide-react';
-
-export interface Client {
-  id: string;
-  first_name: string;
+import { User, Mail, Phone, MapPin, DollarSign, Calendar, CreditCard as Edit, Trash2, Star, TrendingUp, Clock, MessageCircle, CreditCard } from 'lucide-react'ame: string;
   last_name: string;
   email?: string;
   phone?: string;
@@ -23,23 +19,8 @@ export interface Client {
   updated_at: string;
 }
 
-export interface ClientGrade {
-  id: string;
-  client_id: string;
-  overall_score: number;
-  financial_score: number;
-  motivation_score: number;
-  timeline_score: number;
-  communication_score: number;
-  ai_analysis: string;
-  grade_letter: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface ClientCardProps {
   client: Client;
-  grade?: ClientGrade;
   onEdit: (client: Client) => void;
   onDelete: (id: string) => void;
 }
@@ -76,27 +57,7 @@ const getTypeColor = (type: string) => {
   }
 };
 
-const getGradeColor = (gradeLetter: string) => {
-  if (gradeLetter.startsWith('A')) {
-    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-  } else if (gradeLetter.startsWith('B')) {
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-  } else if (gradeLetter.startsWith('C')) {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-  } else if (gradeLetter.startsWith('D')) {
-    return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-  } else {
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-  }
-};
-
-const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-green-600 dark:text-green-400';
-  if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-red-600 dark:text-red-400';
-};
-
-export function ClientCard({ client, grade, onEdit, onDelete }: ClientCardProps) {
+export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
   const formatBudget = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
@@ -118,16 +79,9 @@ export function ClientCard({ client, grade, onEdit, onDelete }: ClientCardProps)
             <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {client.first_name} {client.last_name}
-              </h3>
-              {grade && (
-                <span className={`inline-block px-2 py-1 text-xs font-bold rounded-full ${getGradeColor(grade.grade_letter)}`}>
-                  {grade.grade_letter}
-                </span>
-              )}
-            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              {client.first_name} {client.last_name}
+            </h3>
             <div className="flex items-center gap-2 mt-1">
               <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(client.client_type)}`}>
                 {client.client_type}
@@ -155,54 +109,6 @@ export function ClientCard({ client, grade, onEdit, onDelete }: ClientCardProps)
           </button>
         </div>
       </div>
-
-      {grade && (
-        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Star className="w-4 h-4 text-yellow-500" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              AI Grade: {grade.overall_score}/100
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1">
-              <CreditCard className="w-3 h-3 text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Financial:</span>
-              <span className={`font-medium ${getScoreColor(grade.financial_score)}`}>
-                {grade.financial_score}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Motivation:</span>
-              <span className={`font-medium ${getScoreColor(grade.motivation_score)}`}>
-                {grade.motivation_score}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3 text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Timeline:</span>
-              <span className={`font-medium ${getScoreColor(grade.timeline_score)}`}>
-                {grade.timeline_score}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="w-3 h-3 text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Communication:</span>
-              <span className={`font-medium ${getScoreColor(grade.communication_score)}`}>
-                {grade.communication_score}
-              </span>
-            </div>
-          </div>
-          {grade.ai_analysis && (
-            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                {grade.ai_analysis}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="space-y-2">
         {client.email && (
