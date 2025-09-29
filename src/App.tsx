@@ -225,7 +225,7 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar 
@@ -252,9 +252,6 @@ export default function App() {
                   )}
                   {view === 'prompts' && (
                     <Prompts onSignOut={handleSignOut} currentView={view} />
-                  )}
-                  {view === 'crm' && (
-                    <CRM onSignOut={handleSignOut} currentView={view} />
                   )}
                 </div>
               </div>
