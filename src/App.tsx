@@ -235,7 +235,6 @@ export default function App() {
                     onEmailsClick={() => setView('emails')}
                     onAddressesClick={() => setView('addresses')}
                     onPromptsClick={() => setView('prompts')}
-                    onCRMClick={() => setView('crm')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
@@ -253,6 +252,9 @@ export default function App() {
                   )}
                   {view === 'prompts' && (
                     <Prompts onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'crm' && (
+                    <CRM onSignOut={handleSignOut} currentView={view} />
                   )}
                 </div>
               </div>
