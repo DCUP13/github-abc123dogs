@@ -22,6 +22,22 @@ interface Interaction {
 
 const clientTypes = [
   { value: 'buyer', label: 'Buyer', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' },
+];
+
+const clientStatuses = [
+  { value: 'lead', label: 'Lead', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+];
+
+const interactionTypes = [
+  { value: 'call', label: 'Call', icon: Phone },
+];
+
+const propertyTypes = [
+  'Single Family Home',
+  'Condo',
+  'Townhouse',
+];
+
 export function CRM({ onSignOut, currentView }: CRMProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
@@ -333,6 +349,19 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
@@ -357,7 +386,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 onClick={() => setShowClientForm(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                <UserPlus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4 mr-2" />
                 Add Client
               </button>
             </div>
@@ -413,7 +442,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  <ClientCard
+                  {filteredClients.map((client) => {
                     const typeInfo = getClientTypeInfo(client.client_type);
                     const statusInfo = getClientStatusInfo(client.status);
 
@@ -440,7 +469,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
                               {client.email && (
                                 <div className="flex items-center gap-2">
-                                  <Mail className="w-4 h-4 text-gray-400" />
+                                  <MessageSquare className="w-4 h-4 text-gray-400" />
                                   {client.email}
                                 </div>
                               )}
@@ -544,7 +573,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <div className="space-y-4">
                     {selectedClient.email && (
                       <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-gray-400" />
+                        <MessageSquare className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{selectedClient.email}</span>
                       </div>
                     )}
@@ -765,11 +794,120 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Phone
                     </label>
-                    client={client}
-                    onEdit={setEditingClient}
-                    onDelete={handleDeleteClient}
+                    <input
+                      type="tel"
+                      value={clientForm.phone}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    value={clientForm.address}
+                    onChange={(e) => setClientForm(prev => ({ ...prev, address: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
-                )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={clientForm.city}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, city: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      value={clientForm.state}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, state: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      ZIP Code
+                    </label>
+                    <input
+                      type="text"
+                      value={clientForm.zip_code}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, zip_code: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Client Type
+                    </label>
+                    <select
+                      value={clientForm.client_type}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, client_type: e.target.value as any }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {clientTypes.map(type => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={clientForm.status}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, status: e.target.value as any }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {clientStatuses.map(status => (
+                        <option key={status.value} value={status.value}>{status.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Budget Min
+                    </label>
+                    <input
+                      type="number"
+                      value={clientForm.budget_min}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, budget_min: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Minimum budget"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Budget Max
+                    </label>
+                    <input
+                      type="number"
+                      value={clientForm.budget_max}
+                      onChange={(e) => setClientForm(prev => ({ ...prev, budget_max: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      placeholder="Maximum budget"
+                    />
+                  </div>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
