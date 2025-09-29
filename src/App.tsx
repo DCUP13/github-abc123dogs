@@ -10,6 +10,7 @@ import { Addresses } from './components/Emails';
 import { EmailsInbox } from './components/EmailsInbox';
 import { Prompts } from './components/Prompts';
 import { CRM } from './components/CRM';
+import { CRM } from './components/CRM';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
@@ -235,6 +236,7 @@ export default function App() {
                     onEmailsClick={() => setView('emails')}
                     onAddressesClick={() => setView('addresses')}
                     onPromptsClick={() => setView('prompts')}
+                    onCRMClick={() => setView('crm')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
@@ -252,6 +254,9 @@ export default function App() {
                   )}
                   {view === 'prompts' && (
                     <Prompts onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'crm' && (
+                    <CRM onSignOut={handleSignOut} currentView={view} />
                   )}
                 </div>
               </div>
