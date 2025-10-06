@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
     // Insert the grading result into the database
     const { data: insertedGrade, error: insertError } = await supabase
       .from('client_grades')
-      .insert({
+      .upsert({
         client_id,
         user_id,
         overall_score: gradingResult.overall_score,
@@ -203,6 +203,8 @@ Deno.serve(async (req) => {
         grade_letter: gradingResult.grade_letter,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'client_id'
       })
       .select()
       .single();
