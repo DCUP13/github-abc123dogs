@@ -426,102 +426,34 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </select>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-              {filteredClients.length === 0 ? (
+            {filteredClients.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     {clients.length === 0 ? 'No clients yet' : 'No clients found'}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400">
-                    {clients.length === 0 
+                    {clients.length === 0
                       ? 'Add your first client to get started'
                       : 'Try adjusting your search or filters'
                     }
                   </p>
                 </div>
-              ) : (
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredClients.map((client) => {
-                    const typeInfo = getClientTypeInfo(client.client_type);
-                    const statusInfo = getClientStatusInfo(client.status);
-
-                    return (
-                      <div
-                        key={client.id}
-                        onClick={() => setSelectedClient(client)}
-                        className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                {client.first_name} {client.last_name}
-                              </h3>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeInfo.color}`}>
-                                {typeInfo.label}
-                              </span>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
-                              {client.email && (
-                                <div className="flex items-center gap-2">
-                                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                                  {client.email}
-                                </div>
-                              )}
-                              {client.phone && (
-                                <div className="flex items-center gap-2">
-                                  <Phone className="w-4 h-4 text-gray-400" />
-                                  {client.phone}
-                                </div>
-                              )}
-                              {(client.city || client.state) && (
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-4 h-4 text-gray-400" />
-                                  {[client.city, client.state].filter(Boolean).join(', ')}
-                                </div>
-                              )}
-                            </div>
-
-                            {(client.budget_min || client.budget_max) && (
-                              <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                <DollarSign className="w-4 h-4 text-gray-400" />
-                                Budget: {client.budget_min ? formatCurrency(client.budget_min) : 'No min'} - {client.budget_max ? formatCurrency(client.budget_max) : 'No max'}
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditClient(client);
-                              }}
-                              className="p-2 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClient(client.id);
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredClients.map((client) => (
+                  <div key={client.id} onClick={() => setSelectedClient(client)} className="cursor-pointer">
+                    <ClientCard
+                      client={client}
+                      onEdit={handleEditClient}
+                      onDelete={handleDeleteClient}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div>
