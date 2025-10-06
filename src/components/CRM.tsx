@@ -1,7 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Filter, Phone, Mail, MapPin, DollarSign, Calendar, Building, User, CreditCard as Edit, Trash2, X, Save, MessageSquare } from 'lucide-react';
+import { Users, Plus, Search, Filter, Phone, Mail, MapPin, DollarSign, Calendar, Building, User, CreditCard as Edit, Trash2, X, Save, MessageSquare, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { ClientCard, type Client } from './crm/ClientCard';
+
+export interface Client {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  client_type: 'buyer' | 'seller' | 'renter' | 'landlord';
+  status: 'lead' | 'prospect' | 'active' | 'closed' | 'inactive';
+  budget_min?: number;
+  budget_max?: number;
+  preferred_areas?: string[];
+  property_type?: string;
+  notes?: string;
+  source?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ClientGrade {
+  id: string;
+  client_id: string;
+  user_id: string;
+  overall_score: number;
+  financial_score: number;
+  motivation_score: number;
+  timeline_score: number;
+  communication_score: number;
+  ai_analysis: string;
+  grade_letter: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface CRMProps {
   onSignOut: () => void;
@@ -38,10 +75,29 @@ const propertyTypes = [
   'Townhouse',
 ];
 
+const getGradeColor = (grade: string) => {
+  switch (grade) {
+    case 'A':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    case 'B':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+    case 'C':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    case 'D':
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+    case 'F':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+  }
+};
+
 export function CRM({ onSignOut, currentView }: CRMProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClientGrade, setSelectedClientGrade] = useState<ClientGrade | null>(null);
+  const [clientGrades, setClientGrades] = useState<Record<string, ClientGrade>>({});
   const [showClientForm, setShowClientForm] = useState(false);
   const [showInteractionForm, setShowInteractionForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -86,6 +142,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   useEffect(() => {
     if (selectedClient) {
       fetchInteractions(selectedClient.id);
+      fetchClientGrade(selectedClient.id);
     }
   }, [selectedClient]);
 
@@ -102,10 +159,56 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
       if (error) throw error;
       setClients(data || []);
+
+      if (data && data.length > 0) {
+        await fetchAllClientGrades(data.map(c => c.id));
+      }
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAllClientGrades = async (clientIds: string[]) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('client_grades')
+        .select('*')
+        .in('client_id', clientIds)
+        .eq('user_id', user.data.user.id);
+
+      if (error) throw error;
+
+      const gradesMap: Record<string, ClientGrade> = {};
+      data?.forEach(grade => {
+        gradesMap[grade.client_id] = grade;
+      });
+      setClientGrades(gradesMap);
+    } catch (error) {
+      console.error('Error fetching client grades:', error);
+    }
+  };
+
+  const fetchClientGrade = async (clientId: string) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('client_grades')
+        .select('*')
+        .eq('client_id', clientId)
+        .eq('user_id', user.data.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setSelectedClientGrade(data);
+    } catch (error) {
+      console.error('Error fetching client grade:', error);
     }
   };
 
@@ -426,8 +529,8 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </select>
             </div>
 
-            {filteredClients.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+              {filteredClients.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -440,20 +543,95 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     }
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredClients.map((client) => (
-                  <div key={client.id} onClick={() => setSelectedClient(client)} className="cursor-pointer">
-                    <ClientCard
-                      client={client}
-                      onEdit={handleEditClient}
-                      onDelete={handleDeleteClient}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+              ) : (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredClients.map((client) => {
+                    const typeInfo = getClientTypeInfo(client.client_type);
+                    const statusInfo = getClientStatusInfo(client.status);
+                    const grade = clientGrades[client.id];
+
+                    return (
+                      <div
+                        key={client.id}
+                        onClick={() => setSelectedClient(client)}
+                        className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                {client.first_name} {client.last_name}
+                              </h3>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeInfo.color}`}>
+                                {typeInfo.label}
+                              </span>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.color}`}>
+                                {statusInfo.label}
+                              </span>
+                              {grade && (
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${getGradeColor(grade.grade_letter)}`}>
+                                  <Star className="w-3 h-3" />
+                                  {grade.grade_letter} ({grade.overall_score})
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
+                              {client.email && (
+                                <div className="flex items-center gap-2">
+                                  <MessageSquare className="w-4 h-4 text-gray-400" />
+                                  {client.email}
+                                </div>
+                              )}
+                              {client.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-gray-400" />
+                                  {client.phone}
+                                </div>
+                              )}
+                              {(client.city || client.state) && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="w-4 h-4 text-gray-400" />
+                                  {[client.city, client.state].filter(Boolean).join(', ')}
+                                </div>
+                              )}
+                            </div>
+
+                            {(client.budget_min || client.budget_max) && (
+                              <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                <DollarSign className="w-4 h-4 text-gray-400" />
+                                Budget: {client.budget_min ? formatCurrency(client.budget_min) : 'No min'} - {client.budget_max ? formatCurrency(client.budget_max) : 'No max'}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditClient(client);
+                              }}
+                              className="p-2 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClient(client.id);
+                              }}
+                              className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div>
@@ -578,6 +756,75 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     )}
                   </div>
                 </div>
+
+                {selectedClientGrade && (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">Client Grade</h2>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-3 py-1 text-lg font-bold rounded-lg ${getGradeColor(selectedClientGrade.grade_letter)}`}>
+                          {selectedClientGrade.grade_letter}
+                        </span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {selectedClientGrade.overall_score}/100
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Financial</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.financial_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Motivation</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.motivation_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Timeline</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.timeline_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Communication</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.communication_score}/100</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedClientGrade.ai_analysis && (
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <div className="flex items-start gap-2">
+                          <Star className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">AI Analysis</div>
+                            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">{selectedClientGrade.ai_analysis}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Graded {new Date(selectedClientGrade.created_at).toLocaleDateString()}</span>
+                      {selectedClientGrade.updated_at !== selectedClientGrade.created_at && (
+                        <span>Updated {new Date(selectedClientGrade.updated_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="lg:col-span-2">
