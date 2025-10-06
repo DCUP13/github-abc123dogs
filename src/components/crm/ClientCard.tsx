@@ -106,13 +106,20 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
   const fetchClientGrade = async () => {
     setLoadingGrade(true);
     try {
+      console.log('Fetching grade for client:', client.id);
       const { data, error } = await supabase
         .from('client_grades')
         .select('*')
         .eq('client_id', client.id)
         .maybeSingle();
 
-      if (error) throw error;
+      console.log('Client grade data:', data);
+      console.log('Client grade error:', error);
+
+      if (error) {
+        console.error('Supabase error fetching client grade:', error);
+        throw error;
+      }
       setClientGrade(data);
     } catch (error) {
       console.error('Error fetching client grade:', error);
