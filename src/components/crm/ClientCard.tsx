@@ -1,5 +1,11 @@
-import React from 'react';
-import { User, Mail, Phone, MapPin, DollarSign, Calendar, CreditCard as Edit, Trash2, Star, TrendingUp, Clock, MessageCircle, CreditCard } from 'lucide-react'ame: string;
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, MapPin, DollarSign, Calendar, CreditCard as Edit, Trash2, Star, TrendingUp, Clock, MessageCircle, CreditCard } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+interface Client {
+  id: string;
+  user_id: string;
+  first_name: string;
   last_name: string;
   email?: string;
   phone?: string;
@@ -15,6 +21,21 @@ import { User, Mail, Phone, MapPin, DollarSign, Calendar, CreditCard as Edit, Tr
   property_type?: string;
   notes?: string;
   source?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ClientGrade {
+  id: string;
+  client_id: string;
+  user_id: string;
+  overall_score: number;
+  financial_score: number;
+  motivation_score: number;
+  timeline_score: number;
+  communication_score: number;
+  ai_analysis: string;
+  grade_letter: string;
   created_at: string;
   updated_at: string;
 }
@@ -57,7 +78,49 @@ const getTypeColor = (type: string) => {
   }
 };
 
+const getGradeColor = (grade: string) => {
+  switch (grade) {
+    case 'A':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    case 'B':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+    case 'C':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+    case 'D':
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+    case 'F':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+  }
+};
+
 export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
+  const [clientGrade, setClientGrade] = useState<ClientGrade | null>(null);
+  const [loadingGrade, setLoadingGrade] = useState(false);
+
+  useEffect(() => {
+    fetchClientGrade();
+  }, [client.id]);
+
+  const fetchClientGrade = async () => {
+    setLoadingGrade(true);
+    try {
+      const { data, error } = await supabase
+        .from('client_grades')
+        .select('*')
+        .eq('client_id', client.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setClientGrade(data);
+    } catch (error) {
+      console.error('Error fetching client grade:', error);
+    } finally {
+      setLoadingGrade(false);
+    }
+  };
+
   const formatBudget = (min?: number, max?: number) => {
     if (!min && !max) return null;
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
@@ -178,6 +241,75 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
           </div>
         )}
       </div>
+
+      {clientGrade && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Client Grade</h4>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-3 py-1 text-lg font-bold rounded-lg ${getGradeColor(clientGrade.grade_letter)}`}>
+                {clientGrade.grade_letter}
+              </span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                {clientGrade.overall_score}/100
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Financial</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">{clientGrade.financial_score}/100</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Motivation</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">{clientGrade.motivation_score}/100</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Timeline</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">{clientGrade.timeline_score}/100</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <MessageCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Communication</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">{clientGrade.communication_score}/100</div>
+              </div>
+            </div>
+          </div>
+
+          {clientGrade.ai_analysis && (
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+              <div className="flex items-start gap-2">
+                <Star className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="text-xs font-medium text-blue-900 dark:text-blue-300 mb-1">AI Analysis</div>
+                  <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">{clientGrade.ai_analysis}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>Graded {new Date(clientGrade.created_at).toLocaleDateString()}</span>
+            {clientGrade.updated_at !== clientGrade.created_at && (
+              <span>Updated {new Date(clientGrade.updated_at).toLocaleDateString()}</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
