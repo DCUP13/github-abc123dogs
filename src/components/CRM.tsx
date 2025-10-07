@@ -757,77 +757,9 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 </div>
 
-                {selectedClientGrade && (
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">Client Grade</h2>
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-3 py-1 text-lg font-bold rounded-lg ${getGradeColor(selectedClientGrade.grade_letter)}`}>
-                          {selectedClientGrade.grade_letter}
-                        </span>
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                          {selectedClientGrade.overall_score}/100
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Financial</div>
-                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.financial_score}/100</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Motivation</div>
-                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.motivation_score}/100</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Timeline</div>
-                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.timeline_score}/100</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                        <div className="flex-1">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Communication</div>
-                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.communication_score}/100</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedClientGrade.ai_analysis && (
-                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
-                        <div className="flex items-start gap-2">
-                          <Star className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">AI Analysis</div>
-                            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">{selectedClientGrade.ai_analysis}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>Graded {new Date(selectedClientGrade.created_at).toLocaleDateString()}</span>
-                      {selectedClientGrade.updated_at !== selectedClientGrade.created_at && (
-                        <span>Updated {new Date(selectedClientGrade.updated_at).toLocaleDateString()}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white">Interaction History</h2>
@@ -908,6 +840,75 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     </div>
                   )}
                 </div>
+
+                {selectedClientGrade && (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">Client Grade</h2>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-3 py-1 text-lg font-bold rounded-lg ${getGradeColor(selectedClientGrade.grade_letter)}`}>
+                          {selectedClientGrade.grade_letter}
+                        </span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {selectedClientGrade.overall_score}/100
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Financial</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.financial_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Motivation</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.motivation_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Timeline</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.timeline_score}/100</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Communication</div>
+                          <div className="text-base font-semibold text-gray-900 dark:text-white">{selectedClientGrade.communication_score}/100</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedClientGrade.ai_analysis && (
+                      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                        <div className="flex items-start gap-2">
+                          <Star className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <div className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-1">AI Analysis</div>
+                            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">{selectedClientGrade.ai_analysis}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Graded {new Date(selectedClientGrade.created_at).toLocaleDateString()}</span>
+                      {selectedClientGrade.updated_at !== selectedClientGrade.created_at && (
+                        <span>Updated {new Date(selectedClientGrade.updated_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
