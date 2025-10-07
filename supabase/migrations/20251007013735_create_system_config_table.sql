@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS system_config (
 -- Insert Supabase configuration
 INSERT INTO system_config (key, value)
 VALUES 
-  ('supabase_url', 'https://0ec90b57d6e95fcbda19832f.supabase.co'),
-  ('supabase_service_role_key', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODg4MTU3NCwiZXhwIjoxNzU4ODgxNTc0fQ.Qnl2vFEXs2OWP7hgCYDqMu7cxYk5VUWBVP_yjpJmqsY')
+  ('supabase_url', ''),
+  ('supabase_service_role_key', '')
 ON CONFLICT (key) DO UPDATE
 SET value = EXCLUDED.value,
     updated_at = now();
