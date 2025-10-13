@@ -800,6 +800,9 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
           onSend={() => {
             fetchAllEmails();
           }}
+          onDraftSaved={() => {
+            fetchDraftEmails();
+          }}
         />
       )}
     </div>

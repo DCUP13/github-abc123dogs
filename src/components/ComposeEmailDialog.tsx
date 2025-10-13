@@ -7,9 +7,10 @@ import { RichTextEditor, type RichTextEditorRef } from '../features/templates/co
 interface ComposeEmailDialogProps {
   onClose: () => void;
   onSend?: () => void;
+  onDraftSaved?: () => void;
 }
 
-export function ComposeEmailDialog({ onClose, onSend }: ComposeEmailDialogProps) {
+export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEmailDialogProps) {
   const { sesEmails, googleEmails, sesDomains } = useEmails();
   const editorRef = useRef<RichTextEditorRef>(null);
   
@@ -222,6 +223,7 @@ export function ComposeEmailDialog({ onClose, onSend }: ComposeEmailDialogProps)
       if (error) throw error;
 
       alert('Draft saved successfully!');
+      onDraftSaved?.();
       onClose();
 
     } catch (error) {
