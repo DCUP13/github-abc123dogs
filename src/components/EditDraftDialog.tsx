@@ -189,7 +189,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
         throw new Error('User not authenticated');
       }
 
-      const { error: outboxError } = await supabase
+      const { data: outboxData, error: outboxError } = await supabase
         .from('email_outbox')
         .insert({
           user_id: user.data.user.id,
@@ -198,9 +198,36 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
           subject: subject.trim() || '(No Subject)',
           body: body.trim(),
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
       if (outboxError) throw outboxError;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ emailId: outboxData.id })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send email');
+      }
+
+      const result = await response.json();
+      console.log('Email sending result:', result);
 
       const { error: deleteError } = await supabase
         .from('email_drafts')
@@ -209,7 +236,12 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
 
       if (deleteError) throw deleteError;
 
-      alert('Draft moved to outbox successfully!');
+      if (result.results?.[0]?.status === 'sent') {
+        alert('Email sent successfully!');
+      } else {
+        alert(`Email sending failed. Check the outbox for details.`);
+      }
+
       onDraftSent?.();
       onClose();
 
