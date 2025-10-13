@@ -4,6 +4,7 @@ import { GeneralTab } from './settings/GeneralTab';
 import { AmazonTab } from './settings/AmazonTab';
 import { GoogleTab } from './settings/GoogleTab';
 import { RapidAPITab } from './settings/RapidAPITab';
+import { AutoresponderTab } from './settings/AutoresponderTab';
 import type { EmailSettings, GeneralSettings } from './settings/types';
 import { supabase } from '../lib/supabase';
 
@@ -12,7 +13,7 @@ interface SettingsProps {
   currentView: string;
 }
 
-type SettingsTab = 'general' | 'amazon' | 'google' | 'rapid-api';
+type SettingsTab = 'general' | 'amazon' | 'google' | 'rapid-api' | 'autoresponder';
 
 export function Settings({ onSignOut, currentView }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
@@ -161,7 +162,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
     { id: 'general', label: 'General', icon: Server },
     { id: 'amazon', label: 'Amazon SES', icon: Server },
     { id: 'google', label: 'Google SMTP', icon: Mail },
-    { id: 'rapid-api', label: 'Rapid API', icon: Server }
+    { id: 'rapid-api', label: 'Rapid API', icon: Server },
+    { id: 'autoresponder', label: 'Autoresponder', icon: Mail }
   ];
 
   if (isLoading) {
@@ -218,6 +220,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
             {activeTab === 'google' && <GoogleTab />}
 
             {activeTab === 'rapid-api' && <RapidAPITab />}
+
+            {activeTab === 'autoresponder' && <AutoresponderTab />}
           </div>
         </div>
 

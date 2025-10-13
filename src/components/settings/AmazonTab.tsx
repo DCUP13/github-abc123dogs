@@ -30,7 +30,6 @@ export function AmazonTab({
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [domainError, setDomainError] = useState('');
-  const [domainSettings, setDomainSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
 
   useEffect(() => {
     fetchSESSettings();
@@ -73,23 +72,14 @@ export function AmazonTab({
 
       const { data, error } = await supabase
         .from('amazon_ses_domains')
-        .select('domain, autoresponder_enabled')
+        .select('domain')
         .eq('user_id', user.data.user.id)
         .order('domain', { ascending: true });
 
       if (error) throw error;
-      
+
       const domainsData = data || [];
       setDomains(domainsData.map(d => d.domain));
-      
-      const settings = domainsData.reduce((acc, domain) => {
-        acc[domain.domain] = {
-          autoresponderEnabled: domain.autoresponder_enabled || false
-        };
-        return acc;
-      }, {} as Record<string, { autoresponderEnabled: boolean }>);
-      
-      setDomainSettings(settings);
     } catch (error) {
       console.error('Error fetching SES domains:', error);
     }
@@ -237,33 +227,6 @@ export function AmazonTab({
     }
   };
 
-  const handleToggleAutoresponder = async (domain: string, enabled: boolean) => {
-    try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) {
-        throw new Error('User not authenticated');
-      }
-
-      const { error } = await supabase
-        .from('amazon_ses_domains')
-        .update({ 
-          autoresponder_enabled: enabled,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.data.user.id)
-        .eq('domain', domain);
-
-      if (error) throw error;
-
-      setDomainSettings(prev => ({
-        ...prev,
-        [domain]: { autoresponderEnabled: enabled }
-      }));
-    } catch (error) {
-      console.error('Error updating autoresponder setting:', error);
-      alert('Failed to update autoresponder setting. Please try again.');
-    }
-  };
 
   const handleAddSESEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -577,15 +540,6 @@ export function AmazonTab({
                   <span className="text-gray-900 dark:text-white flex-1">{domain}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Autoresponder
-                    </span>
-                    <Toggle
-                      checked={domainSettings[domain]?.autoresponderEnabled || false}
-                      onChange={() => handleToggleAutoresponder(domain, !domainSettings[domain]?.autoresponderEnabled)}
-                    />
-                  </div>
                   <button
                     onClick={() => handleRemoveDomain(domain)}
                     className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
