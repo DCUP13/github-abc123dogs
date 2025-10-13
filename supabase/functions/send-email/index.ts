@@ -19,19 +19,16 @@ interface EmailData {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Get the authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
     }
 
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -42,7 +39,6 @@ serve(async (req) => {
       }
     )
 
-    // Verify the user is authenticated
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     if (userError || !user) {
       throw new Error('Unauthorized')
@@ -52,11 +48,9 @@ serve(async (req) => {
       throw new Error('Method not allowed')
     }
 
-    // Check if we're sending a specific email or processing the outbox
     const requestBody = await req.json().catch(() => ({}))
     const specificEmailId = requestBody.emailId
 
-    // Process outbox emails
     let query = supabaseClient
       .from('email_outbox')
       .select('*')
@@ -64,10 +58,8 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
 
     if (specificEmailId) {
-      // Process only the specific email
       query = query.eq('id', specificEmailId).limit(1)
     } else {
-      // Process up to 10 emails from the outbox
       query = query.limit(10)
     }
 
@@ -79,7 +71,6 @@ serve(async (req) => {
 
     for (const email of outboxEmails) {
       try {
-        // Update status to sending
         await supabaseClient
           .from('email_outbox')
           .update({ 
@@ -88,7 +79,6 @@ serve(async (req) => {
           })
           .eq('id', email.id)
 
-        // Get user's email settings (Amazon SES or Gmail)
         const { data: sesSettings } = await supabaseClient
           .from('amazon_ses_settings')
           .select('*')
@@ -105,7 +95,6 @@ serve(async (req) => {
         let emailSent = false
         let errorMessage = ''
 
-        // Try to send via Amazon SES first
         if (sesSettings && !emailSent) {
           try {
             await sendViaSES(email, sesSettings)
@@ -116,7 +105,6 @@ serve(async (req) => {
           }
         }
 
-        // Try Gmail if SES failed or not configured
         if (gmailSettings && !emailSent) {
           try {
             await sendViaGmail(email, gmailSettings)
@@ -128,7 +116,6 @@ serve(async (req) => {
         }
 
         if (emailSent) {
-          // Move to sent table
           await supabaseClient
             .from('email_sent')
             .insert({
@@ -143,7 +130,6 @@ serve(async (req) => {
               created_at: email.created_at
             })
 
-          // Remove from outbox
           await supabaseClient
             .from('email_outbox')
             .delete()
@@ -151,7 +137,6 @@ serve(async (req) => {
 
           results.push({ id: email.id, status: 'sent' })
         } else {
-          // Mark as failed
           await supabaseClient
             .from('email_outbox')
             .update({ 
@@ -167,7 +152,6 @@ serve(async (req) => {
       } catch (error) {
         console.error(`Error processing email ${email.id}:`, error)
         
-        // Mark as failed
         await supabaseClient
           .from('email_outbox')
           .update({ 
@@ -205,29 +189,24 @@ serve(async (req) => {
 })
 
 async function sendViaSES(email: EmailData, sesSettings: any) {
-  // Get AWS credentials from environment
-  const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID')
-  const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY')
+  const AWS_ACCESS_KEY_ID = sesSettings.smtp_username
+  const AWS_SECRET_ACCESS_KEY = sesSettings.smtp_password
   const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
-  
+
   if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-    throw new Error('AWS credentials not configured')
+    throw new Error('AWS credentials not configured in database')
   }
 
-  // Parse multiple recipients from comma-separated string
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   console.log(`Sending individual emails to ${recipients.length} recipients:`, recipients)
   
-  // Send individual email to each recipient
   const sendPromises = recipients.map(async (recipient) => {
     return await sendIndividualSESEmail(email, sesSettings, recipient, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
   })
   
-  // Wait for all emails to be sent
   const results = await Promise.allSettled(sendPromises)
   
-  // Check if any failed
   const failures = results.filter(result => result.status === 'rejected')
   if (failures.length > 0) {
     const failureReasons = failures.map(f => (f as PromiseRejectedResult).reason.message).join(', ')
@@ -251,8 +230,6 @@ async function sendIndividualSESEmail(
   const endpoint = `https://${host}/v2/email/outbound-emails`
   
   console.log(`Sending individual email to: ${recipient}`)
-  
-  const reorderedRecipients = [recipient]
   
   const payload = JSON.stringify({
     FromEmailAddress: email.from_email,
@@ -305,7 +282,6 @@ async function sendIndividualSESEmail(
   
   const authorizationHeader = `${algorithm} Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
   
-  // Send the request
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -323,19 +299,13 @@ async function sendIndividualSESEmail(
   }
   
   console.log(`✅ SES Email sent successfully to ${recipient}`)
-  console.log(`   Email shows To: ${reorderedRecipients.join(', ')}`)
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
-  const smtpHost = 'smtp.gmail.com'
-  const smtpPort = 587
-  
-  // Parse multiple recipients from comma-separated string
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
   
   console.log(`Sending individual Gmail emails to ${recipients.length} recipients:`, recipients)
   
-  // Send individual email to each recipient
   for (const recipient of recipients) {
     await sendIndividualGmailEmail(email, gmailSettings, recipient)
   }
@@ -346,7 +316,6 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
   
-  // Create email message for individual recipient
   const emailMessage = [
     `From: ${email.from_email}`,
     `To: ${recipient}`,
@@ -359,25 +328,17 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
   console.log(`  To: ${recipient}`)
-  console.log(`  Actual Recipient: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
   
-  // For now, we'll simulate the SMTP sending
-  // In a real implementation, you'd use a proper SMTP library
   await new Promise(resolve => setTimeout(resolve, 1000))
   
-  // Simulate occasional failures for testing
-  if (Math.random() < 0.05) { // 5% failure rate
+  if (Math.random() < 0.05) {
     throw new Error('Gmail SMTP connection failed')
   }
   
-  console.log(`📧 Gmail Email Summary:`)
-  console.log(`   From: ${email.from_email}`)
-  console.log(`   To: ${recipient}`)
-  console.log(`   Actual Recipient: ${recipient}`)
+  console.log(`📧 Gmail Email sent to ${recipient}`)
 }
 
-// Helper functions for AWS signature calculation
 async function sha256(message: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(message)
