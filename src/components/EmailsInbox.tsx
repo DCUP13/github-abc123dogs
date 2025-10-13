@@ -504,6 +504,22 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   </button>
                   <button
                     onClick={() => {
+                      setActiveTab('drafts');
+                      setSelectedEmail(null);
+                    }}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'drafts'
+                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      Drafts ({draftEmails.length})
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
                       setActiveTab('outbox');
                       setSelectedEmail(null);
                     }}
@@ -532,22 +548,6 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4" />
                       Sent ({sentEmails.length})
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveTab('drafts');
-                      setSelectedEmail(null);
-                    }}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === 'drafts'
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      Drafts ({draftEmails.length})
                     </div>
                   </button>
                 </nav>
