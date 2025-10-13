@@ -3,6 +3,7 @@ import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send
 import { supabase } from '../lib/supabase';
 import { ReplyDialog } from './ReplyDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
+import { EditDraftDialog } from './EditDraftDialog';
 import { useEmails } from '../contexts/EmailContext';
 
 interface EmailsInboxProps {
@@ -82,6 +83,8 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [isProcessingEmails, setIsProcessingEmails] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [isReplyAll, setIsReplyAll] = useState(false);
+  const [showEditDraftDialog, setShowEditDraftDialog] = useState(false);
+  const [selectedDraft, setSelectedDraft] = useState<DraftEmail | null>(null);
 
   useEffect(() => {
     fetchAllEmails();
@@ -586,7 +589,14 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   {filteredEmails.map((email) => (
                     <div
                       key={email.id}
-                      onClick={() => setSelectedEmail(email)}
+                      onClick={() => {
+                        if (activeTab === 'drafts') {
+                          setSelectedDraft(email as DraftEmail);
+                          setShowEditDraftDialog(true);
+                        } else {
+                          setSelectedEmail(email);
+                        }
+                      }}
                       className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                     >
                       <div className="flex items-start justify-between">
@@ -805,6 +815,23 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
           }}
           onDraftSaved={() => {
             fetchDraftEmails();
+          }}
+        />
+      )}
+
+      {showEditDraftDialog && selectedDraft && (
+        <EditDraftDialog
+          draft={selectedDraft}
+          onClose={() => {
+            setShowEditDraftDialog(false);
+            setSelectedDraft(null);
+          }}
+          onDraftUpdated={() => {
+            fetchDraftEmails();
+          }}
+          onDraftSent={() => {
+            fetchDraftEmails();
+            fetchOutboxEmails();
           }}
         />
       )}
