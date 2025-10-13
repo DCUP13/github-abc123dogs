@@ -711,14 +711,16 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-gray-400">From:</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {activeTab === 'inbox' ? (selectedEmail as Email).sender : 
+                      {activeTab === 'inbox' ? (selectedEmail as Email).sender :
+                       activeTab === 'drafts' ? (selectedEmail as DraftEmail).sender :
                        'from_email' in selectedEmail ? (selectedEmail as any).from_email : 'Unknown'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-gray-400">To:</span>
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {activeTab === 'inbox' ? formatReceiverList((selectedEmail as Email).receiver) : 
+                      {activeTab === 'inbox' ? formatReceiverList((selectedEmail as Email).receiver) :
+                       activeTab === 'drafts' ? formatReceiverList((selectedEmail as DraftEmail).receiver) :
                        'to_email' in selectedEmail ? (selectedEmail as any).to_email : 'Unknown'}
                     </span>
                   </div>
@@ -737,9 +739,10 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
 
             <div className="p-6">
               <div className="prose dark:prose-invert max-w-none">
-                <div className="whitespace-pre-wrap text-gray-900 dark:text-white">
-                  {selectedEmail.body || 'No content available'}
-                </div>
+                <div
+                  className="text-gray-900 dark:text-white"
+                  dangerouslySetInnerHTML={{ __html: selectedEmail.body || 'No content available' }}
+                />
               </div>
 
               {activeTab === 'inbox' && hasAttachments((selectedEmail as Email).attachments) && (
