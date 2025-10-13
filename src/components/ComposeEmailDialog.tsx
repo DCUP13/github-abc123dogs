@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Send, Plus } from 'lucide-react';
+import { X, Send, Plus, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useEmails } from '../contexts/EmailContext';
 import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
@@ -19,6 +19,7 @@ export function ComposeEmailDialog({ onClose, onSend }: ComposeEmailDialogProps)
   const [newToEmail, setNewToEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [customFromEmail, setCustomFromEmail] = useState('');
   const [showCustomFrom, setShowCustomFrom] = useState(false);
   const [toEmailError, setToEmailError] = useState('');
@@ -182,6 +183,52 @@ export function ComposeEmailDialog({ onClose, onSend }: ComposeEmailDialogProps)
       alert(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    const body = editorRef.current?.getContent() || '';
+    const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
+
+    if (!finalFromEmail) {
+      alert('Please select a sender email.');
+      return;
+    }
+
+    if (showCustomFrom && !customFromEmail.includes('@')) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSavingDraft(true);
+
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('email_drafts')
+        .insert({
+          user_id: user.data.user.id,
+          sender: finalFromEmail,
+          receiver: toEmails,
+          subject: subject.trim() || '',
+          body: body.trim(),
+          attachments: null
+        });
+
+      if (error) throw error;
+
+      alert('Draft saved successfully!');
+      onClose();
+
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSavingDraft(false);
     }
   };
 
@@ -383,11 +430,33 @@ export function ComposeEmailDialog({ onClose, onSend }: ComposeEmailDialogProps)
                 Cancel
               </button>
               <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={isSavingDraft || isSending}
+                className={`inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm ${
+                  isSavingDraft || isSending
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-wait'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500`}
+              >
+                {isSavingDraft ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Draft
+                  </>
+                )}
+              </button>
+              <button
                 type="submit"
-                disabled={isSending}
+                disabled={isSending || isSavingDraft}
                 className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
-                  isSending 
-                    ? 'bg-indigo-400 cursor-wait' 
+                  isSending || isSavingDraft
+                    ? 'bg-indigo-400 cursor-wait'
                     : 'bg-indigo-600 hover:bg-indigo-700'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
               >
