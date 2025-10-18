@@ -70,7 +70,8 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) {
-        throw new Error('User not authenticated');
+        setIsLoading(false);
+        return;
       }
 
       const { data, error } = await supabase
@@ -79,7 +80,11 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
         .eq('user_id', user.data.user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching settings:', error);
+        setIsLoading(false);
+        return;
+      }
 
       if (data) {
         setSettings({

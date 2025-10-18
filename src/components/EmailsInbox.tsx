@@ -118,39 +118,59 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   };
 
   const fetchInboxEmails = async () => {
-    const { data, error } = await supabase
-      .from('emails')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    setEmails(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('emails')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setEmails(data || []);
+    } catch (error) {
+      console.error('Error fetching inbox emails:', error);
+      setEmails([]);
+    }
   };
 
   const fetchOutboxEmails = async () => {
-    const { data, error } = await supabase
-      .from('email_outbox')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    setOutboxEmails(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('email_outbox')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setOutboxEmails(data || []);
+    } catch (error) {
+      console.error('Error fetching outbox emails:', error);
+      setOutboxEmails([]);
+    }
   };
 
   const fetchSentEmails = async () => {
-    const { data, error } = await supabase
-      .from('email_sent')
-      .select('*')
-      .order('sent_at', { ascending: false });
-    if (error) throw error;
-    setSentEmails(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('email_sent')
+        .select('*')
+        .order('sent_at', { ascending: false });
+      if (error) throw error;
+      setSentEmails(data || []);
+    } catch (error) {
+      console.error('Error fetching sent emails:', error);
+      setSentEmails([]);
+    }
   };
 
   const fetchDraftEmails = async () => {
-    const { data, error } = await supabase
-      .from('email_drafts')
-      .select('*')
-      .order('updated_at', { ascending: false });
-    if (error) throw error;
-    setDraftEmails(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('email_drafts')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      setDraftEmails(data || []);
+    } catch (error) {
+      console.error('Error fetching draft emails:', error);
+      setDraftEmails([]);
+    }
   };
 
   const handleSendReply = async (replyData: {

@@ -149,7 +149,10 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const fetchClients = async () => {
     try {
       const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+      if (!user.data.user) {
+        setIsLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('clients')
@@ -157,7 +160,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         .eq('user_id', user.data.user.id)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching clients:', error);
+        setClients([]);
+        setIsLoading(false);
+        return;
+      }
+
       setClients(data || []);
 
       if (data && data.length > 0) {
@@ -165,6 +174,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
+      setClients([]);
     } finally {
       setIsLoading(false);
     }

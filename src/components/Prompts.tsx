@@ -74,7 +74,10 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const fetchPrompts = async () => {
     try {
       const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+      if (!user.data.user) {
+        setIsLoading(false);
+        return;
+      }
 
       const { data: promptsData, error: promptsError } = await supabase
         .from('prompts')
@@ -82,14 +85,21 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         .eq('user_id', user.data.user.id)
         .order('updated_at', { ascending: false });
 
-      if (promptsError) throw promptsError;
+      if (promptsError) {
+        console.error('Error fetching prompts:', promptsError);
+        setPrompts([]);
+        setIsLoading(false);
+        return;
+      }
 
       const { data: domainsData, error: domainsError } = await supabase
         .from('prompt_domains')
         .select('prompt_id, domain')
         .eq('user_id', user.data.user.id);
 
-      if (domainsError) throw domainsError;
+      if (domainsError) {
+        console.error('Error fetching prompt domains:', domainsError);
+      }
 
       const domainsByPrompt = (domainsData || []).reduce((acc, item) => {
         if (!acc[item.prompt_id]) {
@@ -98,15 +108,16 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         acc[item.prompt_id].push(item.domain);
         return acc;
       }, {} as Record<string, string[]>);
-      
+
       const transformedPrompts = promptsData?.map(prompt => ({
         ...prompt,
         domains: domainsByPrompt[prompt.id] || []
       })) || [];
-      
+
       setPrompts(transformedPrompts);
     } catch (error) {
       console.error('Error fetching prompts:', error);
+      setPrompts([]);
     } finally {
       setIsLoading(false);
     }
