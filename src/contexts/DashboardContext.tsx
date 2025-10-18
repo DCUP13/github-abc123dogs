@@ -83,11 +83,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     initializeStats();
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
-        if (session && mounted && event === 'SIGNED_IN') {
-          await fetchStats();
-        } else if (event === 'SIGNED_OUT' && mounted) {
+    const setupAuthListener = async () => {
+      const { data } = await supabase.auth.onAuthStateChange((event, session) => {
+        if (!mounted) return;
+
+        if (session && event === 'SIGNED_IN') {
+          fetchStats();
+        } else if (event === 'SIGNED_OUT') {
           setStats({
             totalEmailsRemaining: 0,
             totalEmailAccounts: 0,
@@ -97,12 +99,14 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
             totalDomains: 0
           });
         }
-      })();
-    }).then(({ data }) => {
+      });
+
       if (mounted) {
         authSubscription = data.subscription;
       }
-    });
+    };
+
+    setupAuthListener();
 
     channelSubscription = supabase.channel('dashboard_stats')
       .on(

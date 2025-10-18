@@ -91,21 +91,25 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     initialize();
 
     // Subscribe to auth changes
-    supabase.auth.onAuthStateChange((event) => {
-      (async () => {
-        if (event === 'SIGNED_IN' && mounted) {
-          await fetchEmails();
-        } else if (event === 'SIGNED_OUT' && mounted) {
+    const setupAuthListener = async () => {
+      const { data } = await supabase.auth.onAuthStateChange((event) => {
+        if (!mounted) return;
+
+        if (event === 'SIGNED_IN') {
+          fetchEmails();
+        } else if (event === 'SIGNED_OUT') {
           setSesEmails([]);
           setGoogleEmails([]);
           setSesDomains([]);
         }
-      })();
-    }).then(({ data }) => {
+      });
+
       if (mounted) {
         authSubscription = data.subscription;
       }
-    });
+    };
+
+    setupAuthListener();
 
     // Subscribe to realtime changes for amazon_ses_emails
     sesSubscription = supabase
