@@ -64,9 +64,23 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetchStats();
+    let mounted = true;
 
-    // Subscribe to changes in dashboard_statistics
+    const initializeStats = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && mounted) {
+        await fetchStats();
+      }
+    };
+
+    initializeStats();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && mounted && event === 'SIGNED_IN') {
+        await fetchStats();
+      }
+    });
+
     const channel = supabase.channel('dashboard_stats')
       .on(
         'postgres_changes',
@@ -76,14 +90,14 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           table: 'dashboard_statistics'
         },
         (payload) => {
-          if (payload.new) {
+          if (payload.new && mounted) {
             setStats({
               totalEmailsRemaining: payload.new.total_emails_remaining ?? 0,
               totalEmailAccounts: payload.new.total_email_accounts ?? 0,
               totalEmailsSentToday: payload.new.total_emails_sent_today ?? 0,
               totalTemplates: payload.new.total_templates ?? 0,
               totalCampaigns: payload.new.total_campaigns ?? 0,
-            totalDomains: payload.new.total_domains ?? 0
+              totalDomains: payload.new.total_domains ?? 0
             });
           }
         }
@@ -91,6 +105,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       .subscribe();
 
     return () => {
+      mounted = false;
+      subscription.unsubscribe();
       channel.unsubscribe();
     };
   }, []);
