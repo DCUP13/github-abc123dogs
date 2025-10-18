@@ -18,8 +18,12 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
   const [sesEmails, setSesEmails] = useState<SESEmail[]>([]);
   const [googleEmails, setGoogleEmails] = useState<GoogleEmail[]>([]);
   const [sesDomains, setSesDomains] = useState<string[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchEmails = async () => {
+    if (isFetching) return;
+
+    setIsFetching(true);
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
@@ -66,52 +70,82 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       setSesDomains(domainsData?.map(d => d.domain) || []);
     } catch (error) {
       console.error('Error fetching emails:', error);
+    } finally {
+      setIsFetching(false);
     }
   };
 
   // Initial fetch
   useEffect(() => {
-    fetchEmails();
+    let mounted = true;
+    let authSubscription: any = null;
+    let sesSubscription: any = null;
+    let googleSubscription: any = null;
+
+    const initialize = async () => {
+      if (mounted) {
+        await fetchEmails();
+      }
+    };
+
+    initialize();
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        fetchEmails();
-      } else if (event === 'SIGNED_OUT') {
-        setSesEmails([]);
-        setGoogleEmails([]);
-        setSesDomains([]);
+    supabase.auth.onAuthStateChange((event) => {
+      (async () => {
+        if (event === 'SIGNED_IN' && mounted) {
+          await fetchEmails();
+        } else if (event === 'SIGNED_OUT' && mounted) {
+          setSesEmails([]);
+          setGoogleEmails([]);
+          setSesDomains([]);
+        }
+      })();
+    }).then(({ data }) => {
+      if (mounted) {
+        authSubscription = data.subscription;
       }
     });
 
     // Subscribe to realtime changes for amazon_ses_emails
-    const sesSubscription = supabase
+    sesSubscription = supabase
       .channel('amazon_ses_emails_changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'amazon_ses_emails'
       }, () => {
-        fetchEmails();
+        if (mounted) {
+          fetchEmails();
+        }
       })
       .subscribe();
 
     // Subscribe to realtime changes for google_smtp_emails
-    const googleSubscription = supabase
+    googleSubscription = supabase
       .channel('google_smtp_emails_changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'google_smtp_emails'
       }, () => {
-        fetchEmails();
+        if (mounted) {
+          fetchEmails();
+        }
       })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
-      sesSubscription.unsubscribe();
-      googleSubscription.unsubscribe();
+      mounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (sesSubscription) {
+        sesSubscription.unsubscribe();
+      }
+      if (googleSubscription) {
+        googleSubscription.unsubscribe();
+      }
     };
   }, []);
 

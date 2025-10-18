@@ -34,8 +34,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     totalCampaigns: 0,
     totalDomains: 0
   });
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchStats = async () => {
+    if (isFetching) return;
+
+    setIsFetching(true);
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
@@ -60,11 +64,15 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching dashboard statistics:', error);
+    } finally {
+      setIsFetching(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
+    let channelSubscription: any = null;
 
     const initializeStats = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -75,13 +83,28 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     initializeStats();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session && mounted && event === 'SIGNED_IN') {
-        await fetchStats();
+    supabase.auth.onAuthStateChange((event, session) => {
+      (async () => {
+        if (session && mounted && event === 'SIGNED_IN') {
+          await fetchStats();
+        } else if (event === 'SIGNED_OUT' && mounted) {
+          setStats({
+            totalEmailsRemaining: 0,
+            totalEmailAccounts: 0,
+            totalEmailsSentToday: 0,
+            totalTemplates: 0,
+            totalCampaigns: 0,
+            totalDomains: 0
+          });
+        }
+      })();
+    }).then(({ data }) => {
+      if (mounted) {
+        authSubscription = data.subscription;
       }
     });
 
-    const channel = supabase.channel('dashboard_stats')
+    channelSubscription = supabase.channel('dashboard_stats')
       .on(
         'postgres_changes',
         {
@@ -106,8 +129,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
-      channel.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+      if (channelSubscription) {
+        channelSubscription.unsubscribe();
+      }
     };
   }, []);
 
