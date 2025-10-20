@@ -129,13 +129,11 @@ Deno.serve(async (req: Request) => {
     const emailData: EmailData = await req.json();
     console.log('Processing email from:', emailData.from);
 
-    // Extract email address from potential "Name <email>" format
     const emailMatch = emailData.from.match(/<(.+)>/) || [null, emailData.from];
     const senderEmail = emailMatch[1].toLowerCase().trim();
 
     console.log('Extracted sender email:', senderEmail);
 
-    // Find client by email
     const { data: clients, error: clientError } = await supabase
       .from('clients')
       .select('*')
@@ -165,11 +163,9 @@ Deno.serve(async (req: Request) => {
     const client = clients[0] as Client;
     console.log('Found client:', client.first_name, client.last_name, '(', client.id, ')');
 
-    // Generate interaction notes using AI
     const notes = await generateInteractionNotes(emailData, client);
     console.log('Generated interaction notes:', notes);
 
-    // Insert interaction record
     const { data: interaction, error: interactionError } = await supabase
       .from('client_interactions')
       .insert({
@@ -192,44 +188,33 @@ Deno.serve(async (req: Request) => {
 
     console.log('Interaction saved successfully:', interaction.id);
 
-    // Call grade-client function to update the client's grade
-    try {
-      await callGradeClientFunction(client.id, client.user_id, client);
-      console.log('Client grade updated successfully');
-    } catch (gradeError) {
-      console.error('Failed to update client grade, but interaction was saved:', gradeError);
-      // Don't fail the whole operation if grading fails
-    }
+    callGradeClientFunction(client.id, client.user_id, client)
+      .then(() => console.log('Client grade updated successfully'))
+      .catch(gradeError => console.error('Failed to update client grade:', gradeError));
 
-    // Track if this email is a reply to a sent email
-    try {
-      const trackReplyUrl = `${supabaseUrl}/functions/v1/track-email-reply`;
-
-      const trackResponse = await fetch(trackReplyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`
-        },
-        body: JSON.stringify({
-          id: emailData.id || crypto.randomUUID(),
-          from: emailData.from,
-          subject: emailData.subject,
-          to: [],
-          received_at: emailData.received_at || new Date().toISOString()
-        })
-      });
-
-      if (trackResponse.ok) {
-        const trackResult = await trackResponse.json();
-        console.log('Reply tracking result:', trackResult);
-      } else {
-        const trackError = await trackResponse.text();
-        console.log('Reply tracking failed (not necessarily an error):', trackError);
-      }
-    } catch (trackError) {
-      console.log('Failed to track reply (continuing anyway):', trackError);
-    }
+    fetch(`${supabaseUrl}/functions/v1/track-email-reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        id: emailData.id || crypto.randomUUID(),
+        from: emailData.from,
+        subject: emailData.subject,
+        to: [],
+        received_at: emailData.received_at || new Date().toISOString()
+      })
+    })
+      .then(async (response) => {
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Reply tracking result:', result);
+        } else {
+          console.log('Reply tracking failed (not necessarily an error)');
+        }
+      })
+      .catch(error => console.log('Failed to track reply:', error));
 
     return new Response(JSON.stringify({
       success: true,
