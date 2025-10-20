@@ -16,6 +16,8 @@ interface EmailData {
   subject: string;
   to: string[];
   received_at: string;
+  inReplyTo?: string;
+  references?: string;
 }
 
 function extractEmailAddress(emailString: string): string {
@@ -48,12 +50,10 @@ Deno.serve(async (req: Request) => {
     const senderEmail = extractEmailAddress(emailData.from);
     console.log('Extracted sender email:', senderEmail);
 
-    // Find all sent emails where we sent TO this sender
-    // and the subject matches (considering Re: prefix)
     const { data: sentEmails, error: sentError } = await supabase
       .from('email_sent')
       .select('*')
-      .ilike('to_email', senderEmail);
+      .ilike('to_email', `%${senderEmail}%`);
 
     if (sentError) {
       console.error('Error querying sent emails:', sentError);
@@ -75,8 +75,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Find the most recent sent email that matches the subject
     let matchedSentEmail = null;
+
     for (const sentEmail of sentEmails) {
       if (isReplySubject(emailData.subject, sentEmail.subject)) {
         if (!matchedSentEmail || new Date(sentEmail.sent_at) > new Date(matchedSentEmail.sent_at)) {
@@ -85,11 +85,25 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // If no subject match, use the most recent sent email to this address
     if (!matchedSentEmail && sentEmails.length > 0) {
-      matchedSentEmail = sentEmails.reduce((latest, current) =>
-        new Date(current.sent_at) > new Date(latest.sent_at) ? current : latest
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const recentEmails = sentEmails.filter(email =>
+        new Date(email.sent_at) > thirtyDaysAgo
       );
+
+      if (recentEmails.length > 0) {
+        matchedSentEmail = recentEmails.reduce((latest, current) =>
+          new Date(current.sent_at) > new Date(latest.sent_at) ? current : latest
+        );
+        console.log('Matched by recency (within 30 days)');
+      } else {
+        matchedSentEmail = sentEmails.reduce((latest, current) =>
+          new Date(current.sent_at) > new Date(latest.sent_at) ? current : latest
+        );
+        console.log('Matched by recency (all time)');
+      }
     }
 
     if (!matchedSentEmail) {
@@ -108,7 +122,6 @@ Deno.serve(async (req: Request) => {
 
     console.log('Matched sent email:', matchedSentEmail.id);
 
-    // Check if this reply has already been recorded
     const { data: existingReply, error: existingError } = await supabase
       .from('email_replies')
       .select('id')
@@ -135,7 +148,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Record the reply
     const { data: reply, error: replyError } = await supabase
       .from('email_replies')
       .insert({

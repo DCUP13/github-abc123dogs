@@ -45,6 +45,7 @@ interface SentEmail {
   created_at: string;
   reply_count?: number;
   last_reply_at?: string;
+  reply_to_id?: string;
 }
 
 interface DraftEmail {
@@ -153,7 +154,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
     try {
       const { data, error } = await supabase
         .from('email_sent')
-        .select('*')
+        .select('id, to_email, from_email, subject, body, sent_at, created_at, reply_count, last_reply_at, reply_to_id')
         .order('sent_at', { ascending: false });
       if (error) throw error;
       setSentEmails(data || []);
@@ -662,6 +663,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                                 <Reply className="w-3 h-3" />
                                 <span className="text-xs font-medium">{(email as Email).user_reply_count}</span>
+                              </div>
+                            )}
+                            {activeTab === 'sent' && (email as SentEmail).reply_to_id && (
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                                <Reply className="w-3 h-3" />
+                                <span className="text-xs font-medium">Reply</span>
                               </div>
                             )}
                             {activeTab === 'sent' && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count > 0 && (
