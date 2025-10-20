@@ -16,6 +16,7 @@ const openai = new OpenAI({
 });
 
 interface EmailData {
+  id?: string;
   from: string;
   subject: string;
   body: string;
@@ -198,6 +199,36 @@ Deno.serve(async (req: Request) => {
     } catch (gradeError) {
       console.error('Failed to update client grade, but interaction was saved:', gradeError);
       // Don't fail the whole operation if grading fails
+    }
+
+    // Track if this email is a reply to a sent email
+    try {
+      const trackReplyUrl = `${supabaseUrl}/functions/v1/track-email-reply`;
+
+      const trackResponse = await fetch(trackReplyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify({
+          id: emailData.id || crypto.randomUUID(),
+          from: emailData.from,
+          subject: emailData.subject,
+          to: [],
+          received_at: emailData.received_at || new Date().toISOString()
+        })
+      });
+
+      if (trackResponse.ok) {
+        const trackResult = await trackResponse.json();
+        console.log('Reply tracking result:', trackResult);
+      } else {
+        const trackError = await trackResponse.text();
+        console.log('Reply tracking failed (not necessarily an error):', trackError);
+      }
+    } catch (trackError) {
+      console.log('Failed to track reply (continuing anyway):', trackError);
     }
 
     return new Response(JSON.stringify({
