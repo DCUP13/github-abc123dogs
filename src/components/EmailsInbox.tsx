@@ -19,6 +19,8 @@ interface Email {
   body: string;
   attachments: any;
   created_at: string;
+  user_reply_count?: number;
+  last_user_reply_at?: string;
 }
 
 interface OutboxEmail {
@@ -123,7 +125,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
     try {
       const { data, error } = await supabase
         .from('emails')
-        .select('*')
+        .select('id, sender, receiver, subject, body, attachments, created_at, user_reply_count, last_user_reply_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setEmails(data || []);
@@ -655,6 +657,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                             )}
                             {(activeTab === 'inbox' || activeTab === 'drafts') && hasAttachments((email as Email | DraftEmail).attachments) && (
                               <Paperclip className="w-4 h-4 text-gray-400" />
+                            )}
+                            {activeTab === 'inbox' && (email as Email).user_reply_count !== undefined && (email as Email).user_reply_count > 0 && (
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                <Reply className="w-3 h-3" />
+                                <span className="text-xs font-medium">{(email as Email).user_reply_count}</span>
+                              </div>
                             )}
                             {activeTab === 'sent' && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count > 0 && (
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
