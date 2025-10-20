@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus } from 'lucide-react';
+import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ReplyDialog } from './ReplyDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
@@ -41,6 +41,8 @@ interface SentEmail {
   body: string;
   sent_at: string;
   created_at: string;
+  reply_count?: number;
+  last_reply_at?: string;
 }
 
 interface DraftEmail {
@@ -654,6 +656,12 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                             {(activeTab === 'inbox' || activeTab === 'drafts') && hasAttachments((email as Email | DraftEmail).attachments) && (
                               <Paperclip className="w-4 h-4 text-gray-400" />
                             )}
+                            {activeTab === 'sent' && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count > 0 && (
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                <MessageSquare className="w-3 h-3" />
+                                <span className="text-xs font-medium">{(email as SentEmail).reply_count}</span>
+                              </div>
+                            )}
                           </div>
                           <div className="mb-1">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -755,6 +763,22 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                     </span>
                   </div>
                 </div>
+
+                {activeTab === 'sent' && 'reply_count' in selectedEmail && (selectedEmail as SentEmail).reply_count > 0 && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-900 dark:text-green-300">
+                        {(selectedEmail as SentEmail).reply_count} {(selectedEmail as SentEmail).reply_count === 1 ? 'Reply' : 'Replies'} Received
+                      </span>
+                      {(selectedEmail as SentEmail).last_reply_at && (
+                        <span className="text-xs text-green-700 dark:text-green-400">
+                          · Last reply: {new Date((selectedEmail as SentEmail).last_reply_at!).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {activeTab === 'inbox' && hasAttachments((selectedEmail as Email).attachments) && (
                   <div className="flex items-center gap-2 text-sm">
