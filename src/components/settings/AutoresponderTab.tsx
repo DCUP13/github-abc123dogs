@@ -6,6 +6,7 @@ import { Mail } from 'lucide-react';
 export function AutoresponderTab() {
   const [domainSettings, setDomainSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
   const [emailSettings, setEmailSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
+  const [clientGradingEnabled, setClientGradingEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export function AutoresponderTab() {
         throw new Error('User not authenticated');
       }
 
-      const [domainsResult, emailsResult] = await Promise.all([
+      const [domainsResult, emailsResult, userSettingsResult] = await Promise.all([
         supabase
           .from('amazon_ses_domains')
           .select('domain, autoresponder_enabled')
@@ -27,11 +28,17 @@ export function AutoresponderTab() {
         supabase
           .from('amazon_ses_emails')
           .select('address, autoresponder_enabled')
+          .eq('user_id', user.data.user.id),
+        supabase
+          .from('user_settings')
+          .select('client_grading_enabled')
           .eq('user_id', user.data.user.id)
+          .maybeSingle()
       ]);
 
       if (domainsResult.error) throw domainsResult.error;
       if (emailsResult.error) throw emailsResult.error;
+      if (userSettingsResult.error) throw userSettingsResult.error;
 
       if (domainsResult.data) {
         const settings = domainsResult.data.reduce((acc, domain) => {
@@ -53,6 +60,10 @@ export function AutoresponderTab() {
         }, {} as Record<string, { autoresponderEnabled: boolean }>);
 
         setEmailSettings(settings);
+      }
+
+      if (userSettingsResult.data) {
+        setClientGradingEnabled(userSettingsResult.data.client_grading_enabled || false);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -117,6 +128,30 @@ export function AutoresponderTab() {
     }
   };
 
+  const handleToggleClientGrading = async (enabled: boolean) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({
+          client_grading_enabled: enabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id);
+
+      if (error) throw error;
+
+      setClientGradingEnabled(enabled);
+    } catch (error) {
+      console.error('Error updating client grading setting:', error);
+      alert('Failed to update client grading setting. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -145,6 +180,25 @@ export function AutoresponderTab() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Enable or disable autoresponder for configured domains and email addresses. When enabled, the system will automatically respond to incoming emails.
         </p>
+      </div>
+
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+              AI Client Grading
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {clientGradingEnabled
+                ? 'Automatically grade clients using AI when they send emails. Disable this to improve performance in high-volume conversations.'
+                : 'AI client grading is disabled. Enable to automatically grade and analyze clients when they send emails.'}
+            </p>
+          </div>
+          <Toggle
+            checked={clientGradingEnabled}
+            onChange={() => handleToggleClientGrading(!clientGradingEnabled)}
+          />
+        </div>
       </div>
 
       {domains.length > 0 && (

@@ -163,6 +163,15 @@ Deno.serve(async (req: Request) => {
     const client = clients[0] as Client;
     console.log('Found client:', client.first_name, client.last_name, '(', client.id, ')');
 
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('client_grading_enabled')
+      .eq('user_id', client.user_id)
+      .maybeSingle();
+
+    const gradingEnabled = userSettings?.client_grading_enabled || false;
+    console.log('Client grading enabled:', gradingEnabled);
+
     const notes = await generateInteractionNotes(emailData, client);
     console.log('Generated interaction notes:', notes);
 
@@ -188,9 +197,13 @@ Deno.serve(async (req: Request) => {
 
     console.log('Interaction saved successfully:', interaction.id);
 
-    callGradeClientFunction(client.id, client.user_id, client)
-      .then(() => console.log('Client grade updated successfully'))
-      .catch(gradeError => console.error('Failed to update client grade:', gradeError));
+    if (gradingEnabled) {
+      callGradeClientFunction(client.id, client.user_id, client)
+        .then(() => console.log('Client grade updated successfully'))
+        .catch(gradeError => console.error('Failed to update client grade:', gradeError));
+    } else {
+      console.log('Client grading is disabled, skipping grade update');
+    }
 
     fetch(`${supabaseUrl}/functions/v1/track-email-reply`, {
       method: 'POST',
