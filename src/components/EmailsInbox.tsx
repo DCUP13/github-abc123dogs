@@ -6,6 +6,49 @@ import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { EditDraftDialog } from './EditDraftDialog';
 import { useEmails } from '../contexts/EmailContext';
 
+function formatPlainTextEmail(text: string): string {
+  if (!text) return '<p style="color: #9CA3AF;">No content available</p>';
+
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
+  if (hasHtmlTags) return text;
+
+  let formatted = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  formatted = formatted.replace(
+    /^(&gt;+\s*)(.*)$/gm,
+    (match, arrows, content) => {
+      const level = arrows.trim().length;
+      const colors = ['#818CF8', '#A78BFA', '#C4B5FD'];
+      const color = colors[Math.min(level - 1, 2)];
+      return `<div style="border-left: 3px solid ${color}; padding: 8px 0 8px 12px; margin: 6px 0; opacity: 0.85;">${content}</div>`;
+    }
+  );
+
+  formatted = formatted.replace(
+    /^(On .+? at .+?, .+ wrote:)$/gm,
+    '<div style="margin: 16px 0 8px 0; padding: 10px 14px; background: rgba(99, 102, 241, 0.12); border-left: 4px solid #818CF8; font-weight: 500; border-radius: 6px;">📧 $1</div>'
+  );
+
+  formatted = formatted.replace(
+    /^(From:|Date:|Subject:|To:)\s*(.*)$/gm,
+    '<div style="margin: 6px 0; padding: 4px 0;"><span style="font-weight: 600; opacity: 0.7; display: inline-block; min-width: 80px;">$1</span> <span style="opacity: 0.9;">$2</span></div>'
+  );
+
+  formatted = formatted.replace(
+    /^[-─]{3,}\s*Original Message\s*[-─]{3,}$/gm,
+    '<div style="margin: 24px 0; padding: 14px; background: rgba(99, 102, 241, 0.08); border-radius: 8px; text-align: center; font-weight: 600; border-top: 2px solid rgba(99, 102, 241, 0.3); border-bottom: 2px solid rgba(99, 102, 241, 0.3);">📧 Original Message</div>'
+  );
+
+  formatted = formatted.replace(/\n\n+/g, '</p><p style="margin: 14px 0; line-height: 1.7;">');
+  formatted = formatted.replace(/\n/g, '<br>');
+  formatted = `<p style="margin: 14px 0; line-height: 1.7;">${formatted}</p>`;
+
+  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.7;">${formatted}</div>`;
+}
+
 interface EmailsInboxProps {
   onSignOut: () => void;
   currentView: string;
@@ -810,7 +853,7 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
               <div className="prose dark:prose-invert max-w-none">
                 <div
                   className="text-gray-900 dark:text-white"
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.body || 'No content available' }}
+                  dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(selectedEmail.body) }}
                 />
               </div>
 
