@@ -12,6 +12,8 @@ function formatPlainTextEmail(text: string): string {
   const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
   if (hasHtmlTags) return text;
 
+  console.log('Formatting plain text email');
+
   const escapeHtml = (str: string) => str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -45,10 +47,11 @@ function formatPlainTextEmail(text: string): string {
       return '<div style="margin: 24px 0; padding: 14px; background: rgba(99, 102, 241, 0.08); border-radius: 8px; text-align: center; font-weight: 600; border-top: 2px solid rgba(99, 102, 241, 0.3); border-bottom: 2px solid rgba(99, 102, 241, 0.3);">📧 Original Message</div>';
     }
 
-    return line === '' ? '<br>' : escapeHtml(line);
+    if (line === '') return '<div style="height: 8px;"></div>';
+    return `<div style="margin: 2px 0;">${escapeHtml(line)}</div>`;
   });
 
-  const formatted = processedLines.join('\n');
+  const formatted = processedLines.join('');
   return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.7;">${formatted}</div>`;
 }
 
