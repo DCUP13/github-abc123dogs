@@ -10,7 +10,12 @@ function formatPlainTextEmail(text: string): string {
   if (!text) return '<p style="color: #9CA3AF;">No content available</p>';
 
   const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
-  if (hasHtmlTags) return text;
+  console.log('Has HTML tags?', hasHtmlTags, 'Text preview:', text.substring(0, 100));
+
+  if (hasHtmlTags) {
+    console.log('Returning original HTML');
+    return text;
+  }
 
   console.log('Formatting plain text email');
 
@@ -28,11 +33,13 @@ function formatPlainTextEmail(text: string): string {
         const content = escapeHtml(match[2]);
         const colors = ['#818CF8', '#A78BFA', '#C4B5FD'];
         const color = colors[Math.min(level - 1, 2)];
+        console.log('Quote line found:', line);
         return `<div style="border-left: 3px solid ${color}; padding: 8px 0 8px 12px; margin: 6px 0; opacity: 0.85; font-style: italic;">${content}</div>`;
       }
     }
 
     if (/^On .+? at .+?, .+? (?:wrote|<[^>]+>):?$/.test(line)) {
+      console.log('Header line found:', line);
       return `<div style="margin: 16px 0 8px 0; padding: 10px 14px; background: rgba(99, 102, 241, 0.12); border-left: 4px solid #818CF8; font-weight: 500; border-radius: 6px;">📧 ${escapeHtml(line)}</div>`;
     }
 
@@ -52,6 +59,7 @@ function formatPlainTextEmail(text: string): string {
   });
 
   const formatted = processedLines.join('');
+  console.log('Formatted output preview:', formatted.substring(0, 200));
   return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.7;">${formatted}</div>`;
 }
 
