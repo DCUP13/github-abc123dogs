@@ -9,7 +9,7 @@ import { useEmails } from '../contexts/EmailContext';
 function formatPlainTextEmail(text: string): string {
   if (!text) return '<p style="color: #9CA3AF;">No content available</p>';
 
-  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
+  const hasHtmlTags = /<(p|div|br|span|html|body|table|tr|td|strong|em|b|i|ul|ol|li|h[1-6])[>\s]/i.test(text);
   console.log('Has HTML tags?', hasHtmlTags, 'Text preview:', text.substring(0, 100));
 
   if (hasHtmlTags) {
