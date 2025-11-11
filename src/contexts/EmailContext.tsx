@@ -81,6 +81,7 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
     let authSubscription: any = null;
     let sesSubscription: any = null;
     let googleSubscription: any = null;
+    let domainsSubscription: any = null;
 
     const initialize = async () => {
       if (mounted) {
@@ -139,6 +140,20 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       })
       .subscribe();
 
+    // Subscribe to realtime changes for amazon_ses_domains
+    domainsSubscription = supabase
+      .channel('amazon_ses_domains_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'amazon_ses_domains'
+      }, () => {
+        if (mounted) {
+          fetchEmails();
+        }
+      })
+      .subscribe();
+
     return () => {
       mounted = false;
       if (authSubscription) {
@@ -149,6 +164,9 @@ export function EmailProvider({ children }: { children: React.ReactNode }) {
       }
       if (googleSubscription) {
         googleSubscription.unsubscribe();
+      }
+      if (domainsSubscription) {
+        domainsSubscription.unsubscribe();
       }
     };
   }, []);
