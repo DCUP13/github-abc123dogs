@@ -188,10 +188,6 @@ export function AmazonTab({
       }
 
       setDomains([...domains, newDomain].sort());
-      setDomainSettings(prev => ({
-        ...prev,
-        [newDomain]: { autoresponderEnabled: false }
-      }));
       setNewDomain('');
       setDomainError('');
     } catch (error) {
@@ -216,11 +212,6 @@ export function AmazonTab({
       if (error) throw error;
 
       setDomains(domains.filter(d => d !== domain));
-      setDomainSettings(prev => {
-        const newSettings = { ...prev };
-        delete newSettings[domain];
-        return newSettings;
-      });
     } catch (error) {
       console.error('Error removing SES domain:', error);
       alert('Failed to remove domain. Please try again.');
