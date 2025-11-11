@@ -45,6 +45,67 @@ Deno.serve(async (req: Request) => {
     const subject = email.subject || 'No subject';
     const body = email.body || '';
     const userId = email.user_id;
+    const receivers = email.receiver || [];
+
+    if (!receivers || receivers.length === 0) {
+      console.log('No receiver addresses found');
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'No receiver addresses'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
+    const receiverEmail = receivers[0];
+    const receiverDomain = receiverEmail.split('@')[1];
+    console.log('Receiver email:', receiverEmail, 'Domain:', receiverDomain);
+
+    const { data: domainData, error: domainError } = await supabase
+      .from('amazon_ses_domains')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('domain', receiverDomain)
+      .eq('autoresponder_enabled', true)
+      .maybeSingle();
+
+    if (domainError || !domainData) {
+      console.log('Autoresponder not enabled for domain:', receiverDomain);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Autoresponder not enabled for this domain'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
+    const { data: prompts, error: promptsError } = await supabase
+      .from('prompt_domains')
+      .select(`
+        prompt_id,
+        prompts (
+          id,
+          title,
+          content
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('domain', receiverDomain);
+
+    if (promptsError) {
+      console.error('Error fetching prompts:', promptsError);
+    }
+
+    const domainPrompts = prompts?.map(p => p.prompts).filter(Boolean) || [];
+    console.log('Found', domainPrompts.length, 'prompts for domain:', receiverDomain);
 
     const { data: autoresponderEmails, error: autoError } = await supabase
       .from('amazon_ses_emails')
@@ -56,7 +117,7 @@ Deno.serve(async (req: Request) => {
       console.log('No autoresponder emails configured for user:', userId);
       return new Response(JSON.stringify({
         success: false,
-        message: 'No autoresponder configured'
+        message: 'No autoresponder email configured'
       }), {
         headers: {
           ...corsHeaders,
@@ -71,7 +132,8 @@ Deno.serve(async (req: Request) => {
 
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
-    const prompt = `Generate a professional, polite automatic reply to this email. The reply should:
+    let systemPrompt = 'You are a professional email assistant that generates brief, polite automatic replies.';
+    let userPrompt = `Generate a professional, polite automatic reply to this email. The reply should:
 1. Acknowledge receipt of their email
 2. Let them know you'll respond soon
 3. Be brief (2-3 sentences)
@@ -82,6 +144,15 @@ Original email body: ${body}
 
 Generate only the body text of the reply, no subject line.`;
 
+    if (domainPrompts.length > 0) {
+      console.log('Using domain-specific prompts');
+      const promptContents = domainPrompts.map((p: any, idx: number) =>
+        `Prompt ${idx + 1} (${p.title}):\n${p.content}`
+      ).join('\n\n');
+
+      userPrompt = `You have the following custom instructions to follow when generating the reply:\n\n${promptContents}\n\nNow, generate a reply to this email following ALL the instructions above:\n\nOriginal email subject: ${subject}\nOriginal email body: ${body}\n\nGenerate only the body text of the reply, no subject line.`;
+    }
+
     let replyBody = 'Thank you for your email. I have received your message and will get back to you shortly.';
 
     try {
@@ -90,14 +161,14 @@ Generate only the body text of the reply, no subject line.`;
         messages: [
           {
             role: 'system',
-            content: 'You are a professional email assistant that generates brief, polite automatic replies.'
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: prompt
+            content: userPrompt
           }
         ],
-        max_tokens: 150,
+        max_tokens: 500,
         temperature: 0.7
       });
 
