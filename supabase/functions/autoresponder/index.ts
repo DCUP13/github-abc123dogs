@@ -107,6 +107,20 @@ Deno.serve(async (req: Request) => {
     const domainPrompts = prompts?.map(p => p.prompts).filter(Boolean) || [];
     console.log('Found', domainPrompts.length, 'prompts for domain:', receiverDomain);
 
+    if (domainPrompts.length === 0) {
+      console.log('No prompts configured for domain:', receiverDomain);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'No prompts configured for this domain'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
     const { data: autoresponderEmails, error: autoError } = await supabase
       .from('amazon_ses_emails')
       .select('address')
@@ -132,49 +146,39 @@ Deno.serve(async (req: Request) => {
 
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
-    let systemPrompt = 'You are a professional email assistant that generates brief, polite automatic replies.';
-    let userPrompt = `Generate a professional, polite automatic reply to this email. The reply should:
-1. Acknowledge receipt of their email
-2. Let them know you'll respond soon
-3. Be brief (2-3 sentences)
-4. Sound natural and friendly
+    const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
 
-Original email subject: ${subject}
-Original email body: ${body}
+    const processedPrompts = domainPrompts.map((p: any) => {
+      const content = p.content.replace(/\{\{email_content\}\}/g, emailContent);
+      return content;
+    });
 
-Generate only the body text of the reply, no subject line.`;
+    const combinedPrompt = processedPrompts.join('\n\n---\n\n');
+    console.log('Using combined prompts for domain:', receiverDomain);
 
-    if (domainPrompts.length > 0) {
-      console.log('Using domain-specific prompts');
-      const promptContents = domainPrompts.map((p: any, idx: number) =>
-        `Prompt ${idx + 1} (${p.title}):\n${p.content}`
-      ).join('\n\n');
-
-      userPrompt = `You have the following custom instructions to follow when generating the reply:\n\n${promptContents}\n\nNow, generate a reply to this email following ALL the instructions above:\n\nOriginal email subject: ${subject}\nOriginal email body: ${body}\n\nGenerate only the body text of the reply, no subject line.`;
-    }
-
-    let replyBody = 'Thank you for your email. I have received your message and will get back to you shortly.';
+    let replyBody = '';
 
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
             role: 'user',
-            content: userPrompt
+            content: combinedPrompt
           }
         ],
         max_tokens: 500,
         temperature: 0.7
       });
 
-      replyBody = response.choices[0]?.message?.content || replyBody;
+      replyBody = response.choices[0]?.message?.content || '';
     } catch (aiError) {
-      console.error('AI generation failed, using default reply:', aiError);
+      console.error('AI generation failed:', aiError);
+      throw new Error('Failed to generate autoresponse');
+    }
+
+    if (!replyBody) {
+      throw new Error('No reply content generated');
     }
 
     const { error: outboxError } = await supabase
