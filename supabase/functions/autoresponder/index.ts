@@ -70,14 +70,30 @@ Deno.serve(async (req: Request) => {
       .select('*')
       .eq('user_id', userId)
       .eq('domain', receiverDomain)
-      .eq('autoresponder_enabled', true)
       .maybeSingle();
 
     if (domainError || !domainData) {
-      console.log('Autoresponder not enabled for domain:', receiverDomain);
+      console.log('Domain not found:', receiverDomain);
       return new Response(JSON.stringify({
         success: false,
-        message: 'Autoresponder not enabled for this domain'
+        message: 'Domain not configured'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
+    const autoresponderEnabled = domainData.autoresponder_enabled || false;
+    const draftsEnabled = domainData.drafts_enabled || false;
+
+    if (!autoresponderEnabled && !draftsEnabled) {
+      console.log('Both autoresponder and drafts disabled for domain:', receiverDomain);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Autoresponder and drafts are disabled for this domain'
       }), {
         headers: {
           ...corsHeaders,
@@ -181,42 +197,81 @@ Deno.serve(async (req: Request) => {
       throw new Error('No reply content generated');
     }
 
-    const { error: outboxError } = await supabase
-      .from('email_outbox')
-      .insert({
-        user_id: userId,
-        to_email: fromEmail,
-        from_email: autoresponderEmail,
-        subject: replySubject,
-        body: replyBody,
-        reply_to_id: emailId,
-        attachments: [],
-        status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+    if (autoresponderEnabled) {
+      const { error: outboxError } = await supabase
+        .from('email_outbox')
+        .insert({
+          user_id: userId,
+          to_email: fromEmail,
+          from_email: autoresponderEmail,
+          subject: replySubject,
+          body: replyBody,
+          reply_to_id: emailId,
+          attachments: [],
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
-    if (outboxError) {
-      throw new Error(`Failed to queue autoresponse: ${outboxError.message}`);
-    }
-
-    console.log('Autoresponse queued successfully');
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Autoresponse queued',
-        to: fromEmail,
-        from: autoresponderEmail
-      }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 200
+      if (outboxError) {
+        throw new Error(`Failed to queue autoresponse: ${outboxError.message}`);
       }
-    );
+
+      console.log('Autoresponse queued successfully');
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Autoresponse queued',
+          to: fromEmail,
+          from: autoresponderEmail,
+          mode: 'autoresponder'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 200
+        }
+      );
+    } else if (draftsEnabled) {
+      const { error: draftError } = await supabase
+        .from('email_drafts')
+        .insert({
+          user_id: userId,
+          sender: autoresponderEmail,
+          receiver: [fromEmail],
+          subject: replySubject,
+          body: replyBody,
+          attachments: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (draftError) {
+        throw new Error(`Failed to save draft: ${draftError.message}`);
+      }
+
+      console.log('Draft saved successfully');
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Draft saved',
+          to: fromEmail,
+          from: autoresponderEmail,
+          mode: 'draft'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 200
+        }
+      );
+    }
 
   } catch (error) {
     console.error('Error in autoresponder:', error);

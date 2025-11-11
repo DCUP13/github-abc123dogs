@@ -4,7 +4,7 @@ import { Toggle } from './Toggle';
 import { Mail } from 'lucide-react';
 
 export function AutoresponderTab() {
-  const [domainSettings, setDomainSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
+  const [domainSettings, setDomainSettings] = useState<Record<string, { autoresponderEnabled: boolean; draftsEnabled: boolean }>>({});
   const [emailSettings, setEmailSettings] = useState<Record<string, { autoresponderEnabled: boolean }>>({});
   const [clientGradingEnabled, setClientGradingEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +23,7 @@ export function AutoresponderTab() {
       const [domainsResult, emailsResult, userSettingsResult] = await Promise.all([
         supabase
           .from('amazon_ses_domains')
-          .select('domain, autoresponder_enabled')
+          .select('domain, autoresponder_enabled, drafts_enabled')
           .eq('user_id', user.data.user.id),
         supabase
           .from('amazon_ses_emails')
@@ -43,10 +43,11 @@ export function AutoresponderTab() {
       if (domainsResult.data) {
         const settings = domainsResult.data.reduce((acc, domain) => {
           acc[domain.domain] = {
-            autoresponderEnabled: domain.autoresponder_enabled || false
+            autoresponderEnabled: domain.autoresponder_enabled || false,
+            draftsEnabled: domain.drafts_enabled || false
           };
           return acc;
-        }, {} as Record<string, { autoresponderEnabled: boolean }>);
+        }, {} as Record<string, { autoresponderEnabled: boolean; draftsEnabled: boolean }>);
 
         setDomainSettings(settings);
       }
@@ -92,11 +93,39 @@ export function AutoresponderTab() {
 
       setDomainSettings(prev => ({
         ...prev,
-        [domain]: { autoresponderEnabled: enabled }
+        [domain]: { ...prev[domain], autoresponderEnabled: enabled }
       }));
     } catch (error) {
       console.error('Error updating autoresponder setting:', error);
       alert('Failed to update autoresponder setting. Please try again.');
+    }
+  };
+
+  const handleToggleDomainDrafts = async (domain: string, enabled: boolean) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('amazon_ses_domains')
+        .update({
+          drafts_enabled: enabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.data.user.id)
+        .eq('domain', domain);
+
+      if (error) throw error;
+
+      setDomainSettings(prev => ({
+        ...prev,
+        [domain]: { ...prev[domain], draftsEnabled: enabled }
+      }));
+    } catch (error) {
+      console.error('Error updating drafts setting:', error);
+      alert('Failed to update drafts setting. Please try again.');
     }
   };
 
@@ -208,22 +237,45 @@ export function AutoresponderTab() {
             {domains.map((domain) => (
               <div
                 key={domain}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-3"
               >
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                    {domain}
-                  </h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {domainSettings[domain]?.autoresponderEnabled
-                      ? 'Autoresponder is active for this domain'
-                      : 'Autoresponder is inactive for this domain'}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                      {domain}
+                    </h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {domainSettings[domain]?.autoresponderEnabled
+                        ? 'Autoresponder is active - emails will be sent automatically'
+                        : domainSettings[domain]?.draftsEnabled
+                        ? 'Draft mode is active - AI will generate responses as drafts'
+                        : 'All automation is disabled for this domain'}
+                    </p>
+                  </div>
+                  <Toggle
+                    checked={domainSettings[domain]?.autoresponderEnabled || false}
+                    onChange={() => handleToggleDomainAutoresponder(domain, !domainSettings[domain]?.autoresponderEnabled)}
+                  />
                 </div>
-                <Toggle
-                  checked={domainSettings[domain]?.autoresponderEnabled || false}
-                  onChange={() => handleToggleDomainAutoresponder(domain, !domainSettings[domain]?.autoresponderEnabled)}
-                />
+
+                {!domainSettings[domain]?.autoresponderEnabled && (
+                  <div className="flex items-center justify-between pl-4 border-l-2 border-gray-300 dark:border-gray-600">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                        Draft Mode
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {domainSettings[domain]?.draftsEnabled
+                          ? 'AI generates draft responses that you can review before sending'
+                          : 'Disabled - no AI processing to save tokens'}
+                      </p>
+                    </div>
+                    <Toggle
+                      checked={domainSettings[domain]?.draftsEnabled || false}
+                      onChange={() => handleToggleDomainDrafts(domain, !domainSettings[domain]?.draftsEnabled)}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
