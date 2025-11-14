@@ -272,7 +272,7 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'privacy-policy' || view === 'terms-of-service' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar
@@ -298,12 +298,6 @@ export default function App() {
                       onTermsClick={() => updateView('terms-of-service')}
                     />
                   )}
-                  {view === 'privacy-policy' && (
-                    <PrivacyPolicy onBack={handleBackFromPolicy} />
-                  )}
-                  {view === 'terms-of-service' && (
-                    <TermsOfService onBack={handleBackFromPolicy} />
-                  )}
                   {view === 'emails' && (
                     <EmailsInbox onSignOut={handleSignOut} currentView={view} />
                   )}
@@ -323,6 +317,10 @@ export default function App() {
                   )}
                 </div>
               </div>
+            ) : view === 'privacy-policy' ? (
+              <PrivacyPolicy onBack={handleBackFromPolicy} />
+            ) : view === 'terms-of-service' ? (
+              <TermsOfService onBack={handleBackFromPolicy} />
             ) : view === 'google-callback' ? (
               <GoogleCallback />
             ) : view === 'landing' ? (
