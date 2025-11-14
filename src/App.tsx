@@ -337,9 +337,13 @@ export default function App() {
                     <Login
                       onRegisterClick={() => updateView('register')}
                       onLoginSuccess={handleLogin}
+                      onBackToHome={() => updateView('landing')}
                     />
                   ) : (
-                    <Register onLoginClick={() => updateView('login')} />
+                    <Register
+                      onLoginClick={() => updateView('login')}
+                      onBackToHome={() => updateView('landing')}
+                    />
                   )}
                 </div>
               </div>
