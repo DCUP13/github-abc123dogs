@@ -11,11 +11,13 @@ import { supabase } from '../lib/supabase';
 interface SettingsProps {
   onSignOut: () => void;
   currentView: string;
+  onPrivacyClick: () => void;
+  onTermsClick: () => void;
 }
 
 type SettingsTab = 'general' | 'amazon' | 'google' | 'rapid-api' | 'autoresponder';
 
-export function Settings({ onSignOut, currentView }: SettingsProps) {
+export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick }: SettingsProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [settings, setSettings] = useState<GeneralSettings>({
     notifications: true,
@@ -230,8 +232,26 @@ export function Settings({ onSignOut, currentView }: SettingsProps) {
           </div>
         </div>
 
-        <div className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center">
-          Settings are automatically saved when you toggle them
+        <div className="mt-6 space-y-4">
+          <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            Settings are automatically saved when you toggle them
+          </div>
+
+          <div className="flex items-center justify-center gap-6 text-sm">
+            <button
+              onClick={onPrivacyClick}
+              className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
+            <button
+              onClick={onTermsClick}
+              className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 underline"
+            >
+              Terms of Service
+            </button>
+          </div>
         </div>
       </div>
     </div>

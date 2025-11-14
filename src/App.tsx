@@ -12,12 +12,14 @@ import { Prompts } from './components/Prompts';
 import { CRM } from './components/CRM';
 import { Calendar } from './components/Calendar';
 import { GoogleCallback } from './components/GoogleCallback';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback';
+type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -234,7 +236,7 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'privacy-policy' || view === 'terms-of-service' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar
@@ -253,7 +255,18 @@ export default function App() {
                     <Dashboard onSignOut={handleSignOut} currentView={view} />
                   )}
                   {view === 'settings' && (
-                    <Settings onSignOut={handleSignOut} currentView={view} />
+                    <Settings
+                      onSignOut={handleSignOut}
+                      currentView={view}
+                      onPrivacyClick={() => setView('privacy-policy')}
+                      onTermsClick={() => setView('terms-of-service')}
+                    />
+                  )}
+                  {view === 'privacy-policy' && (
+                    <PrivacyPolicy onBack={() => setView('settings')} />
+                  )}
+                  {view === 'terms-of-service' && (
+                    <TermsOfService onBack={() => setView('settings')} />
                   )}
                   {view === 'emails' && (
                     <EmailsInbox onSignOut={handleSignOut} currentView={view} />
