@@ -10,12 +10,13 @@ import { Addresses } from './components/Emails';
 import { EmailsInbox } from './components/EmailsInbox';
 import { Prompts } from './components/Prompts';
 import { CRM } from './components/CRM';
+import { Calendar } from './components/Calendar';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm';
+type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -225,17 +226,18 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
-                  <Sidebar 
-                    onSignOut={handleSignOut} 
+                  <Sidebar
+                    onSignOut={handleSignOut}
                     onHomeClick={() => setView('dashboard')}
                     onSettingsClick={() => setView('settings')}
                     onEmailsClick={() => setView('emails')}
                     onAddressesClick={() => setView('addresses')}
                     onPromptsClick={() => setView('prompts')}
                     onCRMClick={() => setView('crm')}
+                    onCalendarClick={() => setView('calendar')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
@@ -256,6 +258,11 @@ export default function App() {
                   )}
                   {view === 'crm' && (
                     <CRM onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'calendar' && (
+                    <div className="p-8">
+                      <Calendar />
+                    </div>
                   )}
                 </div>
               </div>
