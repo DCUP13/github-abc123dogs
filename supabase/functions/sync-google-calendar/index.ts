@@ -118,13 +118,11 @@ Deno.serve(async (req: Request) => {
     if (eventsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from('calendar_events')
-        .upsert(eventsToInsert, {
-          onConflict: 'user_id,start_time,title',
-          ignoreDuplicates: true
-        });
+        .insert(eventsToInsert);
 
       if (insertError) {
         console.error('Error inserting events:', insertError);
+        throw new Error(`Failed to insert events: ${insertError.message}`);
       }
     }
 
