@@ -14,12 +14,13 @@ import { Calendar } from './components/Calendar';
 import { GoogleCallback } from './components/GoogleCallback';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import { LandingPage } from './components/LandingPage';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -32,14 +33,14 @@ export const ThemeContext = createContext<ThemeContextType>({
 });
 
 export default function App() {
-  const [view, setView] = useState<View>('login');
+  const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseError, setSupabaseError] = useState(false);
 
   const updateView = (newView: View) => {
     setView(newView);
-    const path = newView === 'login' ? '/' : `/${newView}`;
+    const path = newView === 'landing' ? '/' : `/${newView}`;
     window.history.pushState({}, '', path);
   };
 
@@ -114,7 +115,8 @@ export default function App() {
   useEffect(() => {
     const pathToView = (pathname: string): View => {
       const path = pathname.replace(/^\//, '');
-      if (!path || path === 'login') return 'login';
+      if (!path) return 'landing';
+      if (path === 'login') return 'login';
       return path as View;
     };
 
@@ -151,16 +153,17 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Session error:', error);
-        // Don't set supabaseError to true here since other parts work
-        setView('login');
+        setView('landing');
       } else if (session) {
         setView('dashboard');
         fetchUserSettings();
+      } else {
+        setView('landing');
       }
       setIsLoading(false);
     }).catch((error) => {
       console.error('Auth session check failed:', error);
-      setView('login');
+      setView('landing');
       setIsLoading(false);
     });
 
@@ -173,12 +176,12 @@ export default function App() {
           setView('dashboard');
           fetchUserSettings();
         } else {
-          setView('login');
+          setView('landing');
           setDarkMode(false);
         }
       } catch (error) {
         console.error('Auth state change error:', error);
-        setView('login');
+        setView('landing');
       }
     });
 
@@ -312,6 +315,11 @@ export default function App() {
               </div>
             ) : view === 'google-callback' ? (
               <GoogleCallback />
+            ) : view === 'landing' ? (
+              <LandingPage
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
             ) : (
               <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
