@@ -4,9 +4,11 @@ import { Mail, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarChart3, Check
 interface LandingPageProps {
   onSignInClick: () => void;
   onCreateAccountClick: () => void;
+  onPrivacyClick: () => void;
+  onTermsClick: () => void;
 }
 
-export function LandingPage({ onSignInClick, onCreateAccountClick }: LandingPageProps) {
+export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
@@ -327,8 +329,16 @@ export function LandingPage({ onSignInClick, onCreateAccountClick }: LandingPage
             <div>
               <h4 className="text-white font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm">
-                <li>Privacy Policy</li>
-                <li>Terms of Service</li>
+                <li>
+                  <button onClick={onPrivacyClick} className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={onTermsClick} className="hover:text-white transition-colors">
+                    Terms of Service
+                  </button>
+                </li>
                 <li>Cookie Policy</li>
               </ul>
             </div>

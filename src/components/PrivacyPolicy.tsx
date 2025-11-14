@@ -14,7 +14,7 @@ export default function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Settings
+          Back
         </button>
 
         <div className="bg-white rounded-lg shadow-sm p-8">

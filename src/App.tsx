@@ -37,11 +37,21 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseError, setSupabaseError] = useState(false);
+  const [previousView, setPreviousView] = useState<View>('landing');
 
   const updateView = (newView: View) => {
+    setPreviousView(view);
     setView(newView);
     const path = newView === 'landing' ? '/' : `/${newView}`;
     window.history.pushState({}, '', path);
+  };
+
+  const handleBackFromPolicy = () => {
+    if (previousView === 'landing') {
+      updateView('landing');
+    } else {
+      updateView('settings');
+    }
   };
 
   const fetchUserSettings = async () => {
@@ -289,10 +299,10 @@ export default function App() {
                     />
                   )}
                   {view === 'privacy-policy' && (
-                    <PrivacyPolicy onBack={() => updateView('settings')} />
+                    <PrivacyPolicy onBack={handleBackFromPolicy} />
                   )}
                   {view === 'terms-of-service' && (
-                    <TermsOfService onBack={() => updateView('settings')} />
+                    <TermsOfService onBack={handleBackFromPolicy} />
                   )}
                   {view === 'emails' && (
                     <EmailsInbox onSignOut={handleSignOut} currentView={view} />
@@ -319,6 +329,8 @@ export default function App() {
               <LandingPage
                 onSignInClick={() => updateView('login')}
                 onCreateAccountClick={() => updateView('register')}
+                onPrivacyClick={() => updateView('privacy-policy')}
+                onTermsClick={() => updateView('terms-of-service')}
               />
             ) : (
               <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
