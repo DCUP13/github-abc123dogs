@@ -102,27 +102,31 @@ Deno.serve(async (req: Request) => {
     const calendarData = await calendarResponse.json();
     const googleEvents = calendarData.items || [];
 
-    const eventsToInsert = googleEvents.map((event: any) => ({
-      user_id: user.id,
-      title: event.summary || 'Untitled Event',
-      description: event.description || null,
-      start_time: event.start.dateTime || event.start.date,
-      end_time: event.end.dateTime || event.end.date,
-      all_day: !event.start.dateTime,
-      location: event.location || null,
-      color: '#3b82f6',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
+    const eventsToInsert = googleEvents
+      .filter((event: any) => event.id)
+      .map((event: any) => ({
+        user_id: user.id,
+        google_event_id: event.id,
+        title: event.summary || 'Untitled Event',
+        description: event.description || null,
+        start_time: event.start.dateTime || event.start.date,
+        end_time: event.end.dateTime || event.end.date,
+        all_day: !event.start.dateTime,
+        location: event.location || null,
+        color: '#3b82f6'
+      }));
 
     if (eventsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from('calendar_events')
-        .insert(eventsToInsert);
+        .upsert(eventsToInsert, {
+          onConflict: 'user_id,google_event_id',
+          ignoreDuplicates: false
+        });
 
       if (insertError) {
-        console.error('Error inserting events:', insertError);
-        throw new Error(`Failed to insert events: ${insertError.message}`);
+        console.error('Error upserting events:', insertError);
+        throw new Error(`Failed to sync events: ${insertError.message}`);
       }
     }
 
