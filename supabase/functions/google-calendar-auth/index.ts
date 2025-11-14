@@ -19,17 +19,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { code, userId } = await req.json();
+    const { code, userId, redirectUri } = await req.json();
 
-    if (!code || !userId) {
-      throw new Error('Code and userId are required');
+    if (!code || !userId || !redirectUri) {
+      throw new Error('Code, userId, and redirectUri are required');
     }
 
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
     const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
-    const redirectUri = Deno.env.get('GOOGLE_REDIRECT_URI');
 
-    if (!clientId || !clientSecret || !redirectUri) {
+    if (!clientId || !clientSecret) {
       throw new Error('Google OAuth credentials not configured');
     }
 

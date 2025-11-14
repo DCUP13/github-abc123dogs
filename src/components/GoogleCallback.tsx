@@ -27,6 +27,7 @@ export function GoogleCallback() {
 
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const redirectUri = `${window.location.origin}/google-callback`;
 
         const response = await fetch(`${supabaseUrl}/functions/v1/google-calendar-auth`, {
           method: 'POST',
@@ -35,7 +36,8 @@ export function GoogleCallback() {
           },
           body: JSON.stringify({
             code,
-            userId: user.data.user.id
+            userId: user.data.user.id,
+            redirectUri
           })
         });
 
