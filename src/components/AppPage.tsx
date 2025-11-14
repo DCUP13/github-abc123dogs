@@ -67,7 +67,7 @@ const statesAndCities = {
   'NE': ['Omaha', 'Lincoln', 'Bellevue', 'Grand Island', 'Kearney'],
   'NV': ['Las Vegas', 'Henderson', 'Reno', 'North Las Vegas', 'Sparks'],
   'NH': ['Manchester', 'Nashua', 'Concord', 'Derry', 'Rochester'],
-  'NJ': ['Newark', 'Jersey City', 'Paterson', 'Elizabeth', 'Edison'],
+  'NJ': ['Newark', 'Jersey City', 'Paterson', 'Elizabeth', 'Edison', 'Branchville'],
   'NM': ['Albuquerque', 'Las Cruces', 'Rio Rancho', 'Santa Fe', 'Roswell'],
   'NY': ['New York', 'Buffalo', 'Rochester', 'Yonkers', 'Syracuse'],
   'NC': ['Charlotte', 'Raleigh', 'Greensboro', 'Durham', 'Winston-Salem'],
