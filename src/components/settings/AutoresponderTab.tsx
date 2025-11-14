@@ -80,12 +80,18 @@ export function AutoresponderTab() {
         throw new Error('User not authenticated');
       }
 
+      const updateData: any = {
+        autoresponder_enabled: enabled,
+        updated_at: new Date().toISOString()
+      };
+
+      if (enabled) {
+        updateData.drafts_enabled = false;
+      }
+
       const { error } = await supabase
         .from('amazon_ses_domains')
-        .update({
-          autoresponder_enabled: enabled,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('user_id', user.data.user.id)
         .eq('domain', domain);
 
@@ -93,7 +99,10 @@ export function AutoresponderTab() {
 
       setDomainSettings(prev => ({
         ...prev,
-        [domain]: { ...prev[domain], autoresponderEnabled: enabled }
+        [domain]: {
+          autoresponderEnabled: enabled,
+          draftsEnabled: enabled ? false : prev[domain]?.draftsEnabled || false
+        }
       }));
     } catch (error) {
       console.error('Error updating autoresponder setting:', error);
