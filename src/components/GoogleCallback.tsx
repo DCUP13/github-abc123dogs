@@ -33,6 +33,7 @@ export function GoogleCallback() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`
           },
           body: JSON.stringify({
             code,
@@ -42,8 +43,16 @@ export function GoogleCallback() {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.details || 'Failed to connect to Google Calendar');
+          const errorText = await response.text();
+          console.error('Response status:', response.status);
+          console.error('Response text:', errorText);
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            throw new Error(`Failed to connect: ${response.status} - ${errorText}`);
+          }
+          throw new Error(errorData.details || errorData.error || 'Failed to connect to Google Calendar');
         }
 
         setStatus('success');
