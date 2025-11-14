@@ -37,6 +37,12 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [supabaseError, setSupabaseError] = useState(false);
 
+  const updateView = (newView: View) => {
+    setView(newView);
+    const path = newView === 'login' ? '/' : `/${newView}`;
+    window.history.pushState({}, '', path);
+  };
+
   const fetchUserSettings = async () => {
     try {
       const user = await supabase.auth.getUser();
@@ -106,12 +112,26 @@ export default function App() {
   };
 
   useEffect(() => {
+    const pathToView = (pathname: string): View => {
+      const path = pathname.replace(/^\//, '');
+      if (!path || path === 'login') return 'login';
+      return path as View;
+    };
+
     // Check if this is the Google OAuth callback
     if (window.location.pathname === '/google-callback') {
       setView('google-callback');
       setIsLoading(false);
       return;
     }
+
+    // Handle browser back/forward buttons
+    const handlePopState = () => {
+      const newView = pathToView(window.location.pathname);
+      setView(newView);
+    };
+
+    window.addEventListener('popstate', handlePopState);
 
     // Check Supabase connection
     const checkConnection = async () => {
@@ -162,7 +182,10 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const toggleDarkMode = async () => {
@@ -191,12 +214,12 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    setView('dashboard');
+    updateView('dashboard');
   };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    setView('login');
+    updateView('login');
   };
 
   if (isLoading) {
@@ -241,13 +264,13 @@ export default function App() {
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar
                     onSignOut={handleSignOut}
-                    onHomeClick={() => setView('dashboard')}
-                    onSettingsClick={() => setView('settings')}
-                    onEmailsClick={() => setView('emails')}
-                    onAddressesClick={() => setView('addresses')}
-                    onPromptsClick={() => setView('prompts')}
-                    onCRMClick={() => setView('crm')}
-                    onCalendarClick={() => setView('calendar')}
+                    onHomeClick={() => updateView('dashboard')}
+                    onSettingsClick={() => updateView('settings')}
+                    onEmailsClick={() => updateView('emails')}
+                    onAddressesClick={() => updateView('addresses')}
+                    onPromptsClick={() => updateView('prompts')}
+                    onCRMClick={() => updateView('crm')}
+                    onCalendarClick={() => updateView('calendar')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
@@ -258,15 +281,15 @@ export default function App() {
                     <Settings
                       onSignOut={handleSignOut}
                       currentView={view}
-                      onPrivacyClick={() => setView('privacy-policy')}
-                      onTermsClick={() => setView('terms-of-service')}
+                      onPrivacyClick={() => updateView('privacy-policy')}
+                      onTermsClick={() => updateView('terms-of-service')}
                     />
                   )}
                   {view === 'privacy-policy' && (
-                    <PrivacyPolicy onBack={() => setView('settings')} />
+                    <PrivacyPolicy onBack={() => updateView('settings')} />
                   )}
                   {view === 'terms-of-service' && (
-                    <TermsOfService onBack={() => setView('settings')} />
+                    <TermsOfService onBack={() => updateView('settings')} />
                   )}
                   {view === 'emails' && (
                     <EmailsInbox onSignOut={handleSignOut} currentView={view} />
@@ -294,11 +317,11 @@ export default function App() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
                   {view === 'login' ? (
                     <Login
-                      onRegisterClick={() => setView('register')}
+                      onRegisterClick={() => updateView('register')}
                       onLoginSuccess={handleLogin}
                     />
                   ) : (
-                    <Register onLoginClick={() => setView('login')} />
+                    <Register onLoginClick={() => updateView('login')} />
                   )}
                 </div>
               </div>
