@@ -219,10 +219,21 @@ export function Calendar() {
           }
         });
 
-        if (!response.ok) throw new Error('Sync failed');
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Sync error response:', errorText);
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            throw new Error(`Sync failed: ${response.status} - ${errorText}`);
+          }
+          throw new Error(errorData.details || errorData.error || 'Sync failed');
+        }
 
+        const result = await response.json();
         await fetchEvents();
-        alert('Successfully synced with Google Calendar!');
+        alert(`Successfully synced ${result.count || 0} events from Google Calendar!`);
       } catch (error) {
         console.error('Error syncing with Google Calendar:', error);
         alert('Failed to sync with Google Calendar. Please try again.');
