@@ -222,7 +222,7 @@ export default function App() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    updateView('login');
+    updateView('landing');
   };
 
   if (isLoading) {
