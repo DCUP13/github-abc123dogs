@@ -11,12 +11,13 @@ import { EmailsInbox } from './components/EmailsInbox';
 import { Prompts } from './components/Prompts';
 import { CRM } from './components/CRM';
 import { Calendar } from './components/Calendar';
+import { GoogleCallback } from './components/GoogleCallback';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar';
+type View = 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -103,6 +104,13 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Check if this is the Google OAuth callback
+    if (window.location.pathname === '/google-callback') {
+      setView('google-callback');
+      setIsLoading(false);
+      return;
+    }
+
     // Check Supabase connection
     const checkConnection = async () => {
       try {
@@ -266,11 +274,13 @@ export default function App() {
                   )}
                 </div>
               </div>
+            ) : view === 'google-callback' ? (
+              <GoogleCallback />
             ) : (
               <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
                   {view === 'login' ? (
-                    <Login 
+                    <Login
                       onRegisterClick={() => setView('register')}
                       onLoginSuccess={handleLogin}
                     />

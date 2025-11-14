@@ -188,7 +188,23 @@ export function Calendar() {
       const scope = 'https://www.googleapis.com/auth/calendar';
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
 
-      window.location.href = authUrl;
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      window.open(
+        authUrl,
+        'Google Calendar Auth',
+        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+      );
+
+      window.addEventListener('message', async (event) => {
+        if (event.data.type === 'google-auth-success') {
+          await checkGoogleConnection();
+          alert('Successfully connected to Google Calendar!');
+        }
+      }, { once: true });
     } else {
       try {
         setIsSyncing(true);
