@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
 
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 
@@ -22,10 +22,31 @@ export function Calendar() {
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     fetchEvents();
+    checkGoogleConnection();
   }, [currentDate, viewMode]);
+
+  const checkGoogleConnection = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('google_calendar_tokens')
+        .select('id')
+        .eq('user_id', user.data.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsGoogleConnected(!!data);
+    } catch (error) {
+      console.error('Error checking Google connection:', error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -155,6 +176,46 @@ export function Calendar() {
     setShowEventDialog(true);
   };
 
+  const handleGoogleSync = async () => {
+    if (!isGoogleConnected) {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        alert('Google Calendar integration is not configured. Please add VITE_GOOGLE_CLIENT_ID to your environment variables.');
+        return;
+      }
+
+      const redirectUri = `${window.location.origin}/google-callback`;
+      const scope = 'https://www.googleapis.com/auth/calendar';
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+
+      window.location.href = authUrl;
+    } else {
+      try {
+        setIsSyncing(true);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/sync-google-calendar`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error('Sync failed');
+
+        await fetchEvents();
+        alert('Successfully synced with Google Calendar!');
+      } catch (error) {
+        console.error('Error syncing with Google Calendar:', error);
+        alert('Failed to sync with Google Calendar. Please try again.');
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
@@ -165,6 +226,18 @@ export function Calendar() {
             className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Today
+          </button>
+          <button
+            onClick={handleGoogleSync}
+            disabled={isSyncing}
+            className={`flex items-center gap-2 px-3 py-1 text-sm font-medium rounded-md ${
+              isGoogleConnected
+                ? 'text-white bg-green-600 hover:bg-green-700'
+                : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+            } disabled:opacity-50`}
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : isGoogleConnected ? 'Sync Google Calendar' : 'Connect Google Calendar'}
           </button>
         </div>
 
