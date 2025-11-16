@@ -15,7 +15,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">EmailFlow</span>
+            <span className="text-2xl font-bold text-gray-900">loireply</span>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -261,7 +261,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 <div className="pt-6 border-t border-white/20">
                   <TrendingUp className="w-12 h-12 mb-4 opacity-80" />
                   <p className="text-lg opacity-90">
-                    Join thousands of professionals who have transformed their business with EmailFlow
+                    Join thousands of professionals who have transformed their business with loireply
                   </p>
                 </div>
               </div>
@@ -302,7 +302,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Mail className="w-6 h-6 text-blue-500" />
-                <span className="text-xl font-bold text-white">EmailFlow</span>
+                <span className="text-xl font-bold text-white">loireply</span>
               </div>
               <p className="text-sm">
                 Transform your email management with AI-powered automation
@@ -344,7 +344,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>&copy; 2025 EmailFlow. All rights reserved.</p>
+            <p>&copy; 2025 loireply. All rights reserved.</p>
           </div>
         </div>
       </footer>
