@@ -15,12 +15,13 @@ import { GoogleCallback } from './components/GoogleCallback';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import { LandingPage } from './components/LandingPage';
+import { FeaturesPage } from './components/FeaturesPage';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -145,6 +146,13 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
 
+    // Handle custom navigation event for features
+    const handleNavigateToFeatures = () => {
+      updateView('features');
+    };
+
+    window.addEventListener('navigate-to-features', handleNavigateToFeatures);
+
     // Check Supabase connection
     const checkConnection = async () => {
       try {
@@ -198,6 +206,7 @@ export default function App() {
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('navigate-to-features', handleNavigateToFeatures);
     };
   }, []);
 
@@ -323,6 +332,12 @@ export default function App() {
               <TermsOfService onBack={handleBackFromPolicy} />
             ) : view === 'google-callback' ? (
               <GoogleCallback />
+            ) : view === 'features' ? (
+              <FeaturesPage
+                onBackClick={() => updateView('landing')}
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
             ) : view === 'landing' ? (
               <LandingPage
                 onSignInClick={() => updateView('login')}

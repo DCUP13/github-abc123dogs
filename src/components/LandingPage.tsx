@@ -9,6 +9,9 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick }: LandingPageProps) {
+  const onFeaturesClick = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-features'));
+  };
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
@@ -311,7 +314,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <div>
               <h4 className="text-white font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
-                <li>Features</li>
+                <li>
+                  <button onClick={onFeaturesClick} className="hover:text-white transition-colors">
+                    Features
+                  </button>
+                </li>
                 <li>Pricing</li>
                 <li>Security</li>
                 <li>Updates</li>
