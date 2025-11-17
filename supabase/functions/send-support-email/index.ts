@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     const AWS_ACCESS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID");
     const AWS_SECRET_ACCESS_KEY = Deno.env.get("AWS_SECRET_ACCESS_KEY");
     const AWS_REGION = Deno.env.get("AWS_REGION") || "us-east-1";
-    const FROM_EMAIL = Deno.env.get("SUPPORT_FROM_EMAIL") || "noreply@loireply.com";
+    const FROM_EMAIL = "noreply@loireply.com";
 
     if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
       throw new Error("AWS credentials not configured");
