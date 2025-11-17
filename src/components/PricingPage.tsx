@@ -68,26 +68,22 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   Perfect for solo professionals and consultants who want to automate their email workflow.
                 </p>
                 <div className="mb-6">
-                  <div className="mb-4">
-                    <div className="text-sm text-gray-600 mb-1">Initial Investment</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-bold text-gray-900">$5,000</span>
-                      <span className="text-gray-600">one-time</span>
-                    </div>
+                  <div className="text-sm text-gray-600 mb-2">Starting at</div>
+                  <div className="mb-2">
+                    <div className="text-3xl font-bold text-gray-900">$5,000</div>
+                    <div className="text-sm text-gray-600">initial investment</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Monthly Fee</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-gray-900">$1,000</span>
-                      <span className="text-gray-600">/month</span>
-                    </div>
+                  <div className="mb-2">
+                    <div className="text-2xl font-bold text-gray-900">$1,000/mo</div>
+                    <div className="text-sm text-gray-600">monthly service fee</div>
                   </div>
                 </div>
                 <button
-                  onClick={onCreateAccountClick}
-                  className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
+                  onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Individual Plan Inquiry'}
+                  className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                 >
-                  Get Started
+                  <Phone className="w-5 h-5" />
+                  Contact Sales
                 </button>
               </div>
 
@@ -354,16 +350,16 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={onCreateAccountClick}
+              onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Individual Plan Inquiry'}
               className="px-10 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-50 font-semibold text-lg transition-colors shadow-lg hover:shadow-xl"
             >
-              Start with Individual Plan
+              Contact Sales - Individual
             </button>
             <button
               onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Team Plan Inquiry'}
               className="px-10 py-4 bg-transparent text-white border-2 border-white rounded-lg hover:bg-white/10 font-semibold text-lg transition-colors"
             >
-              Contact Sales
+              Contact Sales - Teams
             </button>
           </div>
         </div>
