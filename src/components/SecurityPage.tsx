@@ -239,40 +239,12 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
             <div className="bg-white p-8 rounded-xl shadow-sm">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">SOC 2 Type II</h3>
-                  <p className="text-gray-600">
-                    Our infrastructure partners maintain SOC 2 Type II certification, demonstrating rigorous security controls and annual third-party audits.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Eye className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Privacy by Design</h3>
                   <p className="text-gray-600">
                     Privacy is built into every feature. We collect only the data necessary to provide our services and never share it with third parties.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-xl shadow-sm">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileCheck className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Regular Security Audits</h3>
-                  <p className="text-gray-600">
-                    Third-party security audits and penetration testing are conducted regularly to identify and address potential vulnerabilities.
                   </p>
                 </div>
               </div>
