@@ -361,8 +361,6 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                     About
                   </button>
                 </li>
-                <li>Blog</li>
-                <li>Careers</li>
                 <li>
                   <a href="mailto:support@loireply.com?subject=Contact LoiReply Support" className="hover:text-white transition-colors">
                     Contact
