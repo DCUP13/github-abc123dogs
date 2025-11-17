@@ -21,12 +21,13 @@ import { PricingPage } from './components/PricingPage';
 import { SecurityPage } from './components/SecurityPage';
 import { UpdatesPage } from './components/UpdatesPage';
 import { AboutPage } from './components/AboutPage';
+import { Support } from './components/Support';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -314,7 +315,7 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar
@@ -326,6 +327,7 @@ export default function App() {
                     onPromptsClick={() => updateView('prompts')}
                     onCRMClick={() => updateView('crm')}
                     onCalendarClick={() => updateView('calendar')}
+                    onSupportClick={() => updateView('support')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
@@ -356,6 +358,9 @@ export default function App() {
                     <div className="p-8">
                       <Calendar />
                     </div>
+                  )}
+                  {view === 'support' && (
+                    <Support onSignOut={handleSignOut} currentView={view} />
                   )}
                 </div>
               </div>

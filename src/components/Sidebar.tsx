@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle } from 'lucide-react';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -10,6 +10,7 @@ interface SidebarProps {
   onPromptsClick: () => void;
   onCRMClick: () => void;
   onCalendarClick: () => void;
+  onSupportClick: () => void;
 }
 
 export function Sidebar({
@@ -20,7 +21,8 @@ export function Sidebar({
   onEmailsClick,
   onPromptsClick,
   onCRMClick,
-  onCalendarClick
+  onCalendarClick,
+  onSupportClick
 }: SidebarProps) {
   return (
     <div className="h-screen w-64 bg-indigo-800 dark:bg-gray-800 text-white p-6">
@@ -84,7 +86,15 @@ export function Sidebar({
           <SettingsIcon className="w-4 h-4" />
           Settings
         </button>
-        
+
+        <button
+          onClick={onSupportClick}
+          className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Support
+        </button>
+
         <button 
           onClick={onSignOut}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors text-red-300 hover:text-red-200"
