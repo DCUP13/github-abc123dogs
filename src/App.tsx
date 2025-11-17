@@ -14,6 +14,7 @@ import { Calendar } from './components/Calendar';
 import { GoogleCallback } from './components/GoogleCallback';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import { CookiePolicy } from './components/CookiePolicy';
 import { LandingPage } from './components/LandingPage';
 import { FeaturesPage } from './components/FeaturesPage';
 import { PricingPage } from './components/PricingPage';
@@ -25,7 +26,7 @@ import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -362,6 +363,8 @@ export default function App() {
               <PrivacyPolicy onBack={handleBackFromPolicy} />
             ) : view === 'terms-of-service' ? (
               <TermsOfService onBack={handleBackFromPolicy} />
+            ) : view === 'cookie-policy' ? (
+              <CookiePolicy onBackClick={handleBackFromPolicy} />
             ) : view === 'google-callback' ? (
               <GoogleCallback />
             ) : view === 'features' ? (
@@ -400,6 +403,7 @@ export default function App() {
                 onCreateAccountClick={() => updateView('register')}
                 onPrivacyClick={() => updateView('privacy-policy')}
                 onTermsClick={() => updateView('terms-of-service')}
+                onCookieClick={() => updateView('cookie-policy')}
               />
             ) : (
               <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">

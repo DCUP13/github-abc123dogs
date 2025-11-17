@@ -6,9 +6,10 @@ interface LandingPageProps {
   onCreateAccountClick: () => void;
   onPrivacyClick: () => void;
   onTermsClick: () => void;
+  onCookieClick: () => void;
 }
 
-export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick }: LandingPageProps) {
+export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick, onCookieClick }: LandingPageProps) {
   const onFeaturesClick = () => {
     window.dispatchEvent(new CustomEvent('navigate-to-features'));
   };
@@ -381,7 +382,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                     Terms of Service
                   </button>
                 </li>
-                <li>Cookie Policy</li>
+                <li>
+                  <button onClick={onCookieClick} className="hover:text-white transition-colors">
+                    Cookie Policy
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
