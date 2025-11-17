@@ -363,7 +363,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 </li>
                 <li>Blog</li>
                 <li>Careers</li>
-                <li>Contact</li>
+                <li>
+                  <a href="mailto:support@loireply.com?subject=Contact LoiReply Support" className="hover:text-white transition-colors">
+                    Contact
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
