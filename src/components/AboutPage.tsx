@@ -312,8 +312,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
               Get Started Today
             </button>
             <button
-              onClick={() => window.location.href = 'mailto:hello@loireply.com?subject=Learn More About LoiReply'}
-              className="px-10 py-4 bg-transparent text-white border-2 border-white rounded-lg hover:bg-white/10 font-semibold text-lg transition-colors"
+              onClick={() => window.location.href = 'mailto:support@loireply.com?subject=Contact LoiReply Support'}
+              className="px-10 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white border-2 border-orange-400 rounded-lg hover:from-orange-600 hover:to-red-700 hover:shadow-2xl font-semibold text-lg transition-all duration-300 transform hover:scale-105"
             >
               Contact Us
             </button>
