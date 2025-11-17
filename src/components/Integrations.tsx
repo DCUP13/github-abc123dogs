@@ -50,6 +50,16 @@ const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
     ],
   },
   {
+    type: 'monday',
+    name: 'Monday.com',
+    description: 'Sync tasks and workflows with Monday.com',
+    icon: '📅',
+    fields: [
+      { key: 'api_key', label: 'API Token', type: 'password', placeholder: 'Enter your Monday.com API Token', required: true },
+      { key: 'board_id', label: 'Board ID', type: 'text', placeholder: 'Enter your Board ID (optional)', required: false },
+    ],
+  },
+  {
     type: 'slack',
     name: 'Slack',
     description: 'Send notifications and updates to Slack channels',
