@@ -17,12 +17,14 @@ import TermsOfService from './components/TermsOfService';
 import { LandingPage } from './components/LandingPage';
 import { FeaturesPage } from './components/FeaturesPage';
 import { PricingPage } from './components/PricingPage';
+import { SecurityPage } from './components/SecurityPage';
+import { UpdatesPage } from './components/UpdatesPage';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing' | 'security' | 'updates';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -157,8 +159,20 @@ export default function App() {
       updateView('pricing');
     };
 
+    // Handle custom navigation event for security
+    const handleNavigateToSecurity = () => {
+      updateView('security');
+    };
+
+    // Handle custom navigation event for updates
+    const handleNavigateToUpdates = () => {
+      updateView('updates');
+    };
+
     window.addEventListener('navigate-to-features', handleNavigateToFeatures);
     window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
+    window.addEventListener('navigate-to-security', handleNavigateToSecurity);
+    window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
 
     // Check Supabase connection
     const checkConnection = async () => {
@@ -215,6 +229,8 @@ export default function App() {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('navigate-to-features', handleNavigateToFeatures);
       window.removeEventListener('navigate-to-pricing', handleNavigateToPricing);
+      window.removeEventListener('navigate-to-security', handleNavigateToSecurity);
+      window.removeEventListener('navigate-to-updates', handleNavigateToUpdates);
     };
   }, []);
 
@@ -348,6 +364,18 @@ export default function App() {
               />
             ) : view === 'pricing' ? (
               <PricingPage
+                onBackClick={() => updateView('landing')}
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
+            ) : view === 'security' ? (
+              <SecurityPage
+                onBackClick={() => updateView('landing')}
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
+            ) : view === 'updates' ? (
+              <UpdatesPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
                 onCreateAccountClick={() => updateView('register')}

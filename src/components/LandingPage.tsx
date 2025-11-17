@@ -16,6 +16,15 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
   const onPricingClick = () => {
     window.dispatchEvent(new CustomEvent('navigate-to-pricing'));
   };
+
+  const onSecurityClick = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-security'));
+  };
+
+  const onUpdatesClick = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-updates'));
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
@@ -328,8 +337,16 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                     Pricing
                   </button>
                 </li>
-                <li>Security</li>
-                <li>Updates</li>
+                <li>
+                  <button onClick={onSecurityClick} className="hover:text-white transition-colors">
+                    Security
+                  </button>
+                </li>
+                <li>
+                  <button onClick={onUpdatesClick} className="hover:text-white transition-colors">
+                    Updates
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
