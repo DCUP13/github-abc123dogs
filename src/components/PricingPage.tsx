@@ -325,9 +325,9 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-2">Is there a free trial available?</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Can I get a demo before purchasing?</h3>
               <p className="text-gray-600">
-                We offer a demo and consultation to ensure LoiReply is the right fit for your needs before you commit. Contact us to schedule a personalized walkthrough of the platform.
+                Yes! We offer a demo and consultation to ensure LoiReply is the right fit for your needs before you commit. Contact us to schedule a personalized walkthrough of the platform.
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm">

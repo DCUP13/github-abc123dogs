@@ -70,7 +70,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   onClick={onCreateAccountClick}
                   className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  Get Started Free
+                  Get Started
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 <button
@@ -304,7 +304,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
               onClick={onCreateAccountClick}
               className="px-10 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-50 font-semibold text-lg transition-colors shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
             >
-              Get Started Free
+              Get Started
               <ArrowRight className="w-5 h-5" />
             </button>
             <button

@@ -290,7 +290,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
               onClick={onCreateAccountClick}
               className="px-10 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-50 font-semibold text-lg transition-colors shadow-lg hover:shadow-xl"
             >
-              Start Free Trial
+              Get Started
             </button>
             <button
               onClick={onSignInClick}
