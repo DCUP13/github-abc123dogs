@@ -107,6 +107,106 @@ const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
       { key: 'chat_id', label: 'Chat ID', type: 'text', placeholder: 'Enter your Chat ID', required: true },
     ],
   },
+  {
+    type: 'whatsapp',
+    name: 'WhatsApp Business',
+    description: 'Send notifications via WhatsApp Business API',
+    icon: '📱',
+    fields: [
+      { key: 'phone_number_id', label: 'Phone Number ID', type: 'text', placeholder: 'Enter your Phone Number ID', required: true },
+      { key: 'api_key', label: 'Access Token', type: 'password', placeholder: 'Enter your WhatsApp Business Access Token', required: true },
+    ],
+  },
+  {
+    type: 'twilio',
+    name: 'Twilio SMS',
+    description: 'Send SMS notifications via Twilio',
+    icon: '📲',
+    fields: [
+      { key: 'account_sid', label: 'Account SID', type: 'password', placeholder: 'Enter your Account SID', required: true },
+      { key: 'auth_token', label: 'Auth Token', type: 'password', placeholder: 'Enter your Auth Token', required: true },
+      { key: 'from_number', label: 'From Phone Number', type: 'text', placeholder: '+1234567890', required: true },
+    ],
+  },
+  {
+    type: 'teams',
+    name: 'Microsoft Teams',
+    description: 'Post notifications to Microsoft Teams channels',
+    icon: '🟦',
+    fields: [
+      { key: 'webhook_url', label: 'Webhook URL', type: 'textarea', placeholder: 'https://outlook.office.com/webhook/...', required: true },
+    ],
+  },
+  {
+    type: 'pushover',
+    name: 'Pushover',
+    description: 'Send push notifications to iOS and Android devices',
+    icon: '🔔',
+    fields: [
+      { key: 'user_key', label: 'User Key', type: 'password', placeholder: 'Enter your User Key', required: true },
+      { key: 'api_key', label: 'API Token', type: 'password', placeholder: 'Enter your API Token', required: true },
+    ],
+  },
+  {
+    type: 'pushbullet',
+    name: 'Pushbullet',
+    description: 'Send notifications across all your devices',
+    icon: '📤',
+    fields: [
+      { key: 'api_key', label: 'Access Token', type: 'password', placeholder: 'Enter your Access Token', required: true },
+    ],
+  },
+  {
+    type: 'email_webhook',
+    name: 'Email Webhook',
+    description: 'Send notifications to any email webhook endpoint',
+    icon: '📧',
+    fields: [
+      { key: 'webhook_url', label: 'Webhook URL', type: 'textarea', placeholder: 'https://your-webhook-url.com', required: true },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter API Key (optional)', required: false },
+    ],
+  },
+  {
+    type: 'webhook',
+    name: 'Custom Webhook',
+    description: 'Send notifications to any custom webhook endpoint',
+    icon: '🔗',
+    fields: [
+      { key: 'webhook_url', label: 'Webhook URL', type: 'textarea', placeholder: 'https://your-webhook-url.com', required: true },
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter API Key (optional)', required: false },
+      { key: 'headers', label: 'Custom Headers (JSON)', type: 'textarea', placeholder: '{"Authorization": "Bearer token"}', required: false },
+    ],
+  },
+  {
+    type: 'pagerduty',
+    name: 'PagerDuty',
+    description: 'Send alerts and incidents to PagerDuty',
+    icon: '🚨',
+    fields: [
+      { key: 'integration_key', label: 'Integration Key', type: 'password', placeholder: 'Enter your Integration Key', required: true },
+    ],
+  },
+  {
+    type: 'signal',
+    name: 'Signal',
+    description: 'Send encrypted notifications via Signal messenger',
+    icon: '🔐',
+    fields: [
+      { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Signal API Key', required: true },
+      { key: 'phone_number', label: 'Phone Number', type: 'text', placeholder: '+1234567890', required: true },
+    ],
+  },
+  {
+    type: 'matrix',
+    name: 'Matrix',
+    description: 'Send messages to Matrix rooms',
+    icon: '🟢',
+    fields: [
+      { key: 'homeserver', label: 'Homeserver URL', type: 'text', placeholder: 'https://matrix.org', required: true },
+      { key: 'api_key', label: 'Access Token', type: 'password', placeholder: 'Enter your Access Token', required: true },
+      { key: 'room_id', label: 'Room ID', type: 'text', placeholder: '!roomid:matrix.org', required: true },
+    ],
+  },
 ];
 
 interface IntegrationsProps {
