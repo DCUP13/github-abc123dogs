@@ -16,12 +16,13 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import { LandingPage } from './components/LandingPage';
 import { FeaturesPage } from './components/FeaturesPage';
+import { PricingPage } from './components/PricingPage';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -151,7 +152,13 @@ export default function App() {
       updateView('features');
     };
 
+    // Handle custom navigation event for pricing
+    const handleNavigateToPricing = () => {
+      updateView('pricing');
+    };
+
     window.addEventListener('navigate-to-features', handleNavigateToFeatures);
+    window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
 
     // Check Supabase connection
     const checkConnection = async () => {
@@ -207,6 +214,7 @@ export default function App() {
       subscription.unsubscribe();
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('navigate-to-features', handleNavigateToFeatures);
+      window.removeEventListener('navigate-to-pricing', handleNavigateToPricing);
     };
   }, []);
 
@@ -334,6 +342,12 @@ export default function App() {
               <GoogleCallback />
             ) : view === 'features' ? (
               <FeaturesPage
+                onBackClick={() => updateView('landing')}
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
+            ) : view === 'pricing' ? (
+              <PricingPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
                 onCreateAccountClick={() => updateView('register')}
