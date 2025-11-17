@@ -25,6 +25,10 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
     window.dispatchEvent(new CustomEvent('navigate-to-updates'));
   };
 
+  const onAboutClick = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-about'));
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <header className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
@@ -352,7 +356,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <div>
               <h4 className="text-white font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm">
-                <li>About</li>
+                <li>
+                  <button onClick={onAboutClick} className="hover:text-white transition-colors">
+                    About
+                  </button>
+                </li>
                 <li>Blog</li>
                 <li>Careers</li>
                 <li>Contact</li>

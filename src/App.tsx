@@ -19,12 +19,13 @@ import { FeaturesPage } from './components/FeaturesPage';
 import { PricingPage } from './components/PricingPage';
 import { SecurityPage } from './components/SecurityPage';
 import { UpdatesPage } from './components/UpdatesPage';
+import { AboutPage } from './components/AboutPage';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing' | 'security' | 'updates';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -169,10 +170,16 @@ export default function App() {
       updateView('updates');
     };
 
+    // Handle custom navigation event for about
+    const handleNavigateToAbout = () => {
+      updateView('about');
+    };
+
     window.addEventListener('navigate-to-features', handleNavigateToFeatures);
     window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
     window.addEventListener('navigate-to-security', handleNavigateToSecurity);
     window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
+    window.addEventListener('navigate-to-about', handleNavigateToAbout);
 
     // Check Supabase connection
     const checkConnection = async () => {
@@ -231,6 +238,7 @@ export default function App() {
       window.removeEventListener('navigate-to-pricing', handleNavigateToPricing);
       window.removeEventListener('navigate-to-security', handleNavigateToSecurity);
       window.removeEventListener('navigate-to-updates', handleNavigateToUpdates);
+      window.removeEventListener('navigate-to-about', handleNavigateToAbout);
     };
   }, []);
 
@@ -376,6 +384,12 @@ export default function App() {
               />
             ) : view === 'updates' ? (
               <UpdatesPage
+                onBackClick={() => updateView('landing')}
+                onSignInClick={() => updateView('login')}
+                onCreateAccountClick={() => updateView('register')}
+              />
+            ) : view === 'about' ? (
+              <AboutPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
                 onCreateAccountClick={() => updateView('register')}
