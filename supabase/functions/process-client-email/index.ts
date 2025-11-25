@@ -205,6 +205,56 @@ Deno.serve(async (req: Request) => {
       console.log('Client grading is disabled, skipping grade update');
     }
 
+    const { data: integration } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('user_id', client.user_id)
+      .eq('integration_type', 'slack')
+      .eq('is_active', true)
+      .eq('push_notifications_enabled', true)
+      .maybeSingle();
+
+    if (integration) {
+      const { data: eventNotifications } = await supabase
+        .from('event_notifications')
+        .select('*')
+        .eq('integration_id', integration.id)
+        .eq('event_type', 'new_email')
+        .eq('is_active', true);
+
+      if (eventNotifications && eventNotifications.length > 0) {
+        for (const event of eventNotifications) {
+          let message = event.message;
+          message = message.replace(/{sender}/g, senderEmail);
+          message = message.replace(/{name}/g, `${client.first_name} ${client.last_name}`);
+          message = message.replace(/{subject}/g, emailData.subject || 'No subject');
+
+          fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify({
+              token: integration.api_key,
+              channel: event.channel,
+              message: message,
+              username: event.username
+            })
+          })
+            .then(async (response) => {
+              if (response.ok) {
+                console.log('Slack notification sent successfully');
+              } else {
+                const error = await response.text();
+                console.error('Slack notification failed:', error);
+              }
+            })
+            .catch(error => console.error('Failed to send Slack notification:', error));
+        }
+      }
+    }
+
     fetch(`${supabaseUrl}/functions/v1/track-email-reply`, {
       method: 'POST',
       headers: {
