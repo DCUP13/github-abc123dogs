@@ -5,6 +5,8 @@ export type EventType = 'new_email' | 'new_contact' | 'meeting_scheduled' | 'tas
 interface NotificationData {
   sender?: string;
   name?: string;
+  subject?: string;
+  email_content?: string;
   contact?: string;
   task?: string;
   [key: string]: string | undefined;

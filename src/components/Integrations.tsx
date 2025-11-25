@@ -240,7 +240,7 @@ interface IntegrationsProps {
 }
 
 const EVENT_TYPES = [
-  { key: 'new_email', label: 'New Email Received', defaultMessage: 'New email received from {sender}' },
+  { key: 'new_email', label: 'New Email Received', defaultMessage: 'New email from {sender}\nSubject: {subject}\n\n{email_content}' },
   { key: 'new_contact', label: 'New Contact Added', defaultMessage: 'New contact added: {name}' },
   { key: 'meeting_scheduled', label: 'Meeting Scheduled', defaultMessage: 'Meeting scheduled with {contact}' },
   { key: 'task_completed', label: 'Task Completed', defaultMessage: 'Task completed: {task}' },
@@ -826,7 +826,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                   </h2>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Configure a Slack notification for a specific event. Use placeholders like {'{sender}'}, {'{name}'}, {'{contact}'}, or {'{task}'} in your message.
+                  Configure a Slack notification for a specific event. Use placeholders like {'{sender}'}, {'{name}'}, {'{subject}'}, {'{email_content}'}, {'{contact}'}, or {'{task}'} in your message.
                 </p>
               </div>
 

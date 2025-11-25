@@ -228,6 +228,7 @@ Deno.serve(async (req: Request) => {
           message = message.replace(/{sender}/g, senderEmail);
           message = message.replace(/{name}/g, `${client.first_name} ${client.last_name}`);
           message = message.replace(/{subject}/g, emailData.subject || 'No subject');
+          message = message.replace(/{email_content}/g, emailData.body || 'No content');
 
           fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
             method: 'POST',
