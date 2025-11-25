@@ -65,7 +65,10 @@ const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
     description: 'Send notifications and updates to Slack channels',
     icon: '💬',
     fields: [
-      { key: 'webhook_url', label: 'Webhook URL', type: 'textarea', placeholder: 'https://hooks.slack.com/services/...', required: true },
+      { key: 'api_key', label: 'SLACK_BOT_TOKEN', type: 'password', placeholder: 'xoxb-your-bot-token', required: true },
+      { key: 'message', label: 'MESSAGE', type: 'textarea', placeholder: 'Default message template', required: false },
+      { key: 'channel', label: 'CHANNEL', type: 'text', placeholder: '#general', required: true },
+      { key: 'user_name', label: 'USER_NAME', type: 'text', placeholder: 'Bot Display Name', required: false },
     ],
   },
   {
