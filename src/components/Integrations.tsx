@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle } from 'lucide-react';
+import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Integration {
@@ -10,6 +10,8 @@ interface Integration {
   api_secret: string;
   additional_config: Record<string, any>;
   is_active: boolean;
+  push_notifications_enabled: boolean;
+  event_messages: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
@@ -227,12 +229,23 @@ interface IntegrationsProps {
   currentView: string;
 }
 
+const EVENT_TYPES = [
+  { key: 'new_email', label: 'New Email Received', defaultMessage: 'New email received from {sender}' },
+  { key: 'new_contact', label: 'New Contact Added', defaultMessage: 'New contact added: {name}' },
+  { key: 'meeting_scheduled', label: 'Meeting Scheduled', defaultMessage: 'Meeting scheduled with {contact}' },
+  { key: 'task_completed', label: 'Task Completed', defaultMessage: 'Task completed: {task}' },
+  { key: 'draft_created', label: 'Draft Created', defaultMessage: 'New draft created' },
+];
+
 export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEventConfig, setShowEventConfig] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<IntegrationTemplate | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [eventMessages, setEventMessages] = useState<Record<string, string>>({});
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -370,6 +383,62 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
     }));
   };
 
+  const handleTogglePushNotifications = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('integrations')
+        .update({ push_notifications_enabled: !currentStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await loadIntegrations();
+      setSuccess(`Push notifications ${!currentStatus ? 'enabled' : 'disabled'}`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      setError('Failed to update push notifications');
+    }
+  };
+
+  const handleConfigureEvents = (integration: Integration) => {
+    setSelectedIntegration(integration);
+    setEventMessages(integration.event_messages || {});
+    setShowEventConfig(true);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleSaveEventConfig = async () => {
+    if (!selectedIntegration) return;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from('integrations')
+        .update({
+          event_messages: eventMessages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedIntegration.id);
+
+      if (error) throw error;
+
+      setSuccess('Event configuration saved successfully!');
+      setShowEventConfig(false);
+      await loadIntegrations();
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Error saving event configuration:', error);
+      setError('Failed to save event configuration');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -419,24 +488,54 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={integration.is_active}
-                          onChange={() => handleToggleActive(integration.id, integration.is_active)}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {integration.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </label>
-                      <button
-                        onClick={() => handleDeleteIntegration(integration.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={integration.is_active}
+                            onChange={() => handleToggleActive(integration.id, integration.is_active)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {integration.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </label>
+                        <button
+                          onClick={() => handleDeleteIntegration(integration.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {integration.integration_type === 'slack' && (
+                        <>
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={integration.push_notifications_enabled || false}
+                                onChange={() => handleTogglePushNotifications(integration.id, integration.push_notifications_enabled || false)}
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                <Bell className="w-4 h-4" />
+                                Push Notifications
+                              </span>
+                            </label>
+                          </div>
+                          {integration.push_notifications_enabled && (
+                            <button
+                              onClick={() => handleConfigureEvents(integration)}
+                              className="w-full px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Settings className="w-4 h-4" />
+                              Configure Events
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -558,6 +657,65 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                     <>
                       <Save className="w-5 h-5" />
                       Connect Integration
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEventConfig && selectedIntegration && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Configure Event Notifications</h2>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Customize notification messages for different events. Use placeholders like {'{sender}'}, {'{name}'}, {'{contact}'}, or {'{task}'} in your messages.
+                </p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {EVENT_TYPES.map(event => (
+                  <div key={event.key} className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {event.label}
+                    </label>
+                    <input
+                      type="text"
+                      value={eventMessages[event.key] || event.defaultMessage}
+                      onChange={(e) => setEventMessages({ ...eventMessages, [event.key]: e.target.value })}
+                      placeholder={event.defaultMessage}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+                <button
+                  onClick={() => setShowEventConfig(false)}
+                  className="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEventConfig}
+                  disabled={isSaving}
+                  className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Save Configuration
                     </>
                   )}
                 </button>
