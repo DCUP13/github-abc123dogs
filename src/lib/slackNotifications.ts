@@ -20,7 +20,7 @@ export async function sendSlackNotification(
       return { success: false, error: 'User not authenticated' };
     }
 
-    const { data: integrations, error: fetchError } = await supabase
+    const { data: integration, error: integrationError } = await supabase
       .from('integrations')
       .select('*')
       .eq('user_id', user.id)
@@ -29,49 +29,67 @@ export async function sendSlackNotification(
       .eq('push_notifications_enabled', true)
       .maybeSingle();
 
-    if (fetchError) {
-      console.error('Error fetching Slack integration:', fetchError);
+    if (integrationError) {
+      console.error('Error fetching Slack integration:', integrationError);
       return { success: false, error: 'Failed to fetch integration' };
     }
 
-    if (!integrations) {
+    if (!integration) {
       return { success: false, error: 'No active Slack integration with push notifications enabled' };
     }
 
-    const token = integrations.api_key;
-    const channel = integrations.additional_config?.channel || '#general';
-    const username = integrations.additional_config?.user_name || 'Bot User';
+    const { data: eventNotifications, error: eventError } = await supabase
+      .from('event_notifications')
+      .select('*')
+      .eq('integration_id', integration.id)
+      .eq('event_type', eventType)
+      .eq('is_active', true);
 
-    let message = integrations.event_messages?.[eventType] || integrations.additional_config?.message || 'Notification from app';
+    if (eventError) {
+      console.error('Error fetching event notifications:', eventError);
+      return { success: false, error: 'Failed to fetch event configuration' };
+    }
 
-    Object.keys(data).forEach(key => {
-      if (data[key]) {
-        message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), data[key] as string);
-      }
-    });
+    if (!eventNotifications || eventNotifications.length === 0) {
+      return { success: false, error: `No active event configuration for ${eventType}` };
+    }
 
+    const token = integration.api_key;
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token,
-        channel,
-        message,
-        username,
-      }),
-    });
+    const results = await Promise.all(
+      eventNotifications.map(async (event) => {
+        let message = event.message;
 
-    const result = await response.json();
+        Object.keys(data).forEach(key => {
+          if (data[key]) {
+            message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), data[key] as string);
+          }
+        });
 
-    if (!result.success) {
-      console.error('Slack notification failed:', result.error);
-      return { success: false, error: result.error };
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-slack-notification`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token,
+            channel: event.channel,
+            message,
+            username: event.username,
+          }),
+        });
+
+        return response.json();
+      })
+    );
+
+    const failed = results.filter(r => !r.success);
+    if (failed.length > 0) {
+      console.error('Some Slack notifications failed:', failed);
+      return { success: false, error: `${failed.length} notification(s) failed` };
     }
 
     return { success: true };

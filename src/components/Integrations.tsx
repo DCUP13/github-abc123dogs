@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings } from 'lucide-react';
+import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Toggle } from './Toggle';
 
 interface Integration {
   id: string;
@@ -12,6 +13,18 @@ interface Integration {
   is_active: boolean;
   push_notifications_enabled: boolean;
   event_messages: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+}
+
+interface EventNotification {
+  id: string;
+  integration_id: string;
+  event_type: string;
+  channel: string;
+  message: string;
+  username: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -68,9 +81,6 @@ const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
     icon: '💬',
     fields: [
       { key: 'api_key', label: 'SLACK_BOT_TOKEN', type: 'password', placeholder: 'xoxb-your-bot-token', required: true },
-      { key: 'message', label: 'MESSAGE', type: 'textarea', placeholder: 'Default message template', required: false },
-      { key: 'channel', label: 'CHANNEL', type: 'text', placeholder: '#general', required: true },
-      { key: 'user_name', label: 'USER_NAME', type: 'text', placeholder: 'Bot Display Name', required: false },
     ],
   },
   {
@@ -239,13 +249,20 @@ const EVENT_TYPES = [
 
 export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [eventNotifications, setEventNotifications] = useState<EventNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEventConfig, setShowEventConfig] = useState(false);
+  const [showEventDialog, setShowEventDialog] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventNotification | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<IntegrationTemplate | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [eventMessages, setEventMessages] = useState<Record<string, string>>({});
+  const [eventFormData, setEventFormData] = useState({
+    event_type: '',
+    channel: '',
+    message: '',
+    username: 'Bot User',
+  });
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -253,6 +270,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
   useEffect(() => {
     loadIntegrations();
+    loadEventNotifications();
   }, []);
 
   const loadIntegrations = async () => {
@@ -269,6 +287,20 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
       setError('Failed to load integrations');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadEventNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('event_notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setEventNotifications(data || []);
+    } catch (error) {
+      console.error('Error loading event notifications:', error);
     }
   };
 
@@ -401,41 +433,128 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
     }
   };
 
-  const handleConfigureEvents = (integration: Integration) => {
+  const handleAddEvent = (integration: Integration) => {
     setSelectedIntegration(integration);
-    setEventMessages(integration.event_messages || {});
-    setShowEventConfig(true);
+    setSelectedEvent(null);
+    setEventFormData({
+      event_type: '',
+      channel: '',
+      message: '',
+      username: 'Bot User',
+    });
+    setShowEventDialog(true);
     setError(null);
     setSuccess(null);
   };
 
-  const handleSaveEventConfig = async () => {
+  const handleEditEvent = (event: EventNotification) => {
+    const integration = integrations.find(i => i.id === event.integration_id);
+    if (integration) {
+      setSelectedIntegration(integration);
+      setSelectedEvent(event);
+      setEventFormData({
+        event_type: event.event_type,
+        channel: event.channel,
+        message: event.message,
+        username: event.username,
+      });
+      setShowEventDialog(true);
+      setError(null);
+      setSuccess(null);
+    }
+  };
+
+  const handleSaveEvent = async () => {
     if (!selectedIntegration) return;
+
+    if (!eventFormData.event_type || !eventFormData.channel || !eventFormData.message) {
+      setError('Please fill in all required fields');
+      return;
+    }
 
     setIsSaving(true);
     setError(null);
 
     try {
-      const { error } = await supabase
-        .from('integrations')
-        .update({
-          event_messages: eventMessages,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedIntegration.id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      if (error) throw error;
+      if (selectedEvent) {
+        const { error } = await supabase
+          .from('event_notifications')
+          .update({
+            event_type: eventFormData.event_type,
+            channel: eventFormData.channel,
+            message: eventFormData.message,
+            username: eventFormData.username,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedEvent.id);
 
-      setSuccess('Event configuration saved successfully!');
-      setShowEventConfig(false);
-      await loadIntegrations();
+        if (error) throw error;
+        setSuccess('Event updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('event_notifications')
+          .insert({
+            user_id: user.id,
+            integration_id: selectedIntegration.id,
+            event_type: eventFormData.event_type,
+            channel: eventFormData.channel,
+            message: eventFormData.message,
+            username: eventFormData.username,
+          });
+
+        if (error) throw error;
+        setSuccess('Event added successfully!');
+      }
+
+      setShowEventDialog(false);
+      await loadEventNotifications();
 
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
-      console.error('Error saving event configuration:', error);
-      setError('Failed to save event configuration');
+      console.error('Error saving event:', error);
+      setError('Failed to save event');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('event_notifications')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      setSuccess('Event deleted successfully!');
+      await loadEventNotifications();
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setError('Failed to delete event');
+    }
+  };
+
+  const handleToggleEventActive = async (eventId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('event_notifications')
+        .update({ is_active: !currentStatus, updated_at: new Date().toISOString() })
+        .eq('id', eventId);
+
+      if (error) throw error;
+
+      await loadEventNotifications();
+    } catch (error) {
+      console.error('Error toggling event:', error);
+      setError('Failed to update event');
     }
   };
 
@@ -490,17 +609,11 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={integration.is_active}
-                            onChange={() => handleToggleActive(integration.id, integration.is_active)}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {integration.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </label>
+                        <Toggle
+                          checked={integration.is_active}
+                          onChange={() => handleToggleActive(integration.id, integration.is_active)}
+                          label={integration.is_active ? 'Active' : 'Inactive'}
+                        />
                         <button
                           onClick={() => handleDeleteIntegration(integration.id)}
                           className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -511,29 +624,66 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
                       {integration.integration_type === 'slack' && (
                         <>
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Bell className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Push Notifications
+                                </span>
+                              </div>
+                              <Toggle
                                 checked={integration.push_notifications_enabled || false}
                                 onChange={() => handleTogglePushNotifications(integration.id, integration.push_notifications_enabled || false)}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                               />
-                              <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                <Bell className="w-4 h-4" />
-                                Push Notifications
-                              </span>
-                            </label>
+                            </div>
+                            {integration.push_notifications_enabled && (
+                              <>
+                                <button
+                                  onClick={() => handleAddEvent(integration)}
+                                  className="w-full px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-center gap-2 mb-3"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  Add Event
+                                </button>
+                                {eventNotifications
+                                  .filter(e => e.integration_id === integration.id)
+                                  .map(event => {
+                                    const eventType = EVENT_TYPES.find(t => t.key === event.event_type);
+                                    return (
+                                      <div key={event.id} className="mb-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                            {eventType?.label || event.event_type}
+                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <Toggle
+                                              checked={event.is_active}
+                                              onChange={() => handleToggleEventActive(event.id, event.is_active)}
+                                            />
+                                            <button
+                                              onClick={() => handleEditEvent(event)}
+                                              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                                            >
+                                              <Edit2 className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteEvent(event.id)}
+                                              className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                            >
+                                              <Trash2 className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                          {event.channel}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
+                              </>
+                            )}
                           </div>
-                          {integration.push_notifications_enabled && (
-                            <button
-                              onClick={() => handleConfigureEvents(integration)}
-                              className="w-full px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <Settings className="w-4 h-4" />
-                              Configure Events
-                            </button>
-                          )}
                         </>
                       )}
                     </div>
@@ -665,45 +815,89 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
           </div>
         )}
 
-        {showEventConfig && selectedIntegration && (
+        {showEventDialog && selectedIntegration && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Configure Event Notifications</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {selectedEvent ? 'Edit Event' : 'Add Event'}
+                  </h2>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Customize notification messages for different events. Use placeholders like {'{sender}'}, {'{name}'}, {'{contact}'}, or {'{task}'} in your messages.
+                  Configure a Slack notification for a specific event. Use placeholders like {'{sender}'}, {'{name}'}, {'{contact}'}, or {'{task}'} in your message.
                 </p>
               </div>
 
               <div className="p-6 space-y-4">
-                {EVENT_TYPES.map(event => (
-                  <div key={event.key} className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {event.label}
-                    </label>
-                    <input
-                      type="text"
-                      value={eventMessages[event.key] || event.defaultMessage}
-                      onChange={(e) => setEventMessages({ ...eventMessages, [event.key]: e.target.value })}
-                      placeholder={event.defaultMessage}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                ))}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Event Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={eventFormData.event_type}
+                    onChange={(e) => setEventFormData({ ...eventFormData, event_type: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Select an event type</option>
+                    {EVENT_TYPES.map(event => (
+                      <option key={event.key} value={event.key}>
+                        {event.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Channel <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={eventFormData.channel}
+                    onChange={(e) => setEventFormData({ ...eventFormData, channel: e.target.value })}
+                    placeholder="#general"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Message <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={eventFormData.message}
+                    onChange={(e) => setEventFormData({ ...eventFormData, message: e.target.value })}
+                    placeholder={EVENT_TYPES.find(e => e.key === eventFormData.event_type)?.defaultMessage || 'Enter your message'}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Username (Bot Display Name)
+                  </label>
+                  <input
+                    type="text"
+                    value={eventFormData.username}
+                    onChange={(e) => setEventFormData({ ...eventFormData, username: e.target.value })}
+                    placeholder="Bot User"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
               </div>
 
               <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                 <button
-                  onClick={() => setShowEventConfig(false)}
+                  onClick={() => setShowEventDialog(false)}
                   className="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveEventConfig}
+                  onClick={handleSaveEvent}
                   disabled={isSaving}
                   className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
                 >
@@ -715,7 +909,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                   ) : (
                     <>
                       <Save className="w-5 h-5" />
-                      Save Configuration
+                      {selectedEvent ? 'Update Event' : 'Add Event'}
                     </>
                   )}
                 </button>
