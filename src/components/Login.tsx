@@ -13,6 +13,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     email: '',
     password: '',
   });
+  const [loginType, setLoginType] = useState<'manager' | 'member'>('member');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,7 +30,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       });
 
       if (error) {
-        // Provide more user-friendly error messages
         if (error.message === 'Invalid login credentials') {
           throw new Error('The email or password you entered is incorrect. Please try again.');
         }
@@ -37,6 +37,27 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           throw new Error('Please check your email to confirm your account before logging in.');
         }
         throw error;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('role, organization_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (loginType === 'manager' && (!memberData || !['owner', 'manager'].includes(memberData.role))) {
+          await supabase.auth.signOut();
+          throw new Error('You do not have manager permissions. Please login as a member.');
+        }
+
+        localStorage.setItem('userRole', memberData?.role || 'member');
+        localStorage.setItem('loginType', loginType);
+        if (memberData?.organization_id) {
+          localStorage.setItem('organizationId', memberData.organization_id);
+        }
       }
 
       setStatus('success');
@@ -74,7 +95,37 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Login As
+          </label>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={() => setLoginType('member')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                loginType === 'member'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Member
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginType('manager')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                loginType === 'manager'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Manager
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email Address
           </label>
           <input
@@ -89,7 +140,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Password
           </label>
           <div className="relative">

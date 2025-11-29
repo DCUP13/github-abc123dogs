@@ -23,12 +23,14 @@ import { UpdatesPage } from './components/UpdatesPage';
 import { AboutPage } from './components/AboutPage';
 import { Support } from './components/Support';
 import { Integrations } from './components/Integrations';
+import { TeamManagement } from './components/TeamManagement';
+import { TeamView } from './components/TeamView';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
 import { AlertCircle } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -199,12 +201,27 @@ export default function App() {
     checkConnection();
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('Session error:', error);
         setView('landing');
       } else if (session) {
-        setView('dashboard');
+        const loginType = localStorage.getItem('loginType');
+        if (loginType === 'manager') {
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+            setView('team-management');
+          } else {
+            setView('dashboard');
+          }
+        } else {
+          setView('dashboard');
+        }
         fetchUserSettings();
       } else {
         setView('landing');
@@ -219,10 +236,25 @@ export default function App() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
         if (session) {
-          setView('dashboard');
+          const loginType = localStorage.getItem('loginType');
+          if (loginType === 'manager') {
+            const { data: memberData } = await supabase
+              .from('organization_members')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+              setView('team-management');
+            } else {
+              setView('dashboard');
+            }
+          } else {
+            setView('dashboard');
+          }
           fetchUserSettings();
         } else {
           setView('landing');
@@ -316,6 +348,12 @@ export default function App() {
       <EmailProvider>
         <DashboardProvider>
           <div className={darkMode ? 'dark' : ''}>
+            {view === 'team-management' && (
+              <TeamManagement onSignOut={handleSignOut} />
+            )}
+            {view === 'team-view' && (
+              <TeamView onSignOut={handleSignOut} />
+            )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
@@ -330,6 +368,7 @@ export default function App() {
                     onCalendarClick={() => updateView('calendar')}
                     onSupportClick={() => updateView('support')}
                     onIntegrationsClick={() => updateView('integrations')}
+                    onTeamClick={() => updateView('team-view')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
