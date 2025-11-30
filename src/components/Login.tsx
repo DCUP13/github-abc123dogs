@@ -29,7 +29,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       console.log('Calling signInWithPassword...');
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Sign in request timed out. Please check your network connection.')), 10000);
+        setTimeout(() => reject(new Error('Sign in request timed out. Please check your network connection.')), 20000);
       });
 
       const signInResult = await Promise.race([

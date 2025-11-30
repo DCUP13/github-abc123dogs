@@ -190,7 +190,7 @@ export default function App() {
       console.log('Starting auth initialization...');
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('getSession timeout')), 5000);
+        setTimeout(() => reject(new Error('getSession timeout')), 15000);
       });
 
       try {
