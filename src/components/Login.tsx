@@ -48,11 +48,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (loginType === 'manager' && (!memberData || !['owner', 'manager'].includes(memberData.role))) {
-          await supabase.auth.signOut();
-          throw new Error('You do not have manager permissions. Please login as a member.');
-        }
-
         localStorage.setItem('userRole', memberData?.role || 'member');
         localStorage.setItem('loginType', loginType);
         if (memberData?.organization_id) {

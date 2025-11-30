@@ -1,5 +1,5 @@
-import React from 'react';
-import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, Layout, Settings as SettingsIcon, LogOut, FileText, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug, Shield } from 'lucide-react';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -28,10 +28,53 @@ export function Sidebar({
   onIntegrationsClick,
   onTeamClick
 }: SidebarProps) {
+  const [viewMode, setViewMode] = useState<'member' | 'manager'>('member');
+
+  useEffect(() => {
+    const loginType = localStorage.getItem('loginType');
+    if (loginType === 'manager') {
+      setViewMode('manager');
+    }
+  }, []);
+
+  const switchToManagerView = () => {
+    localStorage.setItem('loginType', 'manager');
+    setViewMode('manager');
+    window.location.href = '/team-management';
+  };
+
+  const switchToMemberView = () => {
+    localStorage.setItem('loginType', 'member');
+    setViewMode('member');
+    onHomeClick();
+  };
+
   return (
-    <div className="h-screen w-64 bg-indigo-800 dark:bg-gray-800 text-white p-6">
+    <div className="h-screen w-64 bg-indigo-800 dark:bg-gray-800 text-white p-6 flex flex-col">
       <div className="mb-8">
         <h2 className="text-xl font-bold">Dashboard</h2>
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={switchToMemberView}
+            className={`flex-1 px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+              viewMode === 'member'
+                ? 'bg-blue-600 text-white'
+                : 'bg-indigo-700 dark:bg-gray-700 text-gray-200 hover:bg-indigo-600 dark:hover:bg-gray-600'
+            }`}
+          >
+            Member
+          </button>
+          <button
+            onClick={switchToManagerView}
+            className={`flex-1 px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+              viewMode === 'manager'
+                ? 'bg-blue-600 text-white'
+                : 'bg-indigo-700 dark:bg-gray-700 text-gray-200 hover:bg-indigo-600 dark:hover:bg-gray-600'
+            }`}
+          >
+            Manager
+          </button>
+        </div>
       </div>
       
       <nav className="space-y-2">
@@ -109,6 +152,9 @@ export function Sidebar({
           Settings
         </button>
 
+      </nav>
+
+      <div className="mt-auto pt-4 border-t border-indigo-700 dark:border-gray-700">
         <button
           onClick={onSupportClick}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
@@ -117,14 +163,14 @@ export function Sidebar({
           Support
         </button>
 
-        <button 
+        <button
           onClick={onSignOut}
           className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors text-red-300 hover:text-red-200"
         >
           <LogOut className="w-4 h-4" />
           Sign out
         </button>
-      </nav>
+      </div>
     </div>
   );
 }
