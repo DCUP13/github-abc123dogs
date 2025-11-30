@@ -201,16 +201,7 @@ export default function App() {
         }
 
         console.log('Calling getSession...');
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((resolve) => {
-          setTimeout(() => {
-            console.log('Session check timed out, going to landing');
-            resolve({ data: { session: null }, error: null });
-          }, 3000);
-        });
-
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        const { data: { session }, error } = result;
+        const { data: { session }, error } = await supabase.auth.getSession();
         console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
@@ -228,18 +219,33 @@ export default function App() {
 
           if (loginType === 'manager') {
             console.log('Manager login type, checking organization membership...');
-            const { data: memberData } = await supabase
-              .from('organization_members')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
+            try {
+              const orgCheckPromise = supabase
+                .from('organization_members')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
 
-            if (memberData && ['owner', 'manager'].includes(memberData.role)) {
-              console.log('Setting view to team-management');
-              setView('team-management');
-              setUserRole(memberData.role);
-            } else {
-              console.log('Setting view to dashboard');
+              const orgTimeout = new Promise((resolve) => {
+                setTimeout(() => {
+                  console.log('Organization check timed out, defaulting to dashboard');
+                  resolve({ data: null });
+                }, 5000);
+              });
+
+              const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
+              const memberData = orgResult?.data;
+
+              if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+                console.log('Setting view to team-management');
+                setView('team-management');
+                setUserRole(memberData.role);
+              } else {
+                console.log('Setting view to dashboard');
+                setView('dashboard');
+              }
+            } catch (orgError) {
+              console.error('Organization check error, defaulting to dashboard:', orgError);
               setView('dashboard');
             }
           } else {
