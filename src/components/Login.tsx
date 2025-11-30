@@ -103,18 +103,44 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
       if (user) {
         console.log('Checking organization membership...');
-        const { data: memberData } = await supabase
-          .from('organization_members')
-          .select('role, organization_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+
+        let memberData = null;
+        try {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const accessToken = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}').currentSession?.access_token;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+          const response = await fetch(
+            `${supabaseUrl}/rest/v1/organization_members?user_id=eq.${user.id}&select=role,organization_id`,
+            {
+              headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken || supabaseAnonKey}`,
+                'Accept': 'application/vnd.pgrst.object+json'
+              },
+              signal: controller.signal
+            }
+          );
+
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            memberData = data;
+          }
+        } catch (e) {
+          console.log('Could not fetch member data, continuing as owner:', e);
+        }
 
         console.log('Member data:', memberData);
 
         const userRole = memberData?.role || 'owner';
 
         if (loginType === 'manager' && memberData && userRole === 'member') {
-          await supabase.auth.signOut();
+          localStorage.clear();
           throw new Error('You do not have manager permissions. Please login as a member.');
         }
 
