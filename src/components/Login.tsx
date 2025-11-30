@@ -48,7 +48,14 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           .eq('user_id', user.id)
           .maybeSingle();
 
-        localStorage.setItem('userRole', memberData?.role || 'member');
+        const userRole = memberData?.role || 'member';
+
+        if (loginType === 'manager' && userRole === 'member') {
+          await supabase.auth.signOut();
+          throw new Error('You do not have manager permissions. Please login as a member.');
+        }
+
+        localStorage.setItem('userRole', userRole);
         localStorage.setItem('loginType', loginType);
         if (memberData?.organization_id) {
           localStorage.setItem('organizationId', memberData.organization_id);

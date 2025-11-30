@@ -28,6 +28,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'member' | 'manager'>('member');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -103,7 +104,8 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
         body: JSON.stringify({
           email: inviteEmail,
           organization_id: organizationId,
-          invited_by: user.id
+          invited_by: user.id,
+          role: inviteRole
         })
       });
 
@@ -115,6 +117,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
 
       setStatus({ type: 'success', message: `Invitation sent to ${inviteEmail}` });
       setInviteEmail('');
+      setInviteRole('member');
       setShowInviteDialog(false);
       loadTeamData();
 
@@ -305,6 +308,24 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                   placeholder="member@example.com"
                   required
                 />
+              </div>
+              <div>
+                <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Role
+                </label>
+                <select
+                  id="invite-role"
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as 'member' | 'manager')}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  required
+                >
+                  <option value="member">Member</option>
+                  <option value="manager">Manager</option>
+                </select>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Members can only access the member view. Managers can access both views.
+                </p>
               </div>
               <div className="flex gap-3">
                 <button
