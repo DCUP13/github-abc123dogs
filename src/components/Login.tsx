@@ -28,10 +28,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     try {
       console.log('Calling signInWithPassword...');
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const loginPromise = supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log('Login timed out after 10 seconds');
+          reject(new Error('Login request timed out. The authentication service may be temporarily unavailable.'));
+        }, 10000);
+      });
+
+      const result = await Promise.race([loginPromise, timeoutPromise]) as any;
+      const { error } = result;
 
       console.log('signInWithPassword result:', { error: error?.message });
 
