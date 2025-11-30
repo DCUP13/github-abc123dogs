@@ -29,6 +29,8 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'member' | 'manager'>('member');
+  const [tempPassword, setTempPassword] = useState('');
+  const [inviteType, setInviteType] = useState<'invitation' | 'direct'>('invitation');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -84,6 +86,10 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail || !organizationId) return;
+    if (inviteType === 'direct' && !tempPassword) {
+      setStatus({ type: 'error', message: 'Please provide a temporary password' });
+      return;
+    }
 
     setLoading(true);
     setStatus(null);
@@ -95,28 +101,54 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/invite-team-member`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: inviteEmail,
-          organization_id: organizationId,
-          invited_by: user.id,
-          role: inviteRole
-        })
-      });
+      if (inviteType === 'direct') {
+        const response = await fetch(`${supabaseUrl}/functions/v1/create-team-member`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: inviteEmail,
+            password: tempPassword,
+            organization_id: organizationId,
+            role: inviteRole
+          })
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send invitation');
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create team member');
+        }
+
+        setStatus({ type: 'success', message: `Team member created successfully. Email: ${inviteEmail}, Password: ${tempPassword}` });
+      } else {
+        const response = await fetch(`${supabaseUrl}/functions/v1/invite-team-member`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: inviteEmail,
+            organization_id: organizationId,
+            invited_by: user.id,
+            role: inviteRole
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to send invitation');
+        }
+
+        setStatus({ type: 'success', message: `Invitation sent to ${inviteEmail}` });
       }
 
-      setStatus({ type: 'success', message: `Invitation sent to ${inviteEmail}` });
       setInviteEmail('');
+      setTempPassword('');
       setInviteRole('member');
       setShowInviteDialog(false);
       loadTeamData();
@@ -296,6 +328,40 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
             </div>
             <form onSubmit={handleInviteMember} className="space-y-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Invite Method
+                </label>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setInviteType('invitation')}
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                      inviteType === 'invitation'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    Send Invitation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInviteType('direct')}
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                      inviteType === 'direct'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {inviteType === 'invitation'
+                    ? 'Send an email invitation for them to create their own account'
+                    : 'Create an account directly with a temporary password'}
+                </p>
+              </div>
+              <div>
                 <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email Address
                 </label>
@@ -309,6 +375,25 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                   required
                 />
               </div>
+              {inviteType === 'direct' && (
+                <div>
+                  <label htmlFor="temp-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Temporary Password
+                  </label>
+                  <input
+                    id="temp-password"
+                    type="text"
+                    value={tempPassword}
+                    onChange={(e) => setTempPassword(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter temporary password"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    The user can change this password after logging in
+                  </p>
+                </div>
+              )}
               <div>
                 <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Role
@@ -340,7 +425,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                   disabled={loading}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Sending...' : 'Send Invite'}
+                  {loading ? (inviteType === 'direct' ? 'Creating...' : 'Sending...') : (inviteType === 'direct' ? 'Create Account' : 'Send Invite')}
                 </button>
               </div>
             </form>
