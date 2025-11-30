@@ -351,10 +351,7 @@ export default function App() {
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
-            {view === 'team-view' && (
-              <TeamView onSignOut={handleSignOut} />
-            )}
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' ? (
+            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
                 <div className="fixed inset-y-0 left-0 w-64">
                   <Sidebar
@@ -405,6 +402,9 @@ export default function App() {
                   )}
                   {view === 'integrations' && (
                     <Integrations onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'team-view' && (
+                    <TeamView onSignOut={handleSignOut} />
                   )}
                 </div>
               </div>
