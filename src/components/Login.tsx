@@ -22,12 +22,17 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     e.preventDefault();
     setStatus('loading');
     setErrorMessage('');
-    
+
+    console.log('Login attempt started:', { email: formData.email, loginType });
+
     try {
+      console.log('Calling signInWithPassword...');
       const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
+
+      console.log('signInWithPassword result:', { error: error?.message });
 
       if (error) {
         if (error.message === 'Invalid login credentials') {
@@ -39,14 +44,19 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         throw error;
       }
 
+      console.log('Login successful, getting user...');
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('User retrieved:', { userId: user?.id });
 
       if (user) {
+        console.log('Checking organization membership...');
         const { data: memberData } = await supabase
           .from('organization_members')
           .select('role, organization_id')
           .eq('user_id', user.id)
           .maybeSingle();
+
+        console.log('Member data:', memberData);
 
         const userRole = memberData?.role || 'member';
 
@@ -62,6 +72,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }
       }
 
+      console.log('Login complete, calling onLoginSuccess');
       setStatus('success');
       setTimeout(() => {
         setStatus('idle');
@@ -69,6 +80,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         onLoginSuccess();
       }, 1000);
     } catch (error) {
+      console.error('Login error:', error);
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Failed to sign in');
     }
