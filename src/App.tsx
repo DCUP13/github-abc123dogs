@@ -189,7 +189,7 @@ export default function App() {
     // Check Supabase connection
     const checkConnection = async () => {
       try {
-        const { error } = await supabase.from('profiles').select('count');
+        const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
         if (error) throw error;
         setSupabaseError(false);
       } catch (error) {
