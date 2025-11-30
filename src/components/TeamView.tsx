@@ -51,30 +51,14 @@ export function TeamView({ onSignOut }: TeamViewProps) {
       }
 
       const { data: membersData, error } = await supabase
-        .from('organization_members')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at
-        `)
+        .from('organization_members_with_emails')
+        .select('*')
         .eq('organization_id', memberData.organization_id)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
 
-      const membersWithEmails = await Promise.all(
-        (membersData || []).map(async (member) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(member.user_id);
-          return {
-            ...member,
-            email: userData.user?.email,
-            name: userData.user?.user_metadata?.name || userData.user?.email?.split('@')[0]
-          };
-        })
-      );
-
-      setMembers(membersWithEmails);
+      setMembers(membersData || []);
 
     } catch (error) {
       console.error('Error loading team members:', error);

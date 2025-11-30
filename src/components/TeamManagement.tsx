@@ -55,30 +55,14 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
       setOrganizationId(memberData.organization_id);
 
       const { data: membersData, error: membersError } = await supabase
-        .from('organization_members')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at
-        `)
+        .from('organization_members_with_emails')
+        .select('*')
         .eq('organization_id', memberData.organization_id)
         .order('joined_at', { ascending: false });
 
       if (membersError) throw membersError;
 
-      const membersWithEmails = await Promise.all(
-        (membersData || []).map(async (member) => {
-          const { data: userData } = await supabase.auth.admin.getUserById(member.user_id);
-          return {
-            ...member,
-            email: userData.user?.email,
-            name: userData.user?.user_metadata?.name || userData.user?.email?.split('@')[0]
-          };
-        })
-      );
-
-      setMembers(membersWithEmails);
+      setMembers(membersData || []);
 
       const { data: invitationsData, error: invitationsError } = await supabase
         .from('member_invitations')
