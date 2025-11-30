@@ -46,7 +46,6 @@ export default function App() {
   const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [supabaseError, setSupabaseError] = useState(false);
   const [previousView, setPreviousView] = useState<View>('landing');
 
   const updateView = (newView: View) => {
@@ -186,20 +185,6 @@ export default function App() {
     window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
     window.addEventListener('navigate-to-about', handleNavigateToAbout);
 
-    // Check Supabase connection
-    const checkConnection = async () => {
-      try {
-        const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true });
-        if (error) throw error;
-        setSupabaseError(false);
-      } catch (error) {
-        console.error('Supabase connection error:', error);
-        setSupabaseError(true);
-      }
-    };
-
-    checkConnection();
-
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
@@ -315,30 +300,6 @@ export default function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (supabaseError) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md w-full">
-          <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-4">
-            <AlertCircle className="w-6 h-6" />
-            <h1 className="text-xl font-semibold">Connection Error</h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Unable to connect to the database. Please click the "Connect to Supabase" button in the top right corner to establish a connection.
-          </p>
-          <div className="flex justify-end">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Retry Connection
-            </button>
-          </div>
-        </div>
       </div>
     );
   }
