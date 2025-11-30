@@ -77,11 +77,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }
 
         console.log('Setting session in Supabase client...');
-        await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        });
-        console.log('Session set successfully');
+        try {
+          const sessionResult = await Promise.race([
+            supabase.auth.setSession({
+              access_token: data.access_token,
+              refresh_token: data.refresh_token
+            }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Session setup timeout')), 5000)
+            )
+          ]);
+          console.log('Session set successfully', sessionResult);
+        } catch (sessionError) {
+          console.error('Session setup error:', sessionError);
+        }
 
         user = data.user;
       } catch (fetchError: any) {
