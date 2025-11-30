@@ -34,6 +34,8 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         controller.abort();
       }, 10000);
 
+      let user;
+
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -88,7 +90,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }));
         console.log('Session tokens stored');
 
-        const user = data.user;
+        user = data.user;
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
