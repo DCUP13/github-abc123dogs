@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Calendar } from 'lucide-react';
+import { Users, Mail, Calendar, UserPlus, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TeamViewProps {
@@ -19,6 +19,14 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [organizationName, setOrganizationName] = useState<string>('');
+  const [organizationId, setOrganizationId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'manager' | 'member'>('member');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
 
   useEffect(() => {
     loadTeamMembers();
@@ -31,7 +39,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
       const { data: memberData } = await supabase
         .from('organization_members')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -39,6 +47,9 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         setLoading(false);
         return;
       }
+
+      setOrganizationId(memberData.organization_id);
+      setUserRole(memberData.role);
 
       const { data: orgData } = await supabase
         .from('organizations')
@@ -67,6 +78,41 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     }
   };
 
+  const handleInviteMember = async () => {
+    if (!inviteEmail.trim()) {
+      setInviteError('Please enter an email address');
+      return;
+    }
+
+    setInviteLoading(true);
+    setInviteError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-team-member', {
+        body: {
+          email: inviteEmail,
+          role: inviteRole,
+          organizationId
+        }
+      });
+
+      if (error) throw error;
+
+      setInviteSuccess(true);
+      setTimeout(() => {
+        setShowInviteDialog(false);
+        setInviteEmail('');
+        setInviteRole('member');
+        setInviteSuccess(false);
+        loadTeamMembers();
+      }, 2000);
+    } catch (error: any) {
+      setInviteError(error.message || 'Failed to send invitation');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -81,14 +127,25 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   return (
     <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <Users className="w-8 h-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Team Members</h1>
-            {organizationName && (
-              <p className="text-gray-600 dark:text-gray-400">{organizationName}</p>
-            )}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Users className="w-8 h-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Team Members</h1>
+              {organizationName && (
+                <p className="text-gray-600 dark:text-gray-400">{organizationName}</p>
+              )}
+            </div>
           </div>
+          {(userRole === 'owner' || userRole === 'manager') && (
+            <button
+              onClick={() => setShowInviteDialog(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              <UserPlus className="w-5 h-5" />
+              Add Member
+            </button>
+          )}
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -146,6 +203,94 @@ export function TeamView({ onSignOut }: TeamViewProps) {
           )}
         </div>
       </div>
+
+      {showInviteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Invite Team Member</h2>
+              <button
+                onClick={() => {
+                  setShowInviteDialog(false);
+                  setInviteError(null);
+                  setInviteEmail('');
+                  setInviteRole('member');
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {inviteSuccess ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+                <p className="text-green-600 dark:text-green-400 font-medium">Invitation sent successfully!</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="teammate@example.com"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Role
+                    </label>
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as 'manager' | 'member')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="member">Member</option>
+                      <option value="manager">Manager</option>
+                    </select>
+                  </div>
+
+                  {inviteError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-600 dark:text-red-400">{inviteError}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowInviteDialog(false);
+                      setInviteError(null);
+                      setInviteEmail('');
+                      setInviteRole('member');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleInviteMember}
+                    disabled={inviteLoading}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {inviteLoading ? 'Sending...' : 'Send Invite'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
