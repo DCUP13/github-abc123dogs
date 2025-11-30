@@ -108,11 +108,18 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         let memberData = null;
         try {
-          const { data } = await supabase
+          const memberQuery = supabase
             .from('organization_members')
             .select('role, organization_id')
             .eq('user_id', user.id)
             .maybeSingle();
+
+          const { data } = await Promise.race([
+            memberQuery,
+            new Promise<any>((_, reject) =>
+              setTimeout(() => reject(new Error('Organization check timeout')), 5000)
+            )
+          ]);
 
           memberData = data;
         } catch (e) {
