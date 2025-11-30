@@ -27,11 +27,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
     try {
       console.log('Calling signInWithPassword...');
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign in request timed out. Please check your network connection.')), 10000);
       });
 
+      const signInResult = await Promise.race([
+        supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        }),
+        timeoutPromise
+      ]);
+
+      const { error } = signInResult as any;
       console.log('signInWithPassword result:', { error: error?.message });
 
       if (error) {
