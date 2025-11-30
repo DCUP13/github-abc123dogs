@@ -70,13 +70,25 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           throw new Error(errorMsg);
         }
 
-        if (data.access_token) {
-          console.log('Setting session with tokens...');
-          await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token
-          });
+        if (!data.access_token || !data.user) {
+          throw new Error('Invalid response from authentication service');
         }
+
+        console.log('Storing session tokens manually...');
+        localStorage.setItem('supabase.auth.token', JSON.stringify({
+          currentSession: {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_at: data.expires_at,
+            expires_in: data.expires_in,
+            token_type: data.token_type,
+            user: data.user
+          },
+          expiresAt: data.expires_at
+        }));
+        console.log('Session tokens stored');
+
+        const user = data.user;
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
@@ -85,9 +97,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         throw fetchError;
       }
 
-      console.log('Login successful, getting user...');
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('User retrieved:', { userId: user?.id });
+      console.log('Login successful, user retrieved:', { userId: user?.id });
 
       if (user) {
         console.log('Checking organization membership...');
