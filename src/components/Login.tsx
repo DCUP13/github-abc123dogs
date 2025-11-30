@@ -119,7 +119,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
               headers: {
                 'apikey': supabaseAnonKey,
                 'Authorization': `Bearer ${accessToken || supabaseAnonKey}`,
-                'Accept': 'application/vnd.pgrst.object+json'
+                'Accept': 'application/json'
               },
               signal: controller.signal
             }
@@ -129,7 +129,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
           if (response.ok) {
             const data = await response.json();
-            memberData = data;
+            memberData = Array.isArray(data) && data.length > 0 ? data[0] : null;
           }
         } catch (e) {
           console.log('Could not fetch member data, continuing as owner:', e);
