@@ -76,19 +76,12 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           throw new Error('Invalid response from authentication service');
         }
 
-        console.log('Storing session tokens manually...');
-        localStorage.setItem('supabase.auth.token', JSON.stringify({
-          currentSession: {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            expires_at: data.expires_at,
-            expires_in: data.expires_in,
-            token_type: data.token_type,
-            user: data.user
-          },
-          expiresAt: data.expires_at
-        }));
-        console.log('Session tokens stored');
+        console.log('Setting session in Supabase client...');
+        await supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        });
+        console.log('Session set successfully');
 
         user = data.user;
       } catch (fetchError: any) {
@@ -106,31 +99,13 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         let memberData = null;
         try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-          const accessToken = JSON.parse(localStorage.getItem('supabase.auth.token') || '{}').currentSession?.access_token;
+          const { data } = await supabase
+            .from('organization_members')
+            .select('role, organization_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-          const response = await fetch(
-            `${supabaseUrl}/rest/v1/organization_members?user_id=eq.${user.id}&select=role,organization_id`,
-            {
-              headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken || supabaseAnonKey}`,
-                'Accept': 'application/json'
-              },
-              signal: controller.signal
-            }
-          );
-
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const data = await response.json();
-            memberData = Array.isArray(data) && data.length > 0 ? data[0] : null;
-          }
+          memberData = data;
         } catch (e) {
           console.log('Could not fetch member data, continuing as owner:', e);
         }
