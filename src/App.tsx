@@ -185,12 +185,22 @@ export default function App() {
     window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
     window.addEventListener('navigate-to-about', handleNavigateToAbout);
 
-    // Check for existing session
+    // Check for existing session with timeout
     const initAuth = async () => {
       console.log('Starting auth initialization...');
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('getSession timeout')), 5000);
+      });
+
       try {
         console.log('Calling getSession...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]);
+
+        const { data: { session }, error } = sessionResult as any;
         console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
