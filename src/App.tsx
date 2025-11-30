@@ -186,37 +186,47 @@ export default function App() {
     window.addEventListener('navigate-to-about', handleNavigateToAbout);
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error) {
-        console.error('Session error:', error);
-        setView('landing');
-      } else if (session) {
-        const loginType = localStorage.getItem('loginType');
-        if (loginType === 'manager') {
-          const { data: memberData } = await supabase
-            .from('organization_members')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-          if (memberData && ['owner', 'manager'].includes(memberData.role)) {
-            setView('team-management');
+        if (error) {
+          console.error('Session error:', error);
+          setView('landing');
+          setIsLoading(false);
+          return;
+        }
+
+        if (session) {
+          const loginType = localStorage.getItem('loginType');
+          if (loginType === 'manager') {
+            const { data: memberData } = await supabase
+              .from('organization_members')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+              setView('team-management');
+            } else {
+              setView('dashboard');
+            }
           } else {
             setView('dashboard');
           }
+          await fetchUserSettings();
         } else {
-          setView('dashboard');
+          setView('landing');
         }
-        fetchUserSettings();
-      } else {
+      } catch (error) {
+        console.error('Auth init failed:', error);
         setView('landing');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }).catch((error) => {
-      console.error('Auth session check failed:', error);
-      setView('landing');
-      setIsLoading(false);
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const {
