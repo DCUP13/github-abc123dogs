@@ -47,6 +47,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const updateView = (newView: View) => {
     setPreviousView(view);
@@ -222,6 +223,9 @@ export default function App() {
         if (session) {
           console.log('Session found, checking login type...');
           const loginType = localStorage.getItem('loginType');
+          const storedRole = localStorage.getItem('userRole');
+          setUserRole(storedRole);
+
           if (loginType === 'manager') {
             console.log('Manager login type, checking organization membership...');
             const { data: memberData } = await supabase
@@ -233,6 +237,7 @@ export default function App() {
             if (memberData && ['owner', 'manager'].includes(memberData.role)) {
               console.log('Setting view to team-management');
               setView('team-management');
+              setUserRole(memberData.role);
             } else {
               console.log('Setting view to dashboard');
               setView('dashboard');
@@ -247,6 +252,7 @@ export default function App() {
         } else {
           console.log('No session, setting view to landing');
           setView('landing');
+          setUserRole(null);
         }
       } catch (error) {
         console.error('Auth init failed:', error);
@@ -266,6 +272,9 @@ export default function App() {
       try {
         if (session) {
           const loginType = localStorage.getItem('loginType');
+          const storedRole = localStorage.getItem('userRole');
+          setUserRole(storedRole);
+
           if (loginType === 'manager') {
             const { data: memberData } = await supabase
               .from('organization_members')
@@ -275,6 +284,7 @@ export default function App() {
 
             if (memberData && ['owner', 'manager'].includes(memberData.role)) {
               setView('team-management');
+              setUserRole(memberData.role);
             } else {
               setView('dashboard');
             }
@@ -285,6 +295,7 @@ export default function App() {
         } else {
           setView('landing');
           setDarkMode(false);
+          setUserRole(null);
         }
       } catch (error) {
         console.error('Auth state change error:', error);
@@ -367,7 +378,7 @@ export default function App() {
                     onCalendarClick={() => updateView('calendar')}
                     onSupportClick={() => updateView('support')}
                     onIntegrationsClick={() => updateView('integrations')}
-                    onTeamClick={() => updateView('team-view')}
+                    {...(userRole === 'owner' || userRole === 'manager' ? { onTeamClick: () => updateView('team-view') } : {})}
                   />
                 </div>
                 <div className="flex-1 ml-64">
