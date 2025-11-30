@@ -26,33 +26,63 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     console.log('Login attempt started:', { email: formData.email, loginType });
 
     try {
-      console.log('Calling signInWithPassword...');
+      console.log('Using direct fetch for login...');
 
-      const loginPromise = supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('Aborting login after 10 seconds');
+        controller.abort();
+      }, 10000);
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          console.log('Login timed out after 10 seconds');
-          reject(new Error('Login request timed out. The authentication service may be temporarily unavailable.'));
-        }, 10000);
-      });
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const result = await Promise.race([loginPromise, timeoutPromise]) as any;
-      const { error } = result;
+        console.log('Making direct fetch to auth endpoint...');
+        const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseAnonKey,
+            'Authorization': `Bearer ${supabaseAnonKey}`
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          }),
+          signal: controller.signal
+        });
 
-      console.log('signInWithPassword result:', { error: error?.message });
+        clearTimeout(timeoutId);
+        console.log('Direct fetch completed:', { status: response.status });
 
-      if (error) {
-        if (error.message === 'Invalid login credentials') {
-          throw new Error('The email or password you entered is incorrect. Please try again.');
+        const data = await response.json();
+        console.log('Response data:', { hasAccessToken: !!data.access_token, hasError: !!data.error });
+
+        if (!response.ok) {
+          const errorMsg = data.error_description || data.msg || data.error || 'Invalid login credentials';
+          if (errorMsg.includes('Invalid login')) {
+            throw new Error('The email or password you entered is incorrect. Please try again.');
+          }
+          if (errorMsg.includes('Email not confirmed')) {
+            throw new Error('Please check your email to confirm your account before logging in.');
+          }
+          throw new Error(errorMsg);
         }
-        if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email to confirm your account before logging in.');
+
+        if (data.access_token) {
+          console.log('Setting session with tokens...');
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token
+          });
         }
-        throw error;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Login request timed out. The authentication service may be temporarily unavailable.');
+        }
+        throw fetchError;
       }
 
       console.log('Login successful, getting user...');
