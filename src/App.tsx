@@ -187,8 +187,11 @@ export default function App() {
 
     // Check for existing session
     const initAuth = async () => {
+      console.log('Starting auth initialization...');
       try {
+        console.log('Calling getSession...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
           console.error('Session error:', error);
@@ -198,8 +201,10 @@ export default function App() {
         }
 
         if (session) {
+          console.log('Session found, checking login type...');
           const loginType = localStorage.getItem('loginType');
           if (loginType === 'manager') {
+            console.log('Manager login type, checking organization membership...');
             const { data: memberData } = await supabase
               .from('organization_members')
               .select('role')
@@ -207,21 +212,28 @@ export default function App() {
               .maybeSingle();
 
             if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+              console.log('Setting view to team-management');
               setView('team-management');
             } else {
+              console.log('Setting view to dashboard');
               setView('dashboard');
             }
           } else {
+            console.log('Regular login, setting view to dashboard');
             setView('dashboard');
           }
+          console.log('Fetching user settings...');
           await fetchUserSettings();
+          console.log('User settings fetched');
         } else {
+          console.log('No session, setting view to landing');
           setView('landing');
         }
       } catch (error) {
         console.error('Auth init failed:', error);
         setView('landing');
       } finally {
+        console.log('Setting isLoading to false');
         setIsLoading(false);
       }
     };
