@@ -67,9 +67,9 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         console.log('Member data:', memberData);
 
-        const userRole = memberData?.role || 'member';
+        const userRole = memberData?.role || 'owner';
 
-        if (loginType === 'manager' && userRole === 'member') {
+        if (loginType === 'manager' && memberData && userRole === 'member') {
           await supabase.auth.signOut();
           throw new Error('You do not have manager permissions. Please login as a member.');
         }
