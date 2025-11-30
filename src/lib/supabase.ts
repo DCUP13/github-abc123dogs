@@ -14,27 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storage: window.localStorage,
-    storageKey: 'supabase.auth.token',
-    flowType: 'implicit'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'supabase-js-web'
-    },
-    fetch: (url, options = {}) => {
-      return fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(15000)
-      });
-    }
-  }
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 console.log('Supabase client created:', {
   hasAuth: !!supabase.auth,
