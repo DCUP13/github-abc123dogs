@@ -229,20 +229,48 @@ async function sendIndividualSESEmail(
     `--${boundary}--`
   ].join('\r\n')
 
-  const conn = await Deno.connect({
-    hostname: sesSettings.smtp_server,
-    port: parseInt(sesSettings.smtp_port),
-    transport: 'tcp',
-  })
+  const port = parseInt(sesSettings.smtp_port)
+  let conn: Deno.TcpConn | Deno.TlsConn
+
+  if (port === 465) {
+    conn = await Deno.connectTls({
+      hostname: sesSettings.smtp_server,
+      port: port,
+    })
+  } else {
+    conn = await Deno.connect({
+      hostname: sesSettings.smtp_server,
+      port: port,
+      transport: 'tcp',
+    })
+  }
 
   try {
-    const reader = conn.readable.getReader()
-    const writer = conn.writable.getWriter()
+    let reader = conn.readable.getReader()
+    let writer = conn.writable.getWriter()
 
     await readSMTPResponse(reader)
 
     await writer.write(encoder.encode(`EHLO ${sesSettings.smtp_server}\r\n`))
     await readSMTPResponse(reader)
+
+    if (port === 587 || port === 25) {
+      await writer.write(encoder.encode(`STARTTLS\r\n`))
+      await readSMTPResponse(reader)
+
+      reader.releaseLock()
+      writer.releaseLock()
+
+      const tlsConn = await Deno.startTls(conn as Deno.TcpConn, {
+        hostname: sesSettings.smtp_server,
+      })
+
+      reader = tlsConn.readable.getReader()
+      writer = tlsConn.writable.getWriter()
+
+      await writer.write(encoder.encode(`EHLO ${sesSettings.smtp_server}\r\n`))
+      await readSMTPResponse(reader)
+    }
 
     await writer.write(encoder.encode(`AUTH LOGIN\r\n`))
     await readSMTPResponse(reader)
