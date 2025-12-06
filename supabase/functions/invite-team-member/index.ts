@@ -129,13 +129,8 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', invited_by)
       .maybeSingle();
 
-    const { data: domainData } = await supabase
-      .from('email_domains')
-      .select('domain')
-      .eq('user_id', invited_by)
-      .maybeSingle();
-
-    const fromEmail = domainData ? `noreply@${domainData.domain}` : 'noreply@example.com';
+    const noreplyDomain = sesSettings?.noreply_domain;
+    const fromEmail = noreplyDomain ? `noreply@${noreplyDomain}` : 'noreply@example.com';
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

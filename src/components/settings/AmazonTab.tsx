@@ -30,6 +30,7 @@ export function AmazonTab({
   const [domains, setDomains] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState('');
   const [domainError, setDomainError] = useState('');
+  const [noreplyDomain, setNoreplyDomain] = useState('');
 
   useEffect(() => {
     fetchSESSettings();
@@ -59,6 +60,7 @@ export function AmazonTab({
         onEmailSettingChange('smtpPassword', data.smtp_password);
         onEmailSettingChange('smtpPort', data.smtp_port);
         onEmailSettingChange('smtpServer', data.smtp_server);
+        setNoreplyDomain(data.noreply_domain || '');
       }
     } catch (error) {
       console.error('Error fetching SES settings:', error);
@@ -133,6 +135,7 @@ export function AmazonTab({
           smtp_password: emailSettings.smtpPassword,
           smtp_port: emailSettings.smtpPort,
           smtp_server: emailSettings.smtpServer,
+          noreply_domain: noreplyDomain || null,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -447,6 +450,28 @@ export function AmazonTab({
             placeholder="Enter SMTP server"
             required
           />
+        </div>
+
+        <div>
+          <label htmlFor="noreplyDomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            NoReply Domain
+          </label>
+          <select
+            id="noreplyDomain"
+            value={noreplyDomain}
+            onChange={(e) => setNoreplyDomain(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="">Select a domain for noreply@ emails</option>
+            {domains.map((domain) => (
+              <option key={domain} value={domain}>
+                noreply@{domain}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            This domain will be used for system emails like team invitations
+          </p>
         </div>
 
         <div className="flex items-center justify-end gap-4 pt-4">
