@@ -26,7 +26,66 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     console.log('Login attempt started:', { email: formData.email, loginType });
 
     try {
-      console.log('Using direct fetch for login...');
+      console.log('Checking for invitation with temporary password...');
+      const { data: invitation } = await supabase
+        .from('member_invitations')
+        .select('*')
+        .eq('email', formData.email)
+        .eq('temporary_password', formData.password)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (invitation) {
+        console.log('Valid invitation found, creating account...');
+
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: undefined,
+            data: {
+              needs_password_change: true
+            }
+          }
+        });
+
+        if (signUpError) throw signUpError;
+        if (!signUpData.user) throw new Error('Failed to create account');
+
+        console.log('Account created, adding to organization...');
+
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: invitation.organization_id,
+            user_id: signUpData.user.id,
+            role: invitation.role || 'member'
+          });
+
+        if (memberError) throw memberError;
+
+        await supabase
+          .from('member_invitations')
+          .update({ status: 'accepted' })
+          .eq('id', invitation.id);
+
+        localStorage.setItem('userRole', invitation.role || 'member');
+        localStorage.setItem('loginType', loginType);
+        localStorage.setItem('organizationId', invitation.organization_id);
+        localStorage.setItem('needsPasswordChange', 'true');
+
+        console.log('Invitation accepted successfully');
+        setStatus('success');
+        setTimeout(() => {
+          setStatus('idle');
+          setFormData({ email: '', password: '' });
+          onLoginSuccess();
+        }, 1000);
+        return;
+      }
+
+      console.log('No invitation found, attempting regular login...');
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
