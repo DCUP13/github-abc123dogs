@@ -189,133 +189,133 @@ serve(async (req) => {
 })
 
 async function sendViaSES(email: EmailData, sesSettings: any) {
-  const AWS_ACCESS_KEY_ID = sesSettings.smtp_username
-  const AWS_SECRET_ACCESS_KEY = sesSettings.smtp_password
-  const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
-
-  if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-    throw new Error('AWS credentials not configured in database')
+  if (!sesSettings.smtp_username || !sesSettings.smtp_password || !sesSettings.smtp_server || !sesSettings.smtp_port) {
+    throw new Error('SMTP credentials not configured in database')
   }
 
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
-  
-  console.log(`Sending individual emails to ${recipients.length} recipients:`, recipients)
-  
-  const sendPromises = recipients.map(async (recipient) => {
-    return await sendIndividualSESEmail(email, sesSettings, recipient, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION)
-  })
-  
-  const results = await Promise.allSettled(sendPromises)
-  
-  const failures = results.filter(result => result.status === 'rejected')
-  if (failures.length > 0) {
-    const failureReasons = failures.map(f => (f as PromiseRejectedResult).reason.message).join(', ')
-    throw new Error(`Failed to send to ${failures.length} recipients: ${failureReasons}`)
+
+  console.log(`Sending individual emails via SMTP to ${recipients.length} recipients:`, recipients)
+
+  for (const recipient of recipients) {
+    await sendIndividualSESEmail(email, sesSettings, recipient)
   }
-  
+
   console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
 }
 
 async function sendIndividualSESEmail(
-  email: EmailData, 
-  sesSettings: any, 
-  recipient: string,
-  AWS_ACCESS_KEY_ID: string,
-  AWS_SECRET_ACCESS_KEY: string,
-  AWS_REGION: string
+  email: EmailData,
+  sesSettings: any,
+  recipient: string
 ) {
-  const host = `email.${AWS_REGION}.amazonaws.com`
-  const service = 'ses'
-  const method = 'POST'
-  const endpoint = `https://${host}/v2/email/outbound-emails`
-  
-  console.log(`Sending individual email to: ${recipient}`)
-  
-  const payload = JSON.stringify({
-    FromEmailAddress: email.from_email,
-    Destination: {
-      ToAddresses: [recipient]
-    },
-    Content: {
-      Simple: {
-        Subject: {
-          Data: email.subject,
-          Charset: 'UTF-8'
-        },
-        Body: {
-          Html: {
-            Data: email.body,
-            Charset: 'UTF-8'
-          }
-        }
-      }
-    },
-    EmailTags: [
-      {
-        Name: 'To',
-        Value: recipient
-      }
-    ]
+  console.log(`Sending individual email via SMTP to: ${recipient}`)
+
+  const encoder = new TextEncoder()
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+  const emailContent = [
+    `From: ${email.from_email}`,
+    `To: ${recipient}`,
+    `Subject: ${email.subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    email.body,
+    `--${boundary}--`
+  ].join('\r\n')
+
+  const conn = await Deno.connect({
+    hostname: sesSettings.smtp_server,
+    port: parseInt(sesSettings.smtp_port),
+    transport: 'tcp',
   })
-  
-  const now = new Date()
-  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '')
-  const dateStamp = amzDate.substr(0, 8)
-  
-  const payloadHash = await sha256(payload)
-  
-  const canonicalHeaders = [
-    `host:${host}`,
-    `x-amz-date:${amzDate}`
-  ].join('\n') + '\n'
-  
-  const signedHeaders = 'host;x-amz-date'
-  
-  const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
-  
-  const algorithm = 'AWS4-HMAC-SHA256'
-  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`
-  const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${await sha256(canonicalRequest)}`
-  
-  const signingKey = await getSignatureKey(AWS_SECRET_ACCESS_KEY, dateStamp, AWS_REGION, service)
-  const signature = await hmacSha256Hex(signingKey, stringToSign)
-  
-  const authorizationHeader = `${algorithm} Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
-  
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': authorizationHeader,
-      'Content-Type': 'application/json',
-      'X-Amz-Date': amzDate
-    },
-    body: payload
-  })
-  
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`SES API error response for ${recipient}:`, errorText)
-    throw new Error(`SES API error: ${response.status} - ${errorText}`)
+
+  try {
+    const reader = conn.readable.getReader()
+    const writer = conn.writable.getWriter()
+
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`EHLO ${sesSettings.smtp_server}\r\n`))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`AUTH LOGIN\r\n`))
+    await readSMTPResponse(reader)
+
+    const usernameB64 = btoa(sesSettings.smtp_username)
+    await writer.write(encoder.encode(`${usernameB64}\r\n`))
+    await readSMTPResponse(reader)
+
+    const passwordB64 = btoa(sesSettings.smtp_password)
+    await writer.write(encoder.encode(`${passwordB64}\r\n`))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`MAIL FROM:<${email.from_email}>\r\n`))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`RCPT TO:<${recipient}>\r\n`))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`DATA\r\n`))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(emailContent + '\r\n.\r\n'))
+    await readSMTPResponse(reader)
+
+    await writer.write(encoder.encode(`QUIT\r\n`))
+    await readSMTPResponse(reader)
+
+    reader.releaseLock()
+    writer.releaseLock()
+
+    console.log(`✅ SES Email sent successfully to ${recipient}`)
+  } finally {
+    try {
+      conn.close()
+    } catch (e) {
+      console.error('Error closing connection:', e)
+    }
   }
-  
-  console.log(`✅ SES Email sent successfully to ${recipient}`)
+}
+
+async function readSMTPResponse(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+  const decoder = new TextDecoder()
+  const { value, done } = await reader.read()
+
+  if (done) {
+    throw new Error('Connection closed unexpectedly')
+  }
+
+  const response = decoder.decode(value)
+  console.log('SMTP Response:', response)
+
+  if (response.startsWith('4') || response.startsWith('5')) {
+    throw new Error(`SMTP Error: ${response}`)
+  }
+
+  return response
 }
 
 async function sendViaGmail(email: EmailData, gmailSettings: any) {
   const recipients = email.to_email.split(',').map(addr => addr.trim()).filter(addr => addr.length > 0)
-  
+
   console.log(`Sending individual Gmail emails to ${recipients.length} recipients:`, recipients)
-  
+
   for (const recipient of recipients) {
     await sendIndividualGmailEmail(email, gmailSettings, recipient)
   }
-  
+
   console.log(`✅ Successfully sent individual Gmail emails to all ${recipients.length} recipients`)
 }
 
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
-  
+
   const emailMessage = [
     `From: ${email.from_email}`,
     `To: ${recipient}`,
@@ -324,57 +324,17 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
     ``,
     email.body
   ].join('\r\n')
-  
+
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
   console.log(`  To: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
-  
+
   await new Promise(resolve => setTimeout(resolve, 1000))
-  
+
   if (Math.random() < 0.05) {
     throw new Error('Gmail SMTP connection failed')
   }
-  
+
   console.log(`📧 Gmail Email sent to ${recipient}`)
-}
-
-async function sha256(message: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(message)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
-  const encoder = new TextEncoder()
-  const keyObject = await crypto.subtle.importKey(
-    'raw',
-    key,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  const signature = await crypto.subtle.sign('HMAC', keyObject, encoder.encode(message))
-  return new Uint8Array(signature)
-}
-
-async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
-  const signature = await hmacSha256(key, message)
-  return Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function getSignatureKey(
-  key: string,
-  dateStamp: string,
-  regionName: string,
-  serviceName: string
-): Promise<Uint8Array> {
-  const encoder = new TextEncoder()
-  const kDate = await hmacSha256(encoder.encode('AWS4' + key), dateStamp)
-  const kRegion = await hmacSha256(kDate, regionName)
-  const kService = await hmacSha256(kRegion, serviceName)
-  const kSigning = await hmacSha256(kService, 'aws4_request')
-  return kSigning
 }
