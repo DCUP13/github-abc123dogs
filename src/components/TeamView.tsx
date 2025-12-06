@@ -88,11 +88,19 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     setInviteError(null);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setInviteError('You must be logged in to invite members');
+        setInviteLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('invite-team-member', {
         body: {
           email: inviteEmail,
           role: inviteRole,
-          organizationId
+          organization_id: organizationId,
+          invited_by: user.id
         }
       });
 
