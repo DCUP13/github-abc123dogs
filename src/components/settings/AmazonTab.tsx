@@ -135,7 +135,6 @@ export function AmazonTab({
           smtp_password: emailSettings.smtpPassword,
           smtp_port: emailSettings.smtpPort,
           smtp_server: emailSettings.smtpServer,
-          noreply_domain: noreplyDomain || null,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -452,28 +451,6 @@ export function AmazonTab({
           />
         </div>
 
-        <div>
-          <label htmlFor="noreplyDomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            NoReply Domain
-          </label>
-          <select
-            id="noreplyDomain"
-            value={noreplyDomain}
-            onChange={(e) => setNoreplyDomain(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-          >
-            <option value="">Select a domain for noreply@ emails</option>
-            {domains.map((domain) => (
-              <option key={domain} value={domain}>
-                noreply@{domain}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            This domain will be used for system emails like team invitations
-          </p>
-        </div>
-
         <div className="flex items-center justify-end gap-4 pt-4">
           {localSaveSuccess && (
             <span className="text-sm text-green-600 dark:text-green-400">
@@ -493,6 +470,76 @@ export function AmazonTab({
           </button>
         </div>
       </form>
+
+      {/* NoReply Domain Section */}
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            NoReply Domain
+          </h3>
+        </div>
+
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                System Email Configuration
+              </h3>
+              <p className="mt-1 text-sm text-blue-700 dark:text-blue-400">
+                Select which verified domain to use for system emails like team invitations. These emails will be sent from noreply@yourdomain.com.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="noreplyDomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select Domain
+          </label>
+          <select
+            id="noreplyDomain"
+            value={noreplyDomain}
+            onChange={async (e) => {
+              setNoreplyDomain(e.target.value);
+              try {
+                const user = await supabase.auth.getUser();
+                if (!user.data.user) return;
+
+                const { error } = await supabase
+                  .from('amazon_ses_settings')
+                  .upsert({
+                    user_id: user.data.user.id,
+                    smtp_username: emailSettings.smtpUsername,
+                    smtp_password: emailSettings.smtpPassword,
+                    smtp_port: emailSettings.smtpPort,
+                    smtp_server: emailSettings.smtpServer,
+                    noreply_domain: e.target.value || null,
+                    updated_at: new Date().toISOString()
+                  }, {
+                    onConflict: 'user_id'
+                  });
+
+                if (error) throw error;
+              } catch (error) {
+                console.error('Error saving noreply domain:', error);
+                alert('Failed to save noreply domain. Please try again.');
+              }
+            }}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="">Select a domain for noreply@ emails</option>
+            {domains.map((domain) => (
+              <option key={domain} value={domain}>
+                noreply@{domain}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            This domain will be used for system emails like team invitations
+          </p>
+        </div>
+      </div>
 
       {/* SES Domains Section */}
       <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
