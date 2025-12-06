@@ -231,23 +231,26 @@ async function sendIndividualSESEmail(
 
   const port = parseInt(sesSettings.smtp_port)
   let conn: Deno.TcpConn | Deno.TlsConn
+  let activeConn: Deno.TcpConn | Deno.TlsConn
 
   if (port === 465) {
     conn = await Deno.connectTls({
       hostname: sesSettings.smtp_server,
       port: port,
     })
+    activeConn = conn
   } else {
     conn = await Deno.connect({
       hostname: sesSettings.smtp_server,
       port: port,
       transport: 'tcp',
     })
+    activeConn = conn
   }
 
   try {
-    let reader = conn.readable.getReader()
-    let writer = conn.writable.getWriter()
+    let reader = activeConn.readable.getReader()
+    let writer = activeConn.writable.getWriter()
 
     await readSMTPResponse(reader)
 
@@ -264,9 +267,10 @@ async function sendIndividualSESEmail(
       const tlsConn = await Deno.startTls(conn as Deno.TcpConn, {
         hostname: sesSettings.smtp_server,
       })
+      activeConn = tlsConn
 
-      reader = tlsConn.readable.getReader()
-      writer = tlsConn.writable.getWriter()
+      reader = activeConn.readable.getReader()
+      writer = activeConn.writable.getWriter()
 
       await writer.write(encoder.encode(`EHLO ${sesSettings.smtp_server}\r\n`))
       await readSMTPResponse(reader)
@@ -304,7 +308,7 @@ async function sendIndividualSESEmail(
     console.log(`✅ SES Email sent successfully to ${recipient}`)
   } finally {
     try {
-      conn.close()
+      activeConn.close()
     } catch (e) {
       console.error('Error closing connection:', e)
     }
