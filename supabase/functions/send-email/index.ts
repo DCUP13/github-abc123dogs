@@ -29,9 +29,12 @@ serve(async (req) => {
       throw new Error('No authorization header')
     }
 
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      serviceRoleKey,
       {
         global: {
           headers: { Authorization: authHeader },
@@ -39,9 +42,11 @@ serve(async (req) => {
       }
     )
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) {
-      throw new Error('Unauthorized')
+    if (!isServiceRole) {
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+      if (userError || !user) {
+        throw new Error('Unauthorized')
+      }
     }
 
     if (req.method !== 'POST') {
