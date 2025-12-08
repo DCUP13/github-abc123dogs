@@ -41,8 +41,10 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   }, []);
 
   const loadTeamData = async () => {
+    console.log('loadTeamData called');
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user?.id);
       if (!user) return;
 
       const { data: memberData } = await supabase
@@ -51,11 +53,15 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
         .eq('user_id', user.id)
         .maybeSingle();
 
+      console.log('Member data:', memberData);
+
       if (!memberData || !['owner', 'manager'].includes(memberData.role)) {
+        console.log('Permission check failed:', { memberData, hasRole: memberData?.role, allowed: ['owner', 'manager'] });
         setStatus({ type: 'error', message: 'You do not have permission to manage the team.' });
         return;
       }
 
+      console.log('Permission check passed, loading data for organization:', memberData.organization_id);
       setOrganizationId(memberData.organization_id);
 
       const { data: membersData, error: membersError } = await supabase
