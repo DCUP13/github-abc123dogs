@@ -191,17 +191,19 @@ export default function App() {
       console.log('Starting auth initialization...');
 
       try {
-        const storedSession = localStorage.getItem('supabase.auth.token');
-
-        if (!storedSession) {
-          console.log('No stored session, going to landing');
-          setView('landing');
-          setIsLoading(false);
-          return;
-        }
-
         console.log('Calling getSession...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+
+        const getSessionWithTimeout = Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null }, error: Error }>((resolve) =>
+            setTimeout(() => {
+              console.log('getSession timed out after 10 seconds');
+              resolve({ data: { session: null }, error: new Error('Timeout') });
+            }, 10000)
+          )
+        ]);
+
+        const { data: { session }, error } = await getSessionWithTimeout;
         console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
