@@ -75,7 +75,16 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (invitationsError) throw invitationsError;
+      console.log('Invitations query result:', {
+        data: invitationsData,
+        error: invitationsError,
+        organizationId: memberData.organization_id
+      });
+
+      if (invitationsError) {
+        console.error('Error loading invitations:', invitationsError);
+        throw invitationsError;
+      }
       setInvitations(invitationsData || []);
 
     } catch (error) {
@@ -285,11 +294,13 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
             </div>
           </div>
 
-          {invitations.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations</h2>
-              <div className="space-y-3">
-                {invitations.map((invitation) => (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations</h2>
+            <div className="space-y-3">
+              {invitations.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No pending invitations</p>
+              ) : (
+                invitations.map((invitation) => (
                   <div
                     key={invitation.id}
                     className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
@@ -321,10 +332,10 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
