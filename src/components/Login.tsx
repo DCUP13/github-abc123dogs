@@ -55,20 +55,29 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         console.log('Account created, adding to organization...');
 
-        const { error: memberError } = await supabase
-          .from('organization_members')
-          .insert({
-            organization_id: invitation.organization_id,
-            user_id: signUpData.user.id,
-            role: invitation.role || 'member'
-          });
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('No session after signup');
 
-        if (memberError) throw memberError;
+        const joinResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join-organization`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              organization_id: invitation.organization_id,
+              role: invitation.role || 'member',
+              invitation_id: invitation.id
+            })
+          }
+        );
 
-        await supabase
-          .from('member_invitations')
-          .update({ status: 'accepted' })
-          .eq('id', invitation.id);
+        if (!joinResponse.ok) {
+          const error = await joinResponse.json();
+          throw new Error(error.error || 'Failed to join organization');
+        }
 
         localStorage.setItem('userRole', invitation.role || 'member');
         localStorage.setItem('loginType', loginType);
