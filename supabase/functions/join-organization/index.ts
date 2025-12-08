@@ -36,6 +36,7 @@ Deno.serve(async (req: Request) => {
         .from('member_invitations')
         .select('*')
         .eq('email', email)
+        .eq('temporary_password', password)
         .eq('organization_id', organization_id)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString())
