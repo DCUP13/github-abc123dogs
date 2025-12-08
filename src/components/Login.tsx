@@ -52,18 +52,16 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         if (signUpError) throw signUpError;
         if (!signUpData.user) throw new Error('Failed to create account');
+        if (!signUpData.session) throw new Error('No session after signup');
 
         console.log('Account created, adding to organization...');
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('No session after signup');
 
         const joinResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join-organization`,
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${signUpData.session.access_token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
