@@ -18,6 +18,7 @@ interface Member {
 interface Invitation {
   id: string;
   email: string;
+  role?: string;
   status: string;
   created_at: string;
   expires_at: string;
@@ -184,21 +185,23 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
     }
   };
 
-  const handleCancelInvitation = async (invitationId: string) => {
+  const handleDeleteInvitation = async (invitationId: string) => {
+    if (!confirm('Are you sure you want to delete this invitation?')) return;
+
     try {
       const { error } = await supabase
         .from('member_invitations')
-        .update({ status: 'expired' })
+        .delete()
         .eq('id', invitationId);
 
       if (error) throw error;
 
-      setStatus({ type: 'success', message: 'Invitation cancelled' });
+      setStatus({ type: 'success', message: 'Invitation deleted successfully' });
       loadTeamData();
 
     } catch (error) {
-      console.error('Error cancelling invitation:', error);
-      setStatus({ type: 'error', message: 'Failed to cancel invitation' });
+      console.error('Error deleting invitation:', error);
+      setStatus({ type: 'error', message: 'Failed to delete invitation' });
     }
   };
 
@@ -300,12 +303,23 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleCancelInvitation(invitation.id)}
-                      className="p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {invitation.role && (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          invitation.role === 'manager'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
+                        }`}>
+                          {invitation.role}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleDeleteInvitation(invitation.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
