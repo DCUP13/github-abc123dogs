@@ -15,8 +15,18 @@ interface Member {
   name?: string;
 }
 
+interface Invitation {
+  id: string;
+  email: string;
+  role?: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
 export function TeamView({ onSignOut }: TeamViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [organizationName, setOrganizationName] = useState<string>('');
   const [organizationId, setOrganizationId] = useState<string>('');
@@ -70,6 +80,26 @@ export function TeamView({ onSignOut }: TeamViewProps) {
       if (error) throw error;
 
       setMembers(membersData || []);
+
+      if (memberData.role === 'owner' || memberData.role === 'manager') {
+        console.log('Loading invitations for organization:', memberData.organization_id);
+        const { data: invitationsData, error: invitationsError } = await supabase
+          .from('member_invitations')
+          .select('*')
+          .eq('organization_id', memberData.organization_id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+
+        console.log('Invitations query result:', {
+          data: invitationsData,
+          error: invitationsError,
+          count: invitationsData?.length
+        });
+
+        if (!invitationsError) {
+          setInvitations(invitationsData || []);
+        }
+      }
 
     } catch (error) {
       console.error('Error loading team members:', error);
@@ -157,6 +187,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Members</h2>
           {members.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -210,6 +241,36 @@ export function TeamView({ onSignOut }: TeamViewProps) {
             </div>
           )}
         </div>
+
+        {(userRole === 'owner' || userRole === 'manager') && invitations.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mt-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations</h2>
+            <div className="space-y-3">
+              {invitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{invitation.email}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Invited {new Date(invitation.created_at).toLocaleDateString()} •
+                          Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">
+                      {invitation.role || 'member'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {showInviteDialog && (
