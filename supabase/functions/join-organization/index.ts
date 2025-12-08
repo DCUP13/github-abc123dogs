@@ -52,31 +52,42 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          needs_password_change: true
-        }
-      });
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-      if (createError) {
-        console.error('Error creating user:', createError);
-        return new Response(
-          JSON.stringify({ error: createError.message }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      let userId: string;
+
+      if (existingUser) {
+        userId = existingUser.id;
+      } else {
+        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            needs_password_change: true
           }
-        );
+        });
+
+        if (createError) {
+          console.error('Error creating user:', createError);
+          return new Response(
+            JSON.stringify({ error: createError.message }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        userId = newUser.user.id;
       }
 
       const { error: memberError } = await supabase
         .from('organization_members')
         .insert({
           organization_id,
-          user_id: newUser.user.id,
+          user_id: userId,
           role: invitation.role || role || 'member',
         });
 
