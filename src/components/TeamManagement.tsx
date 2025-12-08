@@ -64,16 +64,24 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
       console.log('Permission check passed, loading data for organization:', memberData.organization_id);
       setOrganizationId(memberData.organization_id);
 
+      console.log('Querying organization_members_with_emails...');
       const { data: membersData, error: membersError } = await supabase
         .from('organization_members_with_emails')
         .select('*')
         .eq('organization_id', memberData.organization_id)
         .order('joined_at', { ascending: false });
 
+      console.log('Members query result:', {
+        data: membersData,
+        error: membersError,
+        count: membersData?.length
+      });
+
       if (membersError) throw membersError;
 
       setMembers(membersData || []);
 
+      console.log('Querying member_invitations...');
       const { data: invitationsData, error: invitationsError } = await supabase
         .from('member_invitations')
         .select('*')
@@ -84,7 +92,8 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
       console.log('Invitations query result:', {
         data: invitationsData,
         error: invitationsError,
-        organizationId: memberData.organization_id
+        organizationId: memberData.organization_id,
+        count: invitationsData?.length
       });
 
       if (invitationsError) {
