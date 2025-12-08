@@ -208,6 +208,10 @@ export default function App() {
 
         if (error) {
           console.error('Session error:', error);
+          if (error.message.includes('Refresh Token') || error.message.includes('Timeout')) {
+            await supabase.auth.signOut();
+            localStorage.clear();
+          }
           setView('landing');
           setIsLoading(false);
           return;
@@ -278,6 +282,18 @@ export default function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       try {
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
+
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
+          setView('landing');
+          setDarkMode(false);
+          setUserRole(null);
+          return;
+        }
+
         if (session) {
           const loginType = localStorage.getItem('loginType');
           const storedRole = localStorage.getItem('userRole');
@@ -305,8 +321,12 @@ export default function App() {
           setDarkMode(false);
           setUserRole(null);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth state change error:', error);
+        if (error?.message?.includes('Refresh Token')) {
+          await supabase.auth.signOut();
+          localStorage.clear();
+        }
         setView('landing');
       }
     });
