@@ -52,7 +52,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         if (signUpError) throw signUpError;
         if (!signUpData.user) throw new Error('Failed to create account');
-        if (!signUpData.session) throw new Error('No session after signup');
+
+        let session = signUpData.session;
+
+        if (!session) {
+          console.log('No session after signup, signing in...');
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password
+          });
+
+          if (signInError) throw signInError;
+          if (!signInData.session) throw new Error('Failed to create session');
+          session = signInData.session;
+        }
 
         console.log('Account created, adding to organization...');
 
@@ -61,7 +74,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${signUpData.session.access_token}`,
+              'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
