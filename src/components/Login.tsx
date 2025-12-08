@@ -27,14 +27,35 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
     try {
       console.log('Checking for invitation with temporary password...');
-      const { data: invitation } = await supabase
-        .from('member_invitations')
-        .select('*')
-        .eq('email', formData.email)
-        .eq('temporary_password', formData.password)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+
+      let invitation = null;
+      try {
+        const invitationQuery = supabase
+          .from('member_invitations')
+          .select('*')
+          .eq('email', formData.email)
+          .eq('temporary_password', formData.password)
+          .eq('status', 'pending')
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        const { data, error } = await Promise.race([
+          invitationQuery,
+          new Promise<any>((_, reject) =>
+            setTimeout(() => reject(new Error('Invitation check timeout')), 5000)
+          )
+        ]);
+
+        if (error) {
+          console.log('Error checking invitation:', error);
+        } else {
+          invitation = data;
+        }
+      } catch (inviteError) {
+        console.log('Could not check invitation, continuing with regular login:', inviteError);
+      }
+
+      console.log('Invitation check complete:', { found: !!invitation });
 
       if (invitation) {
         console.log('Valid invitation found, creating account...');
