@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Calendar, UserPlus, X } from 'lucide-react';
+import { Users, Mail, Calendar, UserPlus, X, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TeamViewProps {
@@ -151,6 +151,26 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     }
   };
 
+  const handleDeleteInvitation = async (invitationId: string) => {
+    if (!confirm('Are you sure you want to delete this invitation?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('member_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      setInvitations(invitations.filter(inv => inv.id !== invitationId));
+    } catch (error: any) {
+      console.error('Error deleting invitation:', error);
+      alert('Failed to delete invitation: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -252,9 +272,9 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                   className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
                       <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900 dark:text-white">{invitation.email}</p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           Invited {new Date(invitation.created_at).toLocaleDateString()} •
@@ -262,9 +282,18 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                         </p>
                       </div>
                     </div>
-                    <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">
-                      {invitation.role || 'member'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">
+                        {invitation.role || 'member'}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteInvitation(invitation.id)}
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Delete invitation"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
