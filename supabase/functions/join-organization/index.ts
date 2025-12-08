@@ -62,6 +62,7 @@ Deno.serve(async (req: Request) => {
 
         await supabase.auth.admin.updateUserById(userId, {
           password,
+          email_confirm: true,
           user_metadata: {
             needs_password_change: true
           }
