@@ -1,6 +1,7 @@
-import React from 'react';
-import { Mail, FileText, Send, Users, Layout, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, FileText, Send, Users, Layout, Globe, UserPlus } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
+import { supabase } from '../lib/supabase';
 
 interface DashboardProps {
   onSignOut: () => void;
@@ -9,6 +10,53 @@ interface DashboardProps {
 
 export function Dashboard({ onSignOut, currentView }: DashboardProps) {
   const { stats } = useDashboard();
+  const [teamStats, setTeamStats] = useState({
+    memberCount: 0,
+    pendingInvites: 0,
+    isManagerOrOwner: false
+  });
+
+  useEffect(() => {
+    const fetchTeamStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: memberData } = await supabase
+          .from('organization_members')
+          .select('organization_id, role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!memberData) return;
+
+        const isManagerOrOwner = memberData.role === 'owner' || memberData.role === 'manager';
+        if (!isManagerOrOwner) return;
+
+        const [membersResult, invitationsResult] = await Promise.all([
+          supabase
+            .from('organization_members')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', memberData.organization_id),
+          supabase
+            .from('member_invitations')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', memberData.organization_id)
+            .eq('status', 'pending')
+        ]);
+
+        setTeamStats({
+          memberCount: membersResult.count || 0,
+          pendingInvites: invitationsResult.count || 0,
+          isManagerOrOwner
+        });
+      } catch (error) {
+        console.error('Error fetching team stats:', error);
+      }
+    };
+
+    fetchTeamStats();
+  }, []);
 
   const stats_cards = [
     {
@@ -46,6 +94,22 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       color: 'text-teal-500',
       bgColor: 'bg-teal-100 dark:bg-teal-900/20',
     },
+    ...(teamStats.isManagerOrOwner ? [
+      {
+        title: 'Team Members',
+        value: teamStats.memberCount.toLocaleString(),
+        icon: Users,
+        color: 'text-indigo-500',
+        bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
+      },
+      {
+        title: 'Pending Invites',
+        value: teamStats.pendingInvites.toLocaleString(),
+        icon: UserPlus,
+        color: 'text-yellow-500',
+        bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
+      }
+    ] : [])
   ];
 
   return (
