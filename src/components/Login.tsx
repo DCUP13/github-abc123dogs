@@ -39,45 +39,16 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       if (invitation) {
         console.log('Valid invitation found, creating account...');
 
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: undefined,
-            data: {
-              needs_password_change: true
-            }
-          }
-        });
-
-        if (signUpError) throw signUpError;
-        if (!signUpData.user) throw new Error('Failed to create account');
-
-        let session = signUpData.session;
-
-        if (!session) {
-          console.log('No session after signup, signing in...');
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password
-          });
-
-          if (signInError) throw signInError;
-          if (!signInData.session) throw new Error('Failed to create session');
-          session = signInData.session;
-        }
-
-        console.log('Account created, adding to organization...');
-
         const joinResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/join-organization`,
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              email: formData.email,
+              password: formData.password,
               organization_id: invitation.organization_id,
               role: invitation.role || 'member',
               invitation_id: invitation.id
@@ -89,6 +60,17 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           const error = await joinResponse.json();
           throw new Error(error.error || 'Failed to join organization');
         }
+
+        const result = await joinResponse.json();
+
+        if (!result.session) {
+          throw new Error('No session returned from server');
+        }
+
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token
+        });
 
         localStorage.setItem('userRole', invitation.role || 'member');
         localStorage.setItem('loginType', loginType);
