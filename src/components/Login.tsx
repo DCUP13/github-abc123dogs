@@ -164,12 +164,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }
 
         console.log('Setting session in Supabase client...');
-        supabase.auth.setSession({
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token
-        }).catch((sessionError) => {
-          console.error('Session setup error (non-blocking):', sessionError);
         });
+
+        if (sessionError) {
+          console.error('Session setup error:', sessionError);
+          throw new Error('Failed to establish session');
+        }
+
+        console.log('Session established successfully');
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('Session stabilized');
 
         user = data.user;
       } catch (fetchError: any) {

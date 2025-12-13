@@ -75,9 +75,19 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     let channelSubscription: any = null;
 
     const initializeStats = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && mounted) {
-        await fetchStats();
+      try {
+        const timeout = new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), 2000);
+        });
+
+        const sessionPromise = supabase.auth.getSession();
+        const result = await Promise.race([sessionPromise, timeout]);
+
+        if (result && result.data.session && mounted) {
+          await fetchStats();
+        }
+      } catch (error) {
+        console.error('Error initializing dashboard stats:', error);
       }
     };
 
