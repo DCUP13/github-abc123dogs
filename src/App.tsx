@@ -211,18 +211,39 @@ export default function App() {
             setIsLoading(false);
             return;
           }
+        } else {
+          console.log('No stored token, skipping getSession');
+          setView('landing');
+          setIsLoading(false);
+          return;
         }
 
-        console.log('Calling getSession...');
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Calling getSession with timeout...');
+        const timeout = new Promise<null>((resolve) => {
+          setTimeout(() => {
+            console.warn('getSession timed out after 3 seconds');
+            resolve(null);
+          }, 3000);
+        });
+
+        const sessionPromise = supabase.auth.getSession();
+        const result = await Promise.race([sessionPromise, timeout]);
+
+        if (result === null) {
+          console.log('Session check timed out, clearing and redirecting');
+          localStorage.clear();
+          setView('landing');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: { session }, error } = result;
         console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
           console.error('Session error:', error);
-          if (error.message.includes('Refresh Token')) {
-            console.log('Clearing corrupted session data...');
-            localStorage.clear();
-          }
+          console.log('Clearing session data due to error');
+          localStorage.clear();
           setView('landing');
           setIsLoading(false);
           return;
@@ -266,9 +287,8 @@ export default function App() {
         }
       } catch (error) {
         console.error('Auth init failed:', error);
+        localStorage.clear();
         setView('landing');
-      } finally {
-        console.log('Setting isLoading to false');
         setIsLoading(false);
       }
     };
