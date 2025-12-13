@@ -4,7 +4,11 @@ import { useEmails } from '../../contexts/EmailContext';
 import type { GoogleEmail } from './types';
 import { supabase } from '../../lib/supabase';
 
-export function GoogleTab() {
+interface GoogleTabProps {
+  userRole: string | null;
+}
+
+export function GoogleTab({ userRole }: GoogleTabProps) {
   const { googleEmails, setGoogleEmails } = useEmails();
   const [showPassword, setShowPassword] = useState(false);
   const [newEmail, setNewEmail] = useState('');
@@ -234,83 +238,91 @@ export function GoogleTab() {
           </div>
         </div>
 
-        <form onSubmit={handleAddGoogleEmail} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Gmail Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={newEmail}
-              onChange={(e) => {
-                setNewEmail(e.target.value);
-                setEmailError('');
-              }}
-              placeholder="example@gmail.com"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-            {emailError && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="appPassword" className="block text-sm font-medium text-gray-700 dark: text-gray-300 mb-1">
-              App Password
-            </label>
-            <div className="relative">
+        {userRole === 'owner' || userRole === 'manager' ? (
+          <form onSubmit={handleAddGoogleEmail} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Gmail Address
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="appPassword"
-                value={newAppPassword}
+                type="email"
+                id="email"
+                value={newEmail}
                 onChange={(e) => {
-                  setNewAppPassword(e.target.value);
-                  setPasswordError('');
+                  setNewEmail(e.target.value);
+                  setEmailError('');
                 }}
-                placeholder="Enter 16-character app password"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-24"
+                placeholder="example@gmail.com"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="appPassword" className="block text-sm font-medium text-gray-700 dark: text-gray-300 mb-1">
+                App Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="appPassword"
+                  value={newAppPassword}
+                  onChange={(e) => {
+                    setNewAppPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  placeholder="Enter 16-character app password"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-24"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {passwordError && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordError}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="dailyLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Daily Email Limit
+              </label>
+              <input
+                type="number"
+                id="dailyLimit"
+                value={dailyLimit}
+                onChange={(e) => setDailyLimit(Math.min(500, Math.max(1, parseInt(e.target.value))))}
+                min="1"
+                max="500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Maximum number of emails that can be sent per day (1-500)
+              </p>
+            </div>
+
+            <div className="flex justify-end">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                type="submit"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                Add Email
               </button>
             </div>
-            {passwordError && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{passwordError}</p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="dailyLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Daily Email Limit
-            </label>
-            <input
-              type="number"
-              id="dailyLimit"
-              value={dailyLimit}
-              onChange={(e) => setDailyLimit(Math.min(500, Math.max(1, parseInt(e.target.value))))}
-              min="1"
-              max="500"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Maximum number of emails that can be sent per day (1-500)
+          </form>
+        ) : (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Your organization manager will set up and add Gmail addresses to your account. Once added, the email addresses will appear in the list below and will be available for use in campaigns.
             </p>
           </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Add Email
-            </button>
-          </div>
-        </form>
+        )}
 
         <div className="space-y-4">
           {googleEmails.length === 0 ? (

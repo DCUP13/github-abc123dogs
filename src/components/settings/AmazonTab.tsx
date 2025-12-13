@@ -11,14 +11,16 @@ interface AmazonTabProps {
   onSaveEmailSettings: (e: React.FormEvent) => void;
   isSaving: boolean;
   saveSuccess: boolean;
+  userRole: string | null;
 }
 
-export function AmazonTab({ 
-  emailSettings, 
-  onEmailSettingChange, 
+export function AmazonTab({
+  emailSettings,
+  onEmailSettingChange,
   onSaveEmailSettings,
   isSaving,
-  saveSuccess 
+  saveSuccess,
+  userRole
 }: AmazonTabProps) {
   const { sesEmails, setSesEmails } = useEmails();
   const [showPassword, setShowPassword] = useState(false);
@@ -563,29 +565,37 @@ export function AmazonTab({
           </div>
         </div>
 
-        <form onSubmit={handleAddDomain} className="mb-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newDomain}
-              onChange={(e) => {
-                setNewDomain(e.target.value);
-                setDomainError('');
-              }}
-              placeholder="example.com"
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+        {userRole === 'owner' || userRole === 'manager' ? (
+          <form onSubmit={handleAddDomain} className="mb-6">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newDomain}
+                onChange={(e) => {
+                  setNewDomain(e.target.value);
+                  setDomainError('');
+                }}
+                placeholder="example.com"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            {domainError && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{domainError}</p>
+            )}
+          </form>
+        ) : (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Your organization manager will set up and add verified domains to your account. Once added, the domains will appear in the list below and will be available for use.
+            </p>
           </div>
-          {domainError && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{domainError}</p>
-          )}
-        </form>
+        )}
 
         <div className="space-y-2">
           {domains.length === 0 ? (
@@ -624,56 +634,64 @@ export function AmazonTab({
           </h3>
         </div>
 
-        <form onSubmit={handleAddSESEmail} className="mb-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="newEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="newEmail"
-                value={newEmail}
-                onChange={(e) => {
-                  setNewEmail(e.target.value);
-                  setEmailError('');
-                }}
-                placeholder="Enter email address"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-              {emailError && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
-              )}
-            </div>
+        {userRole === 'owner' || userRole === 'manager' ? (
+          <form onSubmit={handleAddSESEmail} className="mb-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="newEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="newEmail"
+                  value={newEmail}
+                  onChange={(e) => {
+                    setNewEmail(e.target.value);
+                    setEmailError('');
+                  }}
+                  placeholder="Enter email address"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                {emailError && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
+                )}
+              </div>
 
-            <div>
-              <label htmlFor="dailyLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Daily Email Limit
-              </label>
-              <input
-                type="number"
-                id="dailyLimit"
-                value={dailyLimit}
-                onChange={(e) => setDailyLimit(Math.min(50000, Math.max(1, parseInt(e.target.value))))}
-                min="1"
-                max="50000"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Maximum number of emails that can be sent per day (1-50,000)
-              </p>
-            </div>
+              <div>
+                <label htmlFor="dailyLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Daily Email Limit
+                </label>
+                <input
+                  type="number"
+                  id="dailyLimit"
+                  value={dailyLimit}
+                  onChange={(e) => setDailyLimit(Math.min(50000, Math.max(1, parseInt(e.target.value))))}
+                  min="1"
+                  max="50000"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Maximum number of emails that can be sent per day (1-50,000)
+                </p>
+              </div>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Add Email
-              </button>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Add Email
+                </button>
+              </div>
             </div>
+          </form>
+        ) : (
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Your organization manager will set up and add sender email addresses to your account. Once added, the email addresses will appear in the list below and will be available for use in campaigns.
+            </p>
           </div>
-        </form>
+        )}
 
         <div className="space-y-4">
           {sesEmails.length === 0 ? (

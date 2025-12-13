@@ -28,6 +28,7 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
     cleanUpLoi: false
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const [emailSettings, setEmailSettings] = useState<EmailSettings>({
     smtpUsername: '',
@@ -41,7 +42,29 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
 
   useEffect(() => {
     fetchSettings();
+    fetchUserRole();
   }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const { data, error } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', user.data.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  };
 
   const createDefaultSettings = async () => {
     try {
@@ -221,10 +244,11 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
                 onSaveEmailSettings={handleSaveEmailSettings}
                 isSaving={isSaving}
                 saveSuccess={saveSuccess}
+                userRole={userRole}
               />
             )}
 
-            {activeTab === 'google' && <GoogleTab />}
+            {activeTab === 'google' && <GoogleTab userRole={userRole} />}
 
             {activeTab === 'rapid-api' && <RapidAPITab />}
 
