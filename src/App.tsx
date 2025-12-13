@@ -298,58 +298,66 @@ export default function App() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully');
-        }
-
-        if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
-          setView('landing');
-          setDarkMode(false);
-          setUserRole(null);
-          return;
-        }
-
-        if (session) {
-          const loginType = localStorage.getItem('loginType');
-
-          const { data: memberData } = await supabase
-            .from('organization_members')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-
-          if (memberData) {
-            setUserRole(memberData.role);
-            localStorage.setItem('userRole', memberData.role);
-
-            if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
-              setView('team-management');
-            } else {
-              setView('dashboard');
-            }
-          } else {
-            setUserRole(null);
-            localStorage.removeItem('userRole');
-            setView('dashboard');
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      (async () => {
+        try {
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('Token refreshed successfully');
           }
 
-          fetchUserSettings();
-        } else {
+          if (event === 'SIGNED_OUT') {
+            console.log('User signed out');
+            setView('landing');
+            setDarkMode(false);
+            setUserRole(null);
+            return;
+          }
+
+          if (session) {
+            const loginType = localStorage.getItem('loginType');
+
+            const memberQuery = supabase
+              .from('organization_members')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+
+            const timeout = new Promise<{ data: null }>((resolve) => {
+              setTimeout(() => resolve({ data: null }), 2000);
+            });
+
+            const result = await Promise.race([memberQuery, timeout]);
+
+            if (result.data) {
+              setUserRole(result.data.role);
+              localStorage.setItem('userRole', result.data.role);
+
+              if (loginType === 'manager' && ['owner', 'manager'].includes(result.data.role)) {
+                setView('team-management');
+              } else {
+                setView('dashboard');
+              }
+            } else {
+              setUserRole(null);
+              localStorage.removeItem('userRole');
+              setView('dashboard');
+            }
+
+            fetchUserSettings();
+          } else {
+            setView('landing');
+            setDarkMode(false);
+            setUserRole(null);
+          }
+        } catch (error: any) {
+          console.error('Auth state change error:', error);
+          if (error?.message?.includes('Refresh Token')) {
+            await supabase.auth.signOut();
+            localStorage.clear();
+          }
           setView('landing');
-          setDarkMode(false);
-          setUserRole(null);
         }
-      } catch (error: any) {
-        console.error('Auth state change error:', error);
-        if (error?.message?.includes('Refresh Token')) {
-          await supabase.auth.signOut();
-          localStorage.clear();
-        }
-        setView('landing');
-      }
+      })();
     });
 
     return () => {

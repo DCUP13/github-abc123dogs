@@ -164,21 +164,26 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }
 
         console.log('Setting session in Supabase client...');
-        const { error: sessionError } = await supabase.auth.setSession({
+
+        const setSessionPromise = supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token
         });
 
-        if (sessionError) {
-          console.error('Session setup error:', sessionError);
-          throw new Error('Failed to establish session');
+        const timeoutPromise = new Promise<{ error: Error }>((resolve) => {
+          setTimeout(() => {
+            resolve({ error: new Error('Session setup timed out') });
+          }, 3000);
+        });
+
+        const sessionResult = await Promise.race([setSessionPromise, timeoutPromise]);
+
+        if (sessionResult.error) {
+          console.error('Session setup error:', sessionResult.error);
+          throw new Error('Failed to establish session - timeout');
         }
 
         console.log('Session established successfully');
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-        console.log('Session stabilized');
-
         user = data.user;
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
