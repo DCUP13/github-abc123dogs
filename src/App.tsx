@@ -434,7 +434,7 @@ export default function App() {
                     onCalendarClick={() => updateView('calendar')}
                     onSupportClick={() => updateView('support')}
                     onIntegrationsClick={() => updateView('integrations')}
-                    {...(userRole === 'owner' || userRole === 'manager' ? { onTeamClick: () => updateView('team-view') } : {})}
+                    onTeamClick={() => updateView('team-view')}
                   />
                 </div>
                 <div className="flex-1 ml-64">
