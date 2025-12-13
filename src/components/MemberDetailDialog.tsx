@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe } from 'lucide-react';
+import { Toggle } from './Toggle';
 
 interface MemberDetailDialogProps {
   memberId: string;
@@ -659,12 +660,10 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                             <label className="font-medium text-gray-800 dark:text-white">Autoresponder</label>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Automatically send AI-generated responses</p>
                           </div>
-                          <input
-                            type="checkbox"
+                          <Toggle
                             checked={domain.autoresponder_enabled}
-                            onChange={(e) => handleToggleDomainAutoresponder(domain.id, e.target.checked)}
+                            onChange={(checked) => handleToggleDomainAutoresponder(domain.id, checked)}
                             disabled={saving || domain.drafts_enabled}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                           />
                         </div>
 
@@ -673,12 +672,10 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                             <label className="font-medium text-gray-800 dark:text-white">Drafts Mode</label>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Save AI responses as drafts instead of sending</p>
                           </div>
-                          <input
-                            type="checkbox"
+                          <Toggle
                             checked={domain.drafts_enabled}
-                            onChange={(e) => handleToggleDomainDrafts(domain.id, e.target.checked)}
+                            onChange={(checked) => handleToggleDomainDrafts(domain.id, checked)}
                             disabled={saving || domain.autoresponder_enabled}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                           />
                         </div>
                       </div>
