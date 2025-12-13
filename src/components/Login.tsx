@@ -23,6 +23,9 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     setStatus('loading');
     setErrorMessage('');
 
+    console.log('Clearing existing auth state before login...');
+    localStorage.removeItem('supabase.auth.token');
+
     console.log('Login attempt started:', { email: formData.email, loginType });
 
     try {
@@ -88,9 +91,11 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           throw new Error('No session returned from server');
         }
 
-        await supabase.auth.setSession({
+        supabase.auth.setSession({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token
+        }).catch((sessionError) => {
+          console.error('Session setup error (non-blocking):', sessionError);
         });
 
         localStorage.setItem('userRole', invitation.role || 'member');
@@ -159,20 +164,12 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         }
 
         console.log('Setting session in Supabase client...');
-        try {
-          const sessionResult = await Promise.race([
-            supabase.auth.setSession({
-              access_token: data.access_token,
-              refresh_token: data.refresh_token
-            }),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Session setup timeout')), 5000)
-            )
-          ]);
-          console.log('Session set successfully', sessionResult);
-        } catch (sessionError) {
-          console.error('Session setup error:', sessionError);
-        }
+        supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        }).catch((sessionError) => {
+          console.error('Session setup error (non-blocking):', sessionError);
+        });
 
         user = data.user;
       } catch (fetchError: any) {

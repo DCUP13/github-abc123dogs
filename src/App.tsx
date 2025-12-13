@@ -191,27 +191,36 @@ export default function App() {
       console.log('Starting auth initialization...');
 
       try {
+        const storedToken = localStorage.getItem('supabase.auth.token');
+        if (storedToken) {
+          try {
+            const parsedToken = JSON.parse(storedToken);
+            const expiresAt = parsedToken?.expires_at || parsedToken?.expiresAt;
+
+            if (expiresAt && expiresAt < Date.now() / 1000) {
+              console.log('Token expired, clearing localStorage');
+              localStorage.clear();
+              setView('landing');
+              setIsLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing token, clearing localStorage');
+            localStorage.clear();
+            setView('landing');
+            setIsLoading(false);
+            return;
+          }
+        }
+
         console.log('Calling getSession...');
-
-        const getSessionWithTimeout = Promise.race([
-          supabase.auth.getSession(),
-          new Promise<{ data: { session: null }, error: Error }>((resolve) =>
-            setTimeout(() => {
-              console.error('getSession timed out after 5 seconds - clearing auth state');
-              localStorage.removeItem('supabase.auth.token');
-              resolve({ data: { session: null }, error: new Error('Timeout') });
-            }, 5000)
-          )
-        ]);
-
-        const { data: { session }, error } = await getSessionWithTimeout;
+        const { data: { session }, error } = await supabase.auth.getSession();
         console.log('getSession completed:', { session: !!session, error });
 
         if (error) {
           console.error('Session error:', error);
-          if (error.message.includes('Refresh Token') || error.message.includes('Timeout')) {
+          if (error.message.includes('Refresh Token')) {
             console.log('Clearing corrupted session data...');
-            await supabase.auth.signOut({ scope: 'local' });
             localStorage.clear();
           }
           setView('landing');
@@ -223,21 +232,11 @@ export default function App() {
           console.log('Session found, checking organization membership...');
           const loginType = localStorage.getItem('loginType');
 
-          const orgCheckPromise = supabase
+          const { data: memberData } = await supabase
             .from('organization_members')
             .select('role')
             .eq('user_id', session.user.id)
             .maybeSingle();
-
-          const orgTimeout = new Promise((resolve) => {
-            setTimeout(() => {
-              console.log('Organization check timed out, defaulting to dashboard');
-              resolve({ data: null });
-            }, 3000);
-          });
-
-          const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
-          const memberData = orgResult?.data;
 
           if (memberData) {
             setUserRole(memberData.role);
