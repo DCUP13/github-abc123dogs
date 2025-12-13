@@ -221,43 +221,37 @@ export default function App() {
           console.log('Session found, checking organization membership...');
           const loginType = localStorage.getItem('loginType');
 
-          try {
-            const orgCheckPromise = supabase
-              .from('organization_members')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
+          const orgCheckPromise = supabase
+            .from('organization_members')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-            const orgTimeout = new Promise((resolve) => {
-              setTimeout(() => {
-                console.log('Organization check timed out, defaulting to dashboard');
-                resolve({ data: null });
-              }, 5000);
-            });
+          const orgTimeout = new Promise((resolve) => {
+            setTimeout(() => {
+              console.log('Organization check timed out, defaulting to dashboard');
+              resolve({ data: null });
+            }, 3000);
+          });
 
-            const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
-            const memberData = orgResult?.data;
+          const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
+          const memberData = orgResult?.data;
 
-            if (memberData) {
-              setUserRole(memberData.role);
-              localStorage.setItem('userRole', memberData.role);
+          if (memberData) {
+            setUserRole(memberData.role);
+            localStorage.setItem('userRole', memberData.role);
 
-              if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
-                console.log('Setting view to team-management');
-                setView('team-management');
-              } else {
-                console.log('Setting view to dashboard');
-                setView('dashboard');
-              }
+            if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
+              console.log('Setting view to team-management');
+              setView('team-management');
             } else {
-              console.log('No organization membership found, setting view to dashboard');
-              setUserRole(null);
-              localStorage.removeItem('userRole');
+              console.log('Setting view to dashboard');
               setView('dashboard');
             }
-          } catch (orgError) {
-            console.error('Organization check error, defaulting to dashboard:', orgError);
+          } else {
+            console.log('No organization membership found, setting view to dashboard');
             setUserRole(null);
+            localStorage.removeItem('userRole');
             setView('dashboard');
           }
 
