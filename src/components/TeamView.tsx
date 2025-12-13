@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Mail, Calendar, UserPlus, X, Trash2, Settings, Building2, Globe, MapPin, Briefcase } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import OrganizationSettings from './OrganizationSettings';
+import MemberDetailDialog from './MemberDetailDialog';
 
 interface TeamViewProps {
   onSignOut: () => void;
@@ -45,6 +46,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   const [userRole, setUserRole] = useState<string>('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'manager' | 'member'>('member');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -304,7 +306,10 @@ export function TeamView({ onSignOut }: TeamViewProps) {
               {members.map((member) => (
                 <div
                   key={member.id}
-                  className="p-5 bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-750 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow"
+                  onClick={() => (userRole === 'owner' || userRole === 'manager') && setSelectedMember(member)}
+                  className={`p-5 bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-750 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow ${
+                    (userRole === 'owner' || userRole === 'manager') ? 'cursor-pointer hover:border-blue-500 dark:hover:border-blue-400' : ''
+                  }`}
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
@@ -477,6 +482,18 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         <OrganizationSettings
           onClose={() => {
             setShowSettingsDialog(false);
+            loadTeamMembers();
+          }}
+        />
+      )}
+
+      {selectedMember && (
+        <MemberDetailDialog
+          memberId={selectedMember.user_id}
+          memberName={selectedMember.name || 'Unknown'}
+          memberEmail={selectedMember.email || ''}
+          onClose={() => {
+            setSelectedMember(null);
             loadTeamMembers();
           }}
         />
