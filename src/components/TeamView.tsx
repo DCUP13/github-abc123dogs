@@ -367,7 +367,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                           {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                         </span>
                       </div>
-                      {member.settings && (
+                      {(userRole === 'owner' || userRole === 'manager') && member.settings && (
                         <div className="mt-3 flex flex-wrap gap-2">
                           {member.settings.notifications && (
                             <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded text-xs" title="Notifications enabled">
