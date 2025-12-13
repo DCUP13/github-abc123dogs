@@ -218,46 +218,49 @@ export default function App() {
         }
 
         if (session) {
-          console.log('Session found, checking login type...');
+          console.log('Session found, checking organization membership...');
           const loginType = localStorage.getItem('loginType');
-          const storedRole = localStorage.getItem('userRole');
-          setUserRole(storedRole);
 
-          if (loginType === 'manager') {
-            console.log('Manager login type, checking organization membership...');
-            try {
-              const orgCheckPromise = supabase
-                .from('organization_members')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
+          try {
+            const orgCheckPromise = supabase
+              .from('organization_members')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
 
-              const orgTimeout = new Promise((resolve) => {
-                setTimeout(() => {
-                  console.log('Organization check timed out, defaulting to dashboard');
-                  resolve({ data: null });
-                }, 5000);
-              });
+            const orgTimeout = new Promise((resolve) => {
+              setTimeout(() => {
+                console.log('Organization check timed out, defaulting to dashboard');
+                resolve({ data: null });
+              }, 5000);
+            });
 
-              const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
-              const memberData = orgResult?.data;
+            const orgResult = await Promise.race([orgCheckPromise, orgTimeout]) as any;
+            const memberData = orgResult?.data;
 
-              if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+            if (memberData) {
+              setUserRole(memberData.role);
+              localStorage.setItem('userRole', memberData.role);
+
+              if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
                 console.log('Setting view to team-management');
                 setView('team-management');
-                setUserRole(memberData.role);
               } else {
                 console.log('Setting view to dashboard');
                 setView('dashboard');
               }
-            } catch (orgError) {
-              console.error('Organization check error, defaulting to dashboard:', orgError);
+            } else {
+              console.log('No organization membership found, setting view to dashboard');
+              setUserRole(null);
+              localStorage.removeItem('userRole');
               setView('dashboard');
             }
-          } else {
-            console.log('Regular login, setting view to dashboard');
+          } catch (orgError) {
+            console.error('Organization check error, defaulting to dashboard:', orgError);
+            setUserRole(null);
             setView('dashboard');
           }
+
           console.log('Fetching user settings...');
           await fetchUserSettings();
           console.log('User settings fetched');
@@ -296,25 +299,28 @@ export default function App() {
 
         if (session) {
           const loginType = localStorage.getItem('loginType');
-          const storedRole = localStorage.getItem('userRole');
-          setUserRole(storedRole);
 
-          if (loginType === 'manager') {
-            const { data: memberData } = await supabase
-              .from('organization_members')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
 
-            if (memberData && ['owner', 'manager'].includes(memberData.role)) {
+          if (memberData) {
+            setUserRole(memberData.role);
+            localStorage.setItem('userRole', memberData.role);
+
+            if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
               setView('team-management');
-              setUserRole(memberData.role);
             } else {
               setView('dashboard');
             }
           } else {
+            setUserRole(null);
+            localStorage.removeItem('userRole');
             setView('dashboard');
           }
+
           fetchUserSettings();
         } else {
           setView('landing');
