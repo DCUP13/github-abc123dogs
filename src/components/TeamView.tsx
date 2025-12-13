@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Calendar, UserPlus, X, Trash2, Settings, Building2, Globe, MapPin, Briefcase } from 'lucide-react';
+import { Users, Mail, Calendar, UserPlus, X, Trash2, Settings, Building2, Globe, MapPin, Briefcase, Bell, Moon, Shield, BookOpen, Eye, Bug, FileText, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import OrganizationSettings from './OrganizationSettings';
 import MemberDetailDialog from './MemberDetailDialog';
@@ -15,6 +15,16 @@ interface Member {
   joined_at: string;
   email?: string;
   name?: string;
+  settings?: {
+    notifications: boolean;
+    dark_mode: boolean;
+    two_factor_auth: boolean;
+    newsletter: boolean;
+    public_profile: boolean;
+    debugging: boolean;
+    clean_up_loi: boolean;
+    client_grading_enabled: boolean;
+  };
 }
 
 interface Invitation {
@@ -94,7 +104,22 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
       if (error) throw error;
 
-      setMembers(membersData || []);
+      const membersWithSettings = await Promise.all(
+        (membersData || []).map(async (member) => {
+          const { data: settings } = await supabase
+            .from('user_settings')
+            .select('notifications, dark_mode, two_factor_auth, newsletter, public_profile, debugging, clean_up_loi, client_grading_enabled')
+            .eq('user_id', member.user_id)
+            .maybeSingle();
+
+          return {
+            ...member,
+            settings: settings || undefined
+          };
+        })
+      );
+
+      setMembers(membersWithSettings);
 
       if (memberData.role === 'owner' || memberData.role === 'manager') {
         console.log('Loading invitations for organization:', memberData.organization_id);
@@ -331,7 +356,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                           <span>Joined {new Date(member.joined_at).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <div className="mt-3">
+                      <div className="mt-3 flex items-center gap-2">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                           member.role === 'owner'
                             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-400'
@@ -342,6 +367,50 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                           {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                         </span>
                       </div>
+                      {member.settings && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {member.settings.notifications && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded text-xs" title="Notifications enabled">
+                              <Bell className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.dark_mode && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-gray-700 text-white rounded text-xs" title="Dark mode enabled">
+                              <Moon className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.two_factor_auth && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded text-xs" title="2FA enabled">
+                              <Shield className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.newsletter && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded text-xs" title="Newsletter subscribed">
+                              <BookOpen className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.public_profile && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded text-xs" title="Public profile">
+                              <Eye className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.debugging && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-xs" title="Debugging enabled">
+                              <Bug className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.clean_up_loi && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:teal-red-400 rounded text-xs" title="Clean up LOI">
+                              <FileText className="w-3 h-3" />
+                            </div>
+                          )}
+                          {member.settings.client_grading_enabled && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded text-xs" title="Client grading enabled">
+                              <BarChart3 className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
