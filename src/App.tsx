@@ -220,10 +220,7 @@ export default function App() {
 
         console.log('Calling getSession with timeout...');
         const timeout = new Promise<null>((resolve) => {
-          setTimeout(() => {
-            console.warn('getSession timed out after 3 seconds');
-            resolve(null);
-          }, 3000);
+          setTimeout(() => resolve(null), 3000);
         });
 
         const sessionPromise = supabase.auth.getSession();
@@ -289,6 +286,8 @@ export default function App() {
         console.error('Auth init failed:', error);
         localStorage.clear();
         setView('landing');
+      } finally {
+        console.log('Auth initialization complete, setting isLoading to false');
         setIsLoading(false);
       }
     };
