@@ -110,7 +110,33 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
 
       setEmailAccounts([...sesEmails, ...googleEmails]);
       setDomains(domainsRes.data || []);
-      setUserSettings(settingsRes.data);
+
+      if (settingsRes.data) {
+        setUserSettings(settingsRes.data);
+      } else {
+        const defaultSettings: UserSettings = {
+          notifications: false,
+          dark_mode: false,
+          two_factor_auth: false,
+          newsletter: false,
+          public_profile: false,
+          debugging: false,
+          clean_up_loi: false,
+          client_grading_enabled: false,
+        };
+
+        const { error: insertError } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: memberId,
+            ...defaultSettings
+          });
+
+        if (!insertError) {
+          setUserSettings(defaultSettings);
+        }
+      }
+
       setDashboardStats(statsRes.data);
 
     } catch (err: any) {
