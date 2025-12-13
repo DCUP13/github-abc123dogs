@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Mail, Calendar, UserPlus, X, Trash2 } from 'lucide-react';
+import { Users, Mail, Calendar, UserPlus, X, Trash2, Settings, Building2, Globe, MapPin, Briefcase } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import OrganizationSettings from './OrganizationSettings';
 
 interface TeamViewProps {
   onSignOut: () => void;
@@ -24,14 +25,26 @@ interface Invitation {
   expires_at: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+  description: string;
+  logo_url: string;
+  industry: string;
+  company_size: string;
+  website: string;
+  location: string;
+}
+
 export function TeamView({ onSignOut }: TeamViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [organizationName, setOrganizationName] = useState<string>('');
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [organizationId, setOrganizationId] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'manager' | 'member'>('member');
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -63,12 +76,12 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
       const { data: orgData } = await supabase
         .from('organizations')
-        .select('name')
+        .select('*')
         .eq('id', memberData.organization_id)
         .single();
 
       if (orgData) {
-        setOrganizationName(orgData.name);
+        setOrganization(orgData);
       }
 
       const { data: membersData, error } = await supabase
@@ -185,25 +198,95 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   return (
     <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Team Members</h1>
-              {organizationName && (
-                <p className="text-gray-600 dark:text-gray-400">{organizationName}</p>
-              )}
+        {organization && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start gap-4 flex-1">
+                {organization.logo_url ? (
+                  <img
+                    src={organization.logo_url}
+                    alt={`${organization.name} logo`}
+                    className="w-16 h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-600"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    {organization.name}
+                  </h1>
+                  {organization.description && (
+                    <p className="text-gray-600 dark:text-gray-400 mb-3">
+                      {organization.description}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    {organization.industry && (
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="w-4 h-4" />
+                        <span>{organization.industry}</span>
+                      </div>
+                    )}
+                    {organization.company_size && (
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        <span>{organization.company_size}</span>
+                      </div>
+                    )}
+                    {organization.location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{organization.location}</span>
+                      </div>
+                    )}
+                    {organization.website && (
+                      <div className="flex items-center gap-1">
+                        <Globe className="w-4 h-4" />
+                        <a
+                          href={organization.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Website
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {(userRole === 'owner' || userRole === 'manager') && (
+                  <>
+                    <button
+                      onClick={() => setShowSettingsDialog(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                      title="Organization Settings"
+                    >
+                      <Settings className="w-5 h-5" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={() => setShowInviteDialog(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      <UserPlus className="w-5 h-5" />
+                      Add Member
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-          {(userRole === 'owner' || userRole === 'manager') && (
-            <button
-              onClick={() => setShowInviteDialog(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              <UserPlus className="w-5 h-5" />
-              Add Member
-            </button>
-          )}
+        )}
+
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Team Members</h2>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -388,6 +471,15 @@ export function TeamView({ onSignOut }: TeamViewProps) {
             )}
           </div>
         </div>
+      )}
+
+      {showSettingsDialog && (
+        <OrganizationSettings
+          onClose={() => {
+            setShowSettingsDialog(false);
+            loadTeamMembers();
+          }}
+        />
       )}
     </div>
   );
