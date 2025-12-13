@@ -197,9 +197,10 @@ export default function App() {
           supabase.auth.getSession(),
           new Promise<{ data: { session: null }, error: Error }>((resolve) =>
             setTimeout(() => {
-              console.log('getSession timed out after 10 seconds');
+              console.error('getSession timed out after 5 seconds - clearing auth state');
+              localStorage.removeItem('supabase.auth.token');
               resolve({ data: { session: null }, error: new Error('Timeout') });
-            }, 10000)
+            }, 5000)
           )
         ]);
 
@@ -209,7 +210,8 @@ export default function App() {
         if (error) {
           console.error('Session error:', error);
           if (error.message.includes('Refresh Token') || error.message.includes('Timeout')) {
-            await supabase.auth.signOut();
+            console.log('Clearing corrupted session data...');
+            await supabase.auth.signOut({ scope: 'local' });
             localStorage.clear();
           }
           setView('landing');
