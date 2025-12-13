@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save } from 'lucide-react';
+import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe } from 'lucide-react';
 
 interface MemberDetailDialogProps {
   memberId: string;
@@ -39,19 +39,22 @@ interface DashboardStats {
 }
 
 export default function MemberDetailDialog({ memberId, memberName, memberEmail, onClose }: MemberDetailDialogProps) {
-  const [activeTab, setActiveTab] = useState<'emails' | 'settings' | 'stats'>('emails');
+  const [activeTab, setActiveTab] = useState<'emails' | 'domains' | 'settings' | 'stats'>('emails');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
+  const [domains, setDomains] = useState<Array<{ id: string; domain: string; autoresponder_enabled: boolean; drafts_enabled: boolean }>>([]);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
 
   const [newEmailAddress, setNewEmailAddress] = useState('');
   const [newEmailType, setNewEmailType] = useState<'ses' | 'google'>('ses');
   const [newEmailDailyLimit, setNewEmailDailyLimit] = useState(1440);
+
+  const [newDomain, setNewDomain] = useState('');
 
   useEffect(() => {
     loadMemberData();
@@ -62,13 +65,17 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
       setLoading(true);
       setError('');
 
-      const [sesEmailsRes, googleEmailsRes, settingsRes, statsRes] = await Promise.all([
+      const [sesEmailsRes, googleEmailsRes, domainsRes, settingsRes, statsRes] = await Promise.all([
         supabase
           .from('amazon_ses_emails')
           .select('*')
           .eq('user_id', memberId),
         supabase
           .from('google_smtp_emails')
+          .select('*')
+          .eq('user_id', memberId),
+        supabase
+          .from('amazon_ses_domains')
           .select('*')
           .eq('user_id', memberId),
         supabase
@@ -102,6 +109,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
       }));
 
       setEmailAccounts([...sesEmails, ...googleEmails]);
+      setDomains(domainsRes.data || []);
       setUserSettings(settingsRes.data);
       setDashboardStats(statsRes.data);
 
@@ -204,6 +212,116 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
     }
   };
 
+  const handleAddDomain = async () => {
+    if (!newDomain.trim()) {
+      setError('Please enter a domain name');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+
+      const { error: insertError } = await supabase
+        .from('amazon_ses_domains')
+        .insert({
+          user_id: memberId,
+          domain: newDomain,
+          autoresponder_enabled: false,
+          drafts_enabled: false
+        });
+
+      if (insertError) throw insertError;
+
+      setSuccess('Domain added successfully!');
+      setNewDomain('');
+      await loadMemberData();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Error adding domain:', err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveDomain = async (domainId: string) => {
+    if (!confirm('Are you sure you want to remove this domain?')) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError('');
+
+      const { error: deleteError } = await supabase
+        .from('amazon_ses_domains')
+        .delete()
+        .eq('id', domainId);
+
+      if (deleteError) throw deleteError;
+
+      setSuccess('Domain removed successfully!');
+      await loadMemberData();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Error removing domain:', err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleDomainAutoresponder = async (domainId: string, enabled: boolean) => {
+    try {
+      setSaving(true);
+      setError('');
+
+      const { error: updateError } = await supabase
+        .from('amazon_ses_domains')
+        .update({ autoresponder_enabled: enabled })
+        .eq('id', domainId);
+
+      if (updateError) throw updateError;
+
+      setSuccess('Domain settings updated!');
+      await loadMemberData();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Error updating domain:', err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleDomainDrafts = async (domainId: string, enabled: boolean) => {
+    try {
+      setSaving(true);
+      setError('');
+
+      const { error: updateError } = await supabase
+        .from('amazon_ses_domains')
+        .update({ drafts_enabled: enabled })
+        .eq('id', domainId);
+
+      if (updateError) throw updateError;
+
+      setSuccess('Domain settings updated!');
+      await loadMemberData();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      console.error('Error updating domain:', err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     if (!userSettings) return;
 
@@ -285,6 +403,17 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
           >
             <Mail className="w-4 h-4 inline mr-2" />
             Email Accounts
+          </button>
+          <button
+            onClick={() => setActiveTab('domains')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'domains'
+                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+            }`}
+          >
+            <Globe className="w-4 h-4 inline mr-2" />
+            Domains
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -431,6 +560,102 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'domains' && (
+          <div className="space-y-6">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Add Domain</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Domain Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newDomain}
+                    onChange={(e) => setNewDomain(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    placeholder="example.com"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleAddDomain}
+                    disabled={saving}
+                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Domain
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Verified Domains</h3>
+              {domains.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                  <Globe className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 dark:text-gray-400">No domains configured</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {domains.map((domain) => (
+                    <div
+                      key={domain.id}
+                      className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                          <span className="font-medium text-gray-800 dark:text-white text-lg">{domain.domain}</span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveDomain(domain.id)}
+                          disabled={saving}
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
+                          title="Remove domain"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded">
+                          <div>
+                            <label className="font-medium text-gray-800 dark:text-white">Autoresponder</label>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Automatically send AI-generated responses</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={domain.autoresponder_enabled}
+                            onChange={(e) => handleToggleDomainAutoresponder(domain.id, e.target.checked)}
+                            disabled={saving || domain.drafts_enabled}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded">
+                          <div>
+                            <label className="font-medium text-gray-800 dark:text-white">Drafts Mode</label>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Save AI responses as drafts instead of sending</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={domain.drafts_enabled}
+                            onChange={(e) => handleToggleDomainDrafts(domain.id, e.target.checked)}
+                            disabled={saving || domain.autoresponder_enabled}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
