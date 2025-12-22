@@ -269,21 +269,18 @@ export default function App() {
             localStorage.removeItem('userRole');
           }
 
-          // Check the current URL path and restore the view
+          // Always restore the current URL path - no redirects
           const currentPath = window.location.pathname.replace(/^\//, '');
-          const publicPaths = ['', 'landing', 'login', 'register', 'features', 'pricing', 'security', 'updates', 'about', 'privacy-policy', 'terms-of-service', 'cookie-policy'];
-
-          if (currentPath && !publicPaths.includes(currentPath)) {
-            // User was on an authenticated page, restore that view
+          if (currentPath) {
             console.log('Restoring view from URL:', currentPath);
             setView(currentPath as View);
           } else {
-            // User was on a public page or root, redirect based on login type
+            // Only set default view if on root URL
             if (loginType === 'manager' && memberData && ['owner', 'manager'].includes(memberData.role)) {
-              console.log('Setting view to team-management');
+              console.log('On root URL, setting view to team-management');
               setView('team-management');
             } else {
-              console.log('Setting view to dashboard');
+              console.log('On root URL, setting view to dashboard');
               setView('dashboard');
             }
           }
