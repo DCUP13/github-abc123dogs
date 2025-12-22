@@ -365,16 +365,23 @@ export default function App() {
             if (result.data) {
               setUserRole(result.data.role);
               localStorage.setItem('userRole', result.data.role);
+            } else {
+              setUserRole(null);
+              localStorage.removeItem('userRole');
+            }
 
-              if (loginType === 'manager' && ['owner', 'manager'].includes(result.data.role)) {
+            // Always restore the current URL path - no redirects
+            const currentPath = window.location.pathname.replace(/^\//, '');
+            if (currentPath) {
+              console.log('SIGNED_IN: Restoring view from URL:', currentPath);
+              setView(currentPath as View);
+            } else {
+              // Only set default view if on root URL
+              if (loginType === 'manager' && result.data && ['owner', 'manager'].includes(result.data.role)) {
                 setView('team-management');
               } else {
                 setView('dashboard');
               }
-            } else {
-              setUserRole(null);
-              localStorage.removeItem('userRole');
-              setView('dashboard');
             }
 
             fetchUserSettings();
@@ -427,7 +434,7 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    updateView('dashboard');
+    // No redirect - let the auth state change handler manage navigation
   };
 
   const handleSignOut = async () => {
