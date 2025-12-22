@@ -264,19 +264,28 @@ export default function App() {
           if (memberData) {
             setUserRole(memberData.role);
             localStorage.setItem('userRole', memberData.role);
+          } else {
+            setUserRole(null);
+            localStorage.removeItem('userRole');
+          }
 
-            if (loginType === 'manager' && ['owner', 'manager'].includes(memberData.role)) {
+          // Check the current URL path and restore the view
+          const currentPath = window.location.pathname.replace(/^\//, '');
+          const publicPaths = ['', 'landing', 'login', 'register', 'features', 'pricing', 'security', 'updates', 'about', 'privacy-policy', 'terms-of-service', 'cookie-policy'];
+
+          if (currentPath && !publicPaths.includes(currentPath)) {
+            // User was on an authenticated page, restore that view
+            console.log('Restoring view from URL:', currentPath);
+            setView(currentPath as View);
+          } else {
+            // User was on a public page or root, redirect based on login type
+            if (loginType === 'manager' && memberData && ['owner', 'manager'].includes(memberData.role)) {
               console.log('Setting view to team-management');
               setView('team-management');
             } else {
               console.log('Setting view to dashboard');
               setView('dashboard');
             }
-          } else {
-            console.log('No organization membership found, setting view to dashboard');
-            setUserRole(null);
-            localStorage.removeItem('userRole');
-            setView('dashboard');
           }
 
           console.log('Fetching user settings...');
