@@ -54,6 +54,11 @@ export default function App() {
     setView(newView);
     const path = newView === 'landing' ? '/' : `/${newView}`;
     window.history.pushState({}, '', path);
+
+    // Clear loginType when navigating away from team-management or to a different authenticated view
+    if (view === 'team-management' && newView !== 'team-management') {
+      localStorage.removeItem('loginType');
+    }
   };
 
   const handleBackFromPolicy = () => {
@@ -302,6 +307,29 @@ export default function App() {
         try {
           if (event === 'TOKEN_REFRESHED') {
             console.log('Token refreshed successfully');
+            // Don't change the view on token refresh, just update the role if needed
+            if (session) {
+              const memberQuery = supabase
+                .from('organization_members')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+
+              const timeout = new Promise<{ data: null }>((resolve) => {
+                setTimeout(() => resolve({ data: null }), 2000);
+              });
+
+              const result = await Promise.race([memberQuery, timeout]);
+
+              if (result.data) {
+                setUserRole(result.data.role);
+                localStorage.setItem('userRole', result.data.role);
+              } else {
+                setUserRole(null);
+                localStorage.removeItem('userRole');
+              }
+            }
+            return;
           }
 
           if (event === 'SIGNED_OUT') {
@@ -312,7 +340,8 @@ export default function App() {
             return;
           }
 
-          if (session) {
+          // Only change view on SIGNED_IN event, not on other events
+          if (event === 'SIGNED_IN' && session) {
             const loginType = localStorage.getItem('loginType');
 
             const memberQuery = supabase
@@ -343,10 +372,6 @@ export default function App() {
             }
 
             fetchUserSettings();
-          } else {
-            setView('landing');
-            setDarkMode(false);
-            setUserRole(null);
           }
         } catch (error: any) {
           console.error('Auth state change error:', error);
@@ -401,6 +426,9 @@ export default function App() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('loginType');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('organizationId');
     updateView('landing');
   };
 
