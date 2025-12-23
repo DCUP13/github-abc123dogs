@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare } from 'lucide-react';
+import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { ReplyDialog } from './ReplyDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
@@ -66,6 +66,7 @@ function formatPlainTextEmail(text: string): string {
 interface EmailsInboxProps {
   onSignOut: () => void;
   currentView: string;
+  userRole?: string | null;
 }
 
 interface Email {
@@ -132,7 +133,7 @@ const getFirstReceiver = (receiver: string | string[]): string => {
   return receiver || '';
 };
 
-export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
+export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxProps) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [outboxEmails, setOutboxEmails] = useState<OutboxEmail[]>([]);
   const [sentEmails, setSentEmails] = useState<SentEmail[]>([]);
@@ -147,10 +148,23 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showEditDraftDialog, setShowEditDraftDialog] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState<DraftEmail | null>(null);
+  const [inboxMode, setInboxMode] = useState<'master' | 'regular'>('master');
+  const [isTogglingMode, setIsTogglingMode] = useState(false);
+
+  const isManager = userRole === 'owner' || userRole === 'manager';
 
   useEffect(() => {
     fetchAllEmails();
+    if (isManager) {
+      fetchInboxMode();
+    }
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'inbox') {
+      fetchInboxEmails();
+    }
+  }, [inboxMode]);
 
   useEffect(() => {
     if (activeTab === 'inbox') {
@@ -163,6 +177,50 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
       fetchDraftEmails();
     }
   }, [activeTab]);
+
+  const fetchInboxMode = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('inbox_mode')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data?.inbox_mode) {
+        setInboxMode(data.inbox_mode as 'master' | 'regular');
+      }
+    } catch (error) {
+      console.error('Error fetching inbox mode:', error);
+    }
+  };
+
+  const toggleInboxMode = async () => {
+    try {
+      setIsTogglingMode(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newMode = inboxMode === 'master' ? 'regular' : 'master';
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ inbox_mode: newMode })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setInboxMode(newMode);
+    } catch (error) {
+      console.error('Error toggling inbox mode:', error);
+      alert('Failed to update inbox mode. Please try again.');
+    } finally {
+      setIsTogglingMode(false);
+    }
+  };
 
   const fetchAllEmails = async () => {
     try {
@@ -638,6 +696,44 @@ export function EmailsInbox({ onSignOut, currentView }: EmailsInboxProps) {
                 </nav>
               </div>
             </div>
+
+            {/* Inbox Mode Toggle for Managers */}
+            {isManager && activeTab === 'inbox' && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Inbox className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Inbox Mode:
+                    </span>
+                    <span className="text-sm text-blue-700 dark:text-blue-300">
+                      {inboxMode === 'master' ? 'Master Inbox (All Organization Emails)' : 'Regular Inbox (My Emails Only)'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={toggleInboxMode}
+                    disabled={isTogglingMode}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      isTogglingMode
+                        ? 'bg-blue-300 cursor-wait text-blue-900'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    {isTogglingMode ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Switching...
+                      </>
+                    ) : (
+                      <>
+                        {inboxMode === 'master' ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                        Switch to {inboxMode === 'master' ? 'Regular' : 'Master'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="mb-6">
               <div className="relative">

@@ -491,7 +491,7 @@ export default function App() {
                     />
                   )}
                   {view === 'emails' && (
-                    <EmailsInbox onSignOut={handleSignOut} currentView={view} />
+                    <EmailsInbox onSignOut={handleSignOut} currentView={view} userRole={userRole} />
                   )}
                   {view === 'addresses' && (
                     <Addresses onSignOut={handleSignOut} currentView={view} />
