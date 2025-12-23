@@ -32,21 +32,32 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      serviceRoleKey,
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    )
+    let supabaseClient
+    let userId: string | null = null
 
-    if (!isServiceRole) {
+    if (isServiceRole) {
+      // Called from trigger with service role key
+      supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        serviceRoleKey
+      )
+    } else {
+      // Called from user with their auth token
+      supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: authHeader },
+          },
+        }
+      )
+
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
       if (userError || !user) {
         throw new Error('Unauthorized')
       }
+      userId = user.id
     }
 
     if (req.method !== 'POST') {
