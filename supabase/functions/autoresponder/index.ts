@@ -24,10 +24,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { emailId } = await req.json();
+    const requestBody = await req.json();
+    console.log('Received request body:', JSON.stringify(requestBody));
+
+    const { emailId } = requestBody;
     console.log('Processing autoresponder for email ID:', emailId);
 
     if (!emailId) {
+      console.error('Email ID missing. Request body keys:', Object.keys(requestBody));
       throw new Error('Email ID is required');
     }
 
