@@ -70,44 +70,6 @@ Deno.serve(async (req: Request) => {
     console.log('Email received by:', receivedByEmail, 'Domain:', receivedByDomain);
     console.log('Original sender:', originalSender);
 
-    const { data: domainData, error: domainError } = await supabase
-      .from('amazon_ses_domains')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('domain', receivedByDomain)
-      .maybeSingle();
-
-    if (domainError || !domainData) {
-      console.log('Domain not found:', receivedByDomain);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Domain not configured'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
-        status: 200
-      });
-    }
-
-    const domainAutoresponderEnabled = domainData.autoresponder_enabled || false;
-    const domainDraftsEnabled = domainData.drafts_enabled || false;
-
-    if (!domainAutoresponderEnabled && !domainDraftsEnabled) {
-      console.log('Both autoresponder and drafts disabled for domain:', receivedByDomain);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Autoresponder and drafts are disabled for this domain'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
-        status: 200
-      });
-    }
-
     const { data: emailAddressData, error: emailAddressError } = await supabase
       .from('amazon_ses_emails')
       .select('*')
@@ -130,12 +92,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const emailAutoresponderEnabled = emailAddressData.autoresponder_enabled || false;
+    const emailDraftsEnabled = emailAddressData.drafts_enabled || false;
     console.log('Email autoresponder enabled:', emailAutoresponderEnabled);
-    console.log('Domain autoresponder enabled:', domainAutoresponderEnabled);
-    console.log('Domain drafts enabled:', domainDraftsEnabled);
+    console.log('Email drafts enabled:', emailDraftsEnabled);
 
-    const shouldAutoSend = domainAutoresponderEnabled && emailAutoresponderEnabled;
-    const shouldSaveDraft = !shouldAutoSend && domainDraftsEnabled;
+    const shouldAutoSend = emailAutoresponderEnabled;
+    const shouldSaveDraft = !shouldAutoSend && emailDraftsEnabled;
 
     if (!shouldAutoSend && !shouldSaveDraft) {
       console.log('No action to take - autoresponder and drafts both disabled');
