@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Email not found: ${emailError?.message}`);
     }
 
-    const fromEmail = email.sender;
+    const originalSender = email.sender;
     const subject = email.subject || 'No subject';
     const body = email.body || '';
     const userId = email.user_id;
@@ -65,19 +65,20 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const receiverEmail = receivers[0];
-    const receiverDomain = receiverEmail.split('@')[1];
-    console.log('Receiver email:', receiverEmail, 'Domain:', receiverDomain);
+    const receivedByEmail = receivers[0];
+    const receivedByDomain = receivedByEmail.split('@')[1];
+    console.log('Email received by:', receivedByEmail, 'Domain:', receivedByDomain);
+    console.log('Original sender:', originalSender);
 
     const { data: domainData, error: domainError } = await supabase
       .from('amazon_ses_domains')
       .select('*')
       .eq('user_id', userId)
-      .eq('domain', receiverDomain)
+      .eq('domain', receivedByDomain)
       .maybeSingle();
 
     if (domainError || !domainData) {
-      console.log('Domain not found:', receiverDomain);
+      console.log('Domain not found:', receivedByDomain);
       return new Response(JSON.stringify({
         success: false,
         message: 'Domain not configured'
@@ -90,14 +91,57 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const autoresponderEnabled = domainData.autoresponder_enabled || false;
-    const draftsEnabled = domainData.drafts_enabled || false;
+    const domainAutoresponderEnabled = domainData.autoresponder_enabled || false;
+    const domainDraftsEnabled = domainData.drafts_enabled || false;
 
-    if (!autoresponderEnabled && !draftsEnabled) {
-      console.log('Both autoresponder and drafts disabled for domain:', receiverDomain);
+    if (!domainAutoresponderEnabled && !domainDraftsEnabled) {
+      console.log('Both autoresponder and drafts disabled for domain:', receivedByDomain);
       return new Response(JSON.stringify({
         success: false,
         message: 'Autoresponder and drafts are disabled for this domain'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
+    const { data: emailAddressData, error: emailAddressError } = await supabase
+      .from('amazon_ses_emails')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('address', receivedByEmail)
+      .maybeSingle();
+
+    if (emailAddressError || !emailAddressData) {
+      console.log('Email address not configured:', receivedByEmail);
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Email address not configured'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 200
+      });
+    }
+
+    const emailAutoresponderEnabled = emailAddressData.autoresponder_enabled || false;
+    console.log('Email autoresponder enabled:', emailAutoresponderEnabled);
+    console.log('Domain autoresponder enabled:', domainAutoresponderEnabled);
+    console.log('Domain drafts enabled:', domainDraftsEnabled);
+
+    const shouldAutoSend = domainAutoresponderEnabled && emailAutoresponderEnabled;
+    const shouldSaveDraft = !shouldAutoSend && domainDraftsEnabled;
+
+    if (!shouldAutoSend && !shouldSaveDraft) {
+      console.log('No action to take - autoresponder and drafts both disabled');
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'No action configured for this email'
       }), {
         headers: {
           ...corsHeaders,
@@ -118,17 +162,17 @@ Deno.serve(async (req: Request) => {
         )
       `)
       .eq('user_id', userId)
-      .eq('domain', receiverDomain);
+      .eq('domain', receivedByDomain);
 
     if (promptsError) {
       console.error('Error fetching prompts:', promptsError);
     }
 
     const domainPrompts = prompts?.map(p => p.prompts).filter(Boolean) || [];
-    console.log('Found', domainPrompts.length, 'prompts for domain:', receiverDomain);
+    console.log('Found', domainPrompts.length, 'prompts for domain:', receivedByDomain);
 
     if (domainPrompts.length === 0) {
-      console.log('No prompts configured for domain:', receiverDomain);
+      console.log('No prompts configured for domain:', receivedByDomain);
       return new Response(JSON.stringify({
         success: false,
         message: 'No prompts configured for this domain'
@@ -141,29 +185,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: autoresponderEmails, error: autoError } = await supabase
-      .from('amazon_ses_emails')
-      .select('address')
-      .eq('user_id', userId)
-      .eq('autoresponder_enabled', true);
-
-    if (autoError || !autoresponderEmails || autoresponderEmails.length === 0) {
-      console.log('No autoresponder emails configured for user:', userId);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'No autoresponder email configured'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
-        status: 200
-      });
-    }
-
-    const autoresponderEmail = autoresponderEmails[0].address;
-    console.log('Using autoresponder email:', autoresponderEmail);
-
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
     const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
@@ -174,7 +195,7 @@ Deno.serve(async (req: Request) => {
     });
 
     const combinedPrompt = processedPrompts.join('\n\n---\n\n');
-    console.log('Using combined prompts for domain:', receiverDomain);
+    console.log('Using combined prompts for domain:', receivedByDomain);
 
     let replyBody = '';
 
@@ -201,13 +222,13 @@ Deno.serve(async (req: Request) => {
       throw new Error('No reply content generated');
     }
 
-    if (autoresponderEnabled) {
+    if (shouldAutoSend) {
       const { error: outboxError } = await supabase
         .from('email_outbox')
         .insert({
           user_id: userId,
-          to_email: fromEmail,
-          from_email: autoresponderEmail,
+          to_email: originalSender,
+          from_email: receivedByEmail,
           subject: replySubject,
           body: replyBody,
           reply_to_id: emailId,
@@ -227,8 +248,8 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           message: 'Autoresponse queued',
-          to: fromEmail,
-          from: autoresponderEmail,
+          to: originalSender,
+          from: receivedByEmail,
           mode: 'autoresponder'
         }),
         {
@@ -239,13 +260,13 @@ Deno.serve(async (req: Request) => {
           status: 200
         }
       );
-    } else if (draftsEnabled) {
+    } else if (shouldSaveDraft) {
       const { error: draftError } = await supabase
         .from('email_drafts')
         .insert({
           user_id: userId,
-          sender: autoresponderEmail,
-          receiver: [fromEmail],
+          sender: receivedByEmail,
+          receiver: [originalSender],
           subject: replySubject,
           body: replyBody,
           attachments: [],
@@ -263,8 +284,8 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           message: 'Draft saved',
-          to: fromEmail,
-          from: autoresponderEmail,
+          to: originalSender,
+          from: receivedByEmail,
           mode: 'draft'
         }),
         {
