@@ -24,51 +24,18 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
-    const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`
-
-    console.log('Auth check:', {
-      hasAuthHeader: !!authHeader,
-      isServiceRole,
-      hasServiceKey: !!serviceRoleKey,
-      hasAnonKey: !!anonKey,
-      hasUrl: !!supabaseUrl
-    })
-
-    let supabaseClient
-    let userId: string | null = null
-
-    if (isServiceRole) {
-      console.log('Creating client with service role key')
-      supabaseClient = createClient(supabaseUrl, serviceRoleKey)
-    } else {
-      console.log('Creating client with anon key and user auth')
-      supabaseClient = createClient(supabaseUrl, anonKey, {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      })
-
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-      console.log('User auth result:', { hasUser: !!user, error: userError?.message })
-
-      if (userError || !user) {
-        throw new Error('Unauthorized')
-      }
-      userId = user.id
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Missing Supabase configuration')
     }
 
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed')
-    }
+    const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
 
     const requestBody = await req.json().catch(() => ({}))
     const specificEmailId = requestBody.emailId
