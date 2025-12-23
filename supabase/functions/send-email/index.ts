@@ -29,31 +29,37 @@ serve(async (req) => {
       throw new Error('No authorization header')
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+
     const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`
+
+    console.log('Auth check:', {
+      hasAuthHeader: !!authHeader,
+      isServiceRole,
+      hasServiceKey: !!serviceRoleKey,
+      hasAnonKey: !!anonKey,
+      hasUrl: !!supabaseUrl
+    })
 
     let supabaseClient
     let userId: string | null = null
 
     if (isServiceRole) {
-      // Called from trigger with service role key
-      supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        serviceRoleKey
-      )
+      console.log('Creating client with service role key')
+      supabaseClient = createClient(supabaseUrl, serviceRoleKey)
     } else {
-      // Called from user with their auth token
-      supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        {
-          global: {
-            headers: { Authorization: authHeader },
-          },
-        }
-      )
+      console.log('Creating client with anon key and user auth')
+      supabaseClient = createClient(supabaseUrl, anonKey, {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      })
 
       const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+      console.log('User auth result:', { hasUser: !!user, error: userError?.message })
+
       if (userError || !user) {
         throw new Error('Unauthorized')
       }
