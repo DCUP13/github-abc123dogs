@@ -269,18 +269,18 @@ export default function App() {
             localStorage.removeItem('userRole');
           }
 
-          // Always restore the current URL path - no redirects
+          // Restore URL path unless it's an auth page
           const currentPath = window.location.pathname.replace(/^\//, '');
-          if (currentPath) {
+          const authPages = ['login', 'register'];
+          if (currentPath && !authPages.includes(currentPath)) {
             console.log('Restoring view from URL:', currentPath);
             setView(currentPath as View);
           } else {
-            // Only set default view if on root URL
             if (loginType === 'manager' && memberData && ['owner', 'manager'].includes(memberData.role)) {
-              console.log('On root URL, setting view to team-management');
+              console.log('Setting view to team-management');
               setView('team-management');
             } else {
-              console.log('On root URL, setting view to dashboard');
+              console.log('Setting view to dashboard');
               setView('dashboard');
             }
           }
@@ -370,13 +370,13 @@ export default function App() {
               localStorage.removeItem('userRole');
             }
 
-            // Always restore the current URL path - no redirects
+            // Restore URL path unless it's an auth page
             const currentPath = window.location.pathname.replace(/^\//, '');
-            if (currentPath) {
+            const authPages = ['login', 'register'];
+            if (currentPath && !authPages.includes(currentPath)) {
               console.log('SIGNED_IN: Restoring view from URL:', currentPath);
               setView(currentPath as View);
             } else {
-              // Only set default view if on root URL
               if (loginType === 'manager' && result.data && ['owner', 'manager'].includes(result.data.role)) {
                 setView('team-management');
               } else {
@@ -434,7 +434,13 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    // No redirect - let the auth state change handler manage navigation
+    const loginType = localStorage.getItem('loginType');
+    const userRoleStored = localStorage.getItem('userRole');
+    if (loginType === 'manager' && userRoleStored && ['owner', 'manager'].includes(userRoleStored)) {
+      updateView('team-management');
+    } else {
+      updateView('dashboard');
+    }
   };
 
   const handleSignOut = async () => {
