@@ -252,6 +252,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
   const [eventNotifications, setEventNotifications] = useState<EventNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingIntegration, setEditingIntegration] = useState<Integration | null>(null);
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventNotification | null>(null);
@@ -306,7 +307,32 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
   const handleAddIntegration = (template: IntegrationTemplate) => {
     setSelectedTemplate(template);
+    setEditingIntegration(null);
     setFormData({});
+    setVisibleFields({});
+    setShowAddModal(true);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleEditIntegration = (integration: Integration) => {
+    const template = INTEGRATION_TEMPLATES.find(t => t.type === integration.integration_type);
+    if (!template) return;
+
+    const prefilled: Record<string, string> = {};
+    template.fields.forEach(field => {
+      if (field.key === 'api_key') {
+        prefilled[field.key] = integration.api_key || '';
+      } else if (field.key === 'api_secret' || field.key === 'client_secret') {
+        prefilled[field.key] = integration.api_secret || '';
+      } else {
+        prefilled[field.key] = integration.additional_config?.[field.key] || '';
+      }
+    });
+
+    setSelectedTemplate(template);
+    setEditingIntegration(integration);
+    setFormData(prefilled);
     setVisibleFields({});
     setShowAddModal(true);
     setError(null);
@@ -332,12 +358,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
       if (!user) throw new Error('Not authenticated');
 
       const additionalConfig: Record<string, string> = {};
-      const integrationData: any = {
-        user_id: user.id,
-        integration_type: selectedTemplate.type,
-        integration_name: selectedTemplate.name,
-        is_active: true,
-      };
+      const integrationData: any = {};
 
       selectedTemplate.fields.forEach(field => {
         const value = formData[field.key] || '';
@@ -351,15 +372,32 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
       });
 
       integrationData.additional_config = additionalConfig;
+      integrationData.updated_at = new Date().toISOString();
 
-      const { error } = await supabase
-        .from('integrations')
-        .insert(integrationData);
+      if (editingIntegration) {
+        const { error } = await supabase
+          .from('integrations')
+          .update(integrationData)
+          .eq('id', editingIntegration.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        setSuccess('Integration updated successfully!');
+      } else {
+        integrationData.user_id = user.id;
+        integrationData.integration_type = selectedTemplate.type;
+        integrationData.integration_name = selectedTemplate.name;
+        integrationData.is_active = true;
 
-      setSuccess('Integration added successfully!');
+        const { error } = await supabase
+          .from('integrations')
+          .insert(integrationData);
+
+        if (error) throw error;
+        setSuccess('Integration connected successfully!');
+      }
+
       setShowAddModal(false);
+      setEditingIntegration(null);
       await loadIntegrations();
 
       setTimeout(() => setSuccess(null), 3000);
@@ -614,12 +652,22 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                           onChange={() => handleToggleActive(integration.id, integration.is_active)}
                           label={integration.is_active ? 'Active' : 'Inactive'}
                         />
-                        <button
-                          onClick={() => handleDeleteIntegration(integration.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleEditIntegration(integration)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Edit credentials"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteIntegration(integration.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete integration"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {integration.integration_type === 'slack' && (
@@ -741,7 +789,9 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-3xl">{selectedTemplate.icon}</span>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Connect {selectedTemplate.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {editingIntegration ? `Edit ${selectedTemplate.name}` : `Connect ${selectedTemplate.name}`}
+                  </h2>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">{selectedTemplate.description}</p>
               </div>
@@ -788,7 +838,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
               <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => { setShowAddModal(false); setEditingIntegration(null); }}
                   className="flex-1 px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
                 >
                   Cancel
@@ -801,12 +851,12 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                   {isSaving ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Connecting...
+                      {editingIntegration ? 'Saving...' : 'Connecting...'}
                     </>
                   ) : (
                     <>
                       <Save className="w-5 h-5" />
-                      Connect Integration
+                      {editingIntegration ? 'Save Changes' : 'Connect Integration'}
                     </>
                   )}
                 </button>
