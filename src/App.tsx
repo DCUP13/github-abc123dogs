@@ -276,13 +276,8 @@ export default function App() {
             console.log('Restoring view from URL:', currentPath);
             setView(currentPath as View);
           } else {
-            if (loginType === 'manager' && memberData && ['owner', 'manager'].includes(memberData.role)) {
-              console.log('Setting view to team-management');
-              setView('team-management');
-            } else {
-              console.log('Setting view to dashboard');
-              setView('dashboard');
-            }
+            console.log('Setting view to dashboard');
+            setView('dashboard');
           }
 
           console.log('Fetching user settings...');
@@ -418,13 +413,7 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    const loginType = localStorage.getItem('loginType');
-    const userRoleStored = localStorage.getItem('userRole');
-    if (loginType === 'manager' && userRoleStored && ['owner', 'manager'].includes(userRoleStored)) {
-      updateView('team-management');
-    } else {
-      updateView('dashboard');
-    }
+    updateView('dashboard');
   };
 
   const handleSignOut = async () => {
