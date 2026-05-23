@@ -346,10 +346,8 @@ export default function App() {
             return;
           }
 
-          // Only change view on SIGNED_IN event, not on other events
+          // On SIGNED_IN, only update role state — navigation is handled by handleLogin
           if (event === 'SIGNED_IN' && session) {
-            const loginType = localStorage.getItem('loginType');
-
             const memberQuery = supabase
               .from('organization_members')
               .select('role')
@@ -368,20 +366,6 @@ export default function App() {
             } else {
               setUserRole(null);
               localStorage.removeItem('userRole');
-            }
-
-            // Restore URL path unless it's an auth page
-            const currentPath = window.location.pathname.replace(/^\//, '');
-            const authPages = ['login', 'register'];
-            if (currentPath && !authPages.includes(currentPath)) {
-              console.log('SIGNED_IN: Restoring view from URL:', currentPath);
-              setView(currentPath as View);
-            } else {
-              if (loginType === 'manager' && result.data && ['owner', 'manager'].includes(result.data.role)) {
-                setView('team-management');
-              } else {
-                setView('dashboard');
-              }
             }
 
             fetchUserSettings();
