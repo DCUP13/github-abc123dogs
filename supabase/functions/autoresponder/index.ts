@@ -15,12 +15,19 @@ const openai = new OpenAI({
   apiKey: Deno.env.get('OPENAI_API_KEY') || ''
 });
 
+async function callAI(prompt: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 500,
+    temperature: 0.7
+  });
+  return response.choices[0]?.message?.content || '';
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -31,7 +38,6 @@ Deno.serve(async (req: Request) => {
     console.log('Processing autoresponder for email ID:', emailId);
 
     if (!emailId) {
-      console.error('Email ID missing. Request body keys:', Object.keys(requestBody));
       throw new Error('Email ID is required');
     }
 
@@ -53,14 +59,8 @@ Deno.serve(async (req: Request) => {
 
     if (!receivers || receivers.length === 0) {
       console.log('No receiver addresses found');
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'No receiver addresses'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
+      return new Response(JSON.stringify({ success: false, message: 'No receiver addresses' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     }
@@ -68,7 +68,6 @@ Deno.serve(async (req: Request) => {
     const receivedByEmail = receivers[0];
     const receivedByDomain = receivedByEmail.split('@')[1];
     console.log('Email received by:', receivedByEmail, 'Domain:', receivedByDomain);
-    console.log('Original sender:', originalSender);
 
     const { data: emailAddressData, error: emailAddressError } = await supabase
       .from('amazon_ses_emails')
@@ -79,48 +78,34 @@ Deno.serve(async (req: Request) => {
 
     if (emailAddressError || !emailAddressData) {
       console.log('Email address not configured:', receivedByEmail);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Email address not configured'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
+      return new Response(JSON.stringify({ success: false, message: 'Email address not configured' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     }
 
-    const emailAutoresponderEnabled = emailAddressData.autoresponder_enabled || false;
-    const emailDraftsEnabled = emailAddressData.drafts_enabled || false;
-    console.log('Email autoresponder enabled:', emailAutoresponderEnabled);
-    console.log('Email drafts enabled:', emailDraftsEnabled);
-
-    const shouldAutoSend = emailAutoresponderEnabled;
-    const shouldSaveDraft = !shouldAutoSend && emailDraftsEnabled;
+    const shouldAutoSend = emailAddressData.autoresponder_enabled || false;
+    const shouldSaveDraft = !shouldAutoSend && (emailAddressData.drafts_enabled || false);
 
     if (!shouldAutoSend && !shouldSaveDraft) {
-      console.log('No action to take - autoresponder and drafts both disabled');
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'No action configured for this email'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
+      console.log('No action configured for this email');
+      return new Response(JSON.stringify({ success: false, message: 'No action configured for this email' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     }
 
-    const { data: prompts, error: promptsError } = await supabase
+    // Fetch prompts for this domain, including prompt_type and step2_content
+    const { data: promptRows, error: promptsError } = await supabase
       .from('prompt_domains')
       .select(`
         prompt_id,
         prompts (
           id,
           title,
-          content
+          content,
+          prompt_type,
+          step2_content
         )
       `)
       .eq('user_id', userId)
@@ -130,55 +115,71 @@ Deno.serve(async (req: Request) => {
       console.error('Error fetching prompts:', promptsError);
     }
 
-    const domainPrompts = prompts?.map(p => p.prompts).filter(Boolean) || [];
+    const domainPrompts = promptRows?.map(p => p.prompts).filter(Boolean) || [];
     console.log('Found', domainPrompts.length, 'prompts for domain:', receivedByDomain);
 
     if (domainPrompts.length === 0) {
       console.log('No prompts configured for domain:', receivedByDomain);
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'No prompts configured for this domain'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
+      return new Response(JSON.stringify({ success: false, message: 'No prompts configured for this domain' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     }
 
+    const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
-    const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
+    // Process each prompt — one-step or two-step — and collect final reply bodies
+    const replyParts: string[] = [];
 
-    const processedPrompts = domainPrompts.map((p: any) => {
-      const content = p.content.replace(/\{\{email_content\}\}/g, emailContent);
-      return content;
-    });
+    for (const prompt of domainPrompts as any[]) {
+      const step1Prompt = prompt.content.replace(/\{\{email_content\}\}/g, emailContent);
 
-    const combinedPrompt = processedPrompts.join('\n\n---\n\n');
-    console.log('Using combined prompts for domain:', receivedByDomain);
+      if (prompt.prompt_type === 'two_step') {
+        console.log(`Running two-step prompt: ${prompt.title}`);
 
-    let replyBody = '';
+        // Step 1
+        const step1Result = await callAI(step1Prompt);
+        if (!step1Result) {
+          console.error('Step 1 produced no output for prompt:', prompt.id);
+          continue;
+        }
 
-    try {
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: combinedPrompt
-          }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      });
+        // Persist step 1 result
+        const { error: step1SaveError } = await supabase
+          .from('prompt_step_results')
+          .insert({
+            user_id: userId,
+            prompt_id: prompt.id,
+            email_id: emailId,
+            step1_result: step1Result
+          });
 
-      replyBody = response.choices[0]?.message?.content || '';
-    } catch (aiError) {
-      console.error('AI generation failed:', aiError);
-      throw new Error('Failed to generate autoresponse');
+        if (step1SaveError) {
+          console.error('Failed to save step 1 result:', step1SaveError);
+        }
+
+        // Step 2
+        const step2Template = prompt.step2_content || '';
+        const step2Prompt = step2Template
+          .replace(/\{\{email_content\}\}/g, emailContent)
+          .replace(/\{\{step1_result\}\}/g, step1Result);
+
+        const step2Result = await callAI(step2Prompt);
+        if (step2Result) {
+          replyParts.push(step2Result);
+        }
+      } else {
+        // One-step
+        console.log(`Running one-step prompt: ${prompt.title}`);
+        const result = await callAI(step1Prompt);
+        if (result) {
+          replyParts.push(result);
+        }
+      }
     }
+
+    const replyBody = replyParts.join('\n\n');
 
     if (!replyBody) {
       throw new Error('No reply content generated');
@@ -207,22 +208,10 @@ Deno.serve(async (req: Request) => {
       console.log('Autoresponse queued successfully');
 
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Autoresponse queued',
-          to: originalSender,
-          from: receivedByEmail,
-          mode: 'autoresponder'
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-          status: 200
-        }
+        JSON.stringify({ success: true, message: 'Autoresponse queued', to: originalSender, from: receivedByEmail, mode: 'autoresponder' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
-    } else if (shouldSaveDraft) {
+    } else {
       const { error: draftError } = await supabase
         .from('email_drafts')
         .insert({
@@ -243,37 +232,16 @@ Deno.serve(async (req: Request) => {
       console.log('Draft saved successfully');
 
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Draft saved',
-          to: originalSender,
-          from: receivedByEmail,
-          mode: 'draft'
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-          status: 200
-        }
+        JSON.stringify({ success: true, message: 'Draft saved', to: originalSender, from: receivedByEmail, mode: 'draft' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
   } catch (error) {
     console.error('Error in autoresponder:', error);
     return new Response(
-      JSON.stringify({ 
-        error: 'Autoresponder failed',
-        details: error.message 
-      }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-        status: 500
-      }
+      JSON.stringify({ error: 'Autoresponder failed', details: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

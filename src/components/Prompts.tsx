@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Plus, Edit, Trash2, Search, Copy, Check, X, Globe } from 'lucide-react';
+import { MessageSquare, Plus, CreditCard as Edit, Trash2, Search, Copy, Check, X, Globe, GitBranch, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useEmails } from '../contexts/EmailContext';
 
@@ -13,6 +13,8 @@ interface Prompt {
   title: string;
   content: string;
   category: string;
+  prompt_type: 'one_step' | 'two_step';
+  step2_content: string | null;
   created_at: string;
   updated_at: string;
   domains: string[];
@@ -43,6 +45,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     title: '',
     content: '',
     category: 'General',
+    prompt_type: 'one_step' as 'one_step' | 'two_step',
+    step2_content: '',
     domains: [] as string[]
   });
 
@@ -136,6 +140,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         title: formData.title.trim(),
         content: formData.content.trim(),
         category: formData.category,
+        prompt_type: formData.prompt_type,
+        step2_content: formData.prompt_type === 'two_step' ? (formData.step2_content.trim() || null) : null,
         user_id: user.data.user.id,
         updated_at: new Date().toISOString()
       };
@@ -198,6 +204,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       title: prompt.title,
       content: prompt.content,
       category: prompt.category,
+      prompt_type: prompt.prompt_type || 'one_step',
+      step2_content: prompt.step2_content || '',
       domains: prompt.domains || []
     });
     setShowCreateModal(true);
@@ -255,7 +263,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   });
 
   const resetForm = () => {
-    setFormData({ title: '', content: '', category: 'General', domains: [] });
+    setFormData({ title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [] });
     setEditingPrompt(null);
     setShowCreateModal(false);
   };
@@ -334,13 +342,24 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                         {prompt.title}
                       </h3>
-                      <span className="inline-block px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300 rounded-full">
+                      <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded-full">
                         {prompt.category}
                       </span>
+                      {prompt.prompt_type === 'two_step' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 rounded-full">
+                          <GitBranch className="w-3 h-3" />
+                          2-Step
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 rounded-full">
+                          <ArrowRight className="w-3 h-3" />
+                          1-Step
+                        </span>
+                      )}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -517,19 +536,90 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Prompt Content
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Prompt Type
                   </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, prompt_type: 'one_step' }))}
+                      className={`flex flex-col items-start p-4 rounded-lg border-2 text-left transition-colors ${
+                        formData.prompt_type === 'one_step'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <ArrowRight className={`w-4 h-4 ${formData.prompt_type === 'one_step' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                        <span className={`text-sm font-semibold ${formData.prompt_type === 'one_step' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                          One-Step
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Single AI call. Email is injected via <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> and the response is sent directly.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, prompt_type: 'two_step' }))}
+                      className={`flex flex-col items-start p-4 rounded-lg border-2 text-left transition-colors ${
+                        formData.prompt_type === 'two_step'
+                          ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <GitBranch className={`w-4 h-4 ${formData.prompt_type === 'two_step' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                        <span className={`text-sm font-semibold ${formData.prompt_type === 'two_step' ? 'text-amber-700 dark:text-amber-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                          Two-Step
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Two AI calls. Step 1 result is stored, then fed into Step 2 via <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code>.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {formData.prompt_type === 'two_step' ? 'Step 1 — Analysis Prompt' : 'Prompt Content'}
+                  </label>
+                  {formData.prompt_type === 'two_step' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      This prompt analyzes the email. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> to inject the email. The AI response is saved and passed to Step 2.
+                    </p>
+                  )}
                   <textarea
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    rows={8}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-                    placeholder="Enter your prompt content here..."
+                    rows={formData.prompt_type === 'two_step' ? 5 : 8}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    placeholder={formData.prompt_type === 'two_step' ? 'Analyze the email and extract key details...' : 'Enter your prompt content here...'}
                     required
                   />
                 </div>
+
+                {formData.prompt_type === 'two_step' && (
+                  <div>
+                    <label htmlFor="step2_content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Step 2 — Reply Generation Prompt
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code> to reference the Step 1 output and <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> for the original email. The response here becomes the final reply.
+                    </p>
+                    <textarea
+                      id="step2_content"
+                      value={formData.step2_content}
+                      onChange={(e) => setFormData(prev => ({ ...prev, step2_content: e.target.value }))}
+                      rows={5}
+                      className="w-full px-4 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                      placeholder="Based on this analysis: {{step1_result}}\n\nWrite a professional reply to: {{email_content}}"
+                    />
+                  </div>
+                )}
                 </form>
               </div>
 
