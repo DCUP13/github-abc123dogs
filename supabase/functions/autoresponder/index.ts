@@ -126,14 +126,32 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // {{email_content}} = only the latest inbound message body
     const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
+
+    // {{FULL_CONVERSATION_HISTORY}} = full thread: original + all sent replies, oldest first
+    const { data: sentReplies } = await supabase
+      .from('email_sent')
+      .select('from_email, to_email, subject, body, sent_at')
+      .eq('reply_to_id', emailId)
+      .order('sent_at', { ascending: true });
+
+    const historyParts: string[] = [];
+    historyParts.push(`[${new Date(email.created_at).toISOString()}] From: ${originalSender}\nSubject: ${subject}\n\n${body}`);
+    for (const sent of (sentReplies || [])) {
+      historyParts.push(`[${new Date(sent.sent_at).toISOString()}] From: ${sent.from_email} To: ${sent.to_email}\nSubject: ${sent.subject}\n\n${sent.body}`);
+    }
+    const fullConversationHistory = historyParts.join('\n\n---\n\n');
+
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
     // Process each prompt — one-step or two-step — and collect final reply bodies
     const replyParts: string[] = [];
 
     for (const prompt of domainPrompts as any[]) {
-      const step1Prompt = prompt.content.replace(/\{\{email_content\}\}/g, emailContent);
+      const step1Prompt = prompt.content
+        .replace(/\{\{email_content\}\}/g, emailContent)
+        .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory);
 
       if (prompt.prompt_type === 'two_step') {
         console.log(`Running two-step prompt: ${prompt.title}`);
@@ -163,6 +181,7 @@ Deno.serve(async (req: Request) => {
         const step2Template = prompt.step2_content || '';
         const step2Prompt = step2Template
           .replace(/\{\{email_content\}\}/g, emailContent)
+          .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
           .replace(/\{\{step1_result\}\}/g, step1Result);
 
         const step2Result = await callAI(step2Prompt);

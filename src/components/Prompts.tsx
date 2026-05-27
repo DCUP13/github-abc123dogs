@@ -556,7 +556,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Single AI call. Email is injected via <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> and the response is sent directly.
+                        Single AI call. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> for the latest message or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code> for the full thread.
                       </p>
                     </button>
 
@@ -588,7 +588,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   </label>
                   {formData.prompt_type === 'two_step' && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      This prompt analyzes the email. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> to inject the email. The AI response is saved and passed to Step 2.
+                      This prompt analyzes the email. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> for the latest message or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code> for the full thread. The AI response is saved and passed to Step 2.
                     </p>
                   )}
                   <textarea
@@ -608,7 +608,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       Step 2 — Reply Generation Prompt
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                      Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code> to reference the Step 1 output and <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> for the original email. The response here becomes the final reply.
+                      Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code> for the Step 1 output, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> for the latest message, or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code> for the full thread. The response here becomes the final reply.
                     </p>
                     <textarea
                       id="step2_content"
