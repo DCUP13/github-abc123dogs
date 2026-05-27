@@ -391,7 +391,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-6">
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
                   {prompt.content}
                 </p>
                 
@@ -595,7 +595,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    rows={formData.prompt_type === 'two_step' ? 5 : 8}
+                    rows={formData.prompt_type === 'two_step' ? 10 : 16}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
                     placeholder={formData.prompt_type === 'two_step' ? 'Analyze the email and extract key details...' : 'Enter your prompt content here...'}
                     required
@@ -614,7 +614,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       id="step2_content"
                       value={formData.step2_content}
                       onChange={(e) => setFormData(prev => ({ ...prev, step2_content: e.target.value }))}
-                      rows={5}
+                      rows={10}
                       className="w-full px-4 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
                       placeholder="Based on this analysis: {{step1_result}}\n\nWrite a professional reply to: {{email_content}}"
                     />
