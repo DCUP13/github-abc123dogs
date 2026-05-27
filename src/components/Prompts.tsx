@@ -391,7 +391,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-6">
                   {prompt.content}
                 </p>
                 
