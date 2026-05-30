@@ -247,6 +247,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           step2_content: prompt.step2_content,
           property_info: prompt.property_info,
           company_info: prompt.company_info,
+          updated_at: new Date(new Date(prompt.updated_at).getTime() - 1).toISOString(),
+          created_at: new Date(new Date(prompt.updated_at).getTime() - 1).toISOString(),
         })
         .select('id')
         .single();
