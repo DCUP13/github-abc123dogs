@@ -57,7 +57,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [collapsedProperties, setCollapsedProperties] = useState<Set<number>>(new Set());
 
   const [formData, setFormData] = useState({
@@ -225,14 +225,50 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     }
   };
 
-  const handleCopyPrompt = async (content: string, id: string) => {
+  const handleDuplicatePrompt = async (prompt: Prompt) => {
+    setDuplicatingId(prompt.id);
     try {
-      await navigator.clipboard.writeText(content);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) return;
+
+      const baseName = prompt.title.replace(/ \(copy ?[0-9]*\)$/i, '');
+      const siblings = prompts.filter(p => p.title.startsWith(baseName));
+      const copyNum = siblings.length;
+      const newTitle = `${baseName} (copy${copyNum > 1 ? ` ${copyNum}` : ''})`;
+
+      const { data: newPrompt, error: insertError } = await supabase
+        .from('prompts')
+        .insert({
+          user_id: user.data.user.id,
+          title: newTitle,
+          content: prompt.content,
+          category: prompt.category,
+          prompt_type: prompt.prompt_type,
+          step2_content: prompt.step2_content,
+          property_info: prompt.property_info,
+          company_info: prompt.company_info,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      if (prompt.domains && prompt.domains.length > 0 && newPrompt) {
+        await supabase.from('prompt_domains').insert(
+          prompt.domains.map(domain => ({
+            user_id: user.data.user!.id,
+            prompt_id: newPrompt.id,
+            domain
+          }))
+        );
+      }
+
+      await fetchPrompts();
     } catch (error) {
-      console.error('Failed to copy prompt:', error);
-      alert('Failed to copy prompt to clipboard');
+      console.error('Error duplicating prompt:', error);
+      alert('Failed to duplicate prompt. Please try again.');
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -385,8 +421,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       )}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleCopyPrompt(prompt.content, prompt.id)} className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" title="Copy prompt">
-                        {copiedId === prompt.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      <button onClick={() => handleDuplicatePrompt(prompt)} disabled={duplicatingId === prompt.id} className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" title="Duplicate prompt">
+                        {duplicatingId === prompt.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                       </button>
                       <button onClick={() => handleEditPrompt(prompt)} className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" title="Edit prompt">
                         <Edit className="w-4 h-4" />
