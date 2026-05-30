@@ -95,30 +95,34 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Fetch prompts for this domain, including prompt_type and step2_content
-    const { data: promptRows, error: promptsError } = await supabase
-      .from('prompt_domains')
-      .select(`
-        prompt_id,
-        prompts (
-          id,
-          title,
-          content,
-          prompt_type,
-          step2_content,
-          property_info,
-          company_info
-        )
-      `)
-      .eq('user_id', userId)
-      .eq('domain', receivedByDomain);
+    // Fetch prompts: try exact email address first, then fall back to domain
+    const fetchPromptsByTarget = async (target: string) => {
+      const { data, error } = await supabase
+        .from('prompt_domains')
+        .select(`
+          prompt_id,
+          prompts (
+            id,
+            title,
+            content,
+            prompt_type,
+            step2_content,
+            property_info,
+            company_info
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('domain', target);
+      if (error) console.error('Error fetching prompts for target', target, error);
+      return data?.map(p => p.prompts).filter(Boolean) || [];
+    };
 
-    if (promptsError) {
-      console.error('Error fetching prompts:', promptsError);
+    let domainPrompts = await fetchPromptsByTarget(receivedByEmail);
+    const resolvedBy = domainPrompts.length > 0 ? 'address' : 'domain';
+    if (domainPrompts.length === 0) {
+      domainPrompts = await fetchPromptsByTarget(receivedByDomain);
     }
-
-    const domainPrompts = promptRows?.map(p => p.prompts).filter(Boolean) || [];
-    console.log('Found', domainPrompts.length, 'prompts for domain:', receivedByDomain);
+    console.log('Found', domainPrompts.length, 'prompts via', resolvedBy, '—', resolvedBy === 'address' ? receivedByEmail : receivedByDomain);
 
     if (domainPrompts.length === 0) {
       console.log('No prompts configured for domain:', receivedByDomain);

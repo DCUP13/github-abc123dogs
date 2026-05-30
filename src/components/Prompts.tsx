@@ -49,7 +49,7 @@ const categories = [
 ];
 
 export function Prompts({ onSignOut, currentView }: PromptsProps) {
-  const { sesDomains } = useEmails();
+  const { sesDomains, sesEmails } = useEmails();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [autoresponderDomains, setAutoresponderDomains] = useState<Set<string>>(new Set());
@@ -462,38 +462,61 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                     </select>
                   </div>
 
-                  {/* Domains */}
+                  {/* Domains & Addresses */}
                   <div>
-                    <label htmlFor="domains" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicable Domains</label>
+                    <label htmlFor="domains" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applicable Domains &amp; Addresses</label>
                     <div className="space-y-2">
                       <select
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         onChange={(e) => { if (e.target.value) { handleAddDomain(e.target.value); e.target.value = ''; } }}
                         value=""
                       >
-                        <option value="">Select a domain</option>
-                        {sesDomains.filter(d => !formData.domains.includes(d)).map(domain => (
-                          <option key={domain} value={domain}>{domain}</option>
-                        ))}
+                        <option value="">Select a domain or address…</option>
+                        {sesEmails.filter(e => !formData.domains.includes(e.address)).length > 0 && (
+                          <optgroup label="Email Addresses (specific)">
+                            {sesEmails
+                              .filter(e => !formData.domains.includes(e.address))
+                              .map(e => (
+                                <option key={e.address} value={e.address}>{e.address}</option>
+                              ))
+                            }
+                          </optgroup>
+                        )}
+                        {sesDomains.filter(d => !formData.domains.includes(d)).length > 0 && (
+                          <optgroup label="Domains (all addresses)">
+                            {sesDomains
+                              .filter(d => !formData.domains.includes(d))
+                              .map(domain => (
+                                <option key={domain} value={domain}>{domain}</option>
+                              ))
+                            }
+                          </optgroup>
+                        )}
                       </select>
-                      {sesDomains.length === 0 && (
+                      {sesEmails.length === 0 && sesDomains.length === 0 && (
                         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
-                          <p className="text-sm text-yellow-700 dark:text-yellow-400">No verified domains found. Add domains in Settings → Amazon SES.</p>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-400">No verified domains or addresses found. Add them in Settings → Amazon SES.</p>
                         </div>
                       )}
                       {formData.domains.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                          {formData.domains.map(domain => (
-                            <span key={domain} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded text-sm">
-                              <Globe className="w-3 h-3" />{domain}
-                              <button type="button" onClick={() => handleRemoveDomain(domain)} className="text-blue-600 dark:text-blue-400 hover:text-blue-800">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </span>
-                          ))}
+                          {formData.domains.map(entry => {
+                            const isAddress = entry.includes('@');
+                            return (
+                              <span key={entry} className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${isAddress ? 'bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200' : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'}`}>
+                                {isAddress ? <MessageSquare className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                                {entry}
+                                <button type="button" onClick={() => handleRemoveDomain(entry)} className={`hover:opacity-70 ${isAddress ? 'text-teal-600 dark:text-teal-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Leave empty to apply to all domains.</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Specific addresses take priority over domain-wide prompts. Leave empty to apply to all.
+                      </p>
                     </div>
                   </div>
 
