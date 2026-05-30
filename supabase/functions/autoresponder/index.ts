@@ -150,12 +150,20 @@ Deno.serve(async (req: Request) => {
     const replyParts: string[] = [];
 
     for (const prompt of domainPrompts as any[]) {
-      const propertyInfoText = prompt.property_info
-        ? Object.entries(prompt.property_info)
-            .filter(([, v]) => v && String(v).trim() !== '')
-            .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
-            .join('\n')
-        : '';
+      const rawPropertyInfo = prompt.property_info;
+      let propertyInfoText = '';
+      if (rawPropertyInfo) {
+        const properties = Array.isArray(rawPropertyInfo) ? rawPropertyInfo : [rawPropertyInfo];
+        propertyInfoText = properties
+          .map((p: Record<string, string>, i: number) => {
+            const lines = Object.entries(p)
+              .filter(([, v]) => v && String(v).trim() !== '')
+              .map(([k, v]) => `  ${k.replace(/_/g, ' ')}: ${v}`)
+              .join('\n');
+            return `Property ${i + 1}:\n${lines}`;
+          })
+          .join('\n\n');
+      }
 
       const step1Prompt = prompt.content
         .replace(/\{\{email_content\}\}/g, emailContent)
