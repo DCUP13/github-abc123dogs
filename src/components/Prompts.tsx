@@ -83,11 +83,14 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     if (!user) return;
     const { data } = await supabase
       .from('user_settings')
-      .select('prompts_sort_order')
+      .select('prompts_sort_order, prompts_category_filter')
       .eq('user_id', user.id)
       .maybeSingle();
     if (data?.prompts_sort_order) {
       setSortOrder(data.prompts_sort_order as typeof sortOrder);
+    }
+    if (data?.prompts_category_filter) {
+      setSelectedCategory(data.prompts_category_filter);
     }
   };
 
@@ -98,6 +101,15 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     await supabase
       .from('user_settings')
       .upsert({ user_id: user.id, prompts_sort_order: value }, { onConflict: 'user_id' });
+  };
+
+  const handleCategoryChange = async (value: string) => {
+    setSelectedCategory(value);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from('user_settings')
+      .upsert({ user_id: user.id, prompts_category_filter: value }, { onConflict: 'user_id' });
   };
 
   const fetchAutoresponderDomains = async () => {
@@ -409,7 +421,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           <div>
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
               <option value="All">All Categories</option>
