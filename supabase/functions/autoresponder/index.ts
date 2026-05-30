@@ -105,7 +105,8 @@ Deno.serve(async (req: Request) => {
           title,
           content,
           prompt_type,
-          step2_content
+          step2_content,
+          property_info
         )
       `)
       .eq('user_id', userId)
@@ -149,9 +150,17 @@ Deno.serve(async (req: Request) => {
     const replyParts: string[] = [];
 
     for (const prompt of domainPrompts as any[]) {
+      const propertyInfoText = prompt.property_info
+        ? Object.entries(prompt.property_info)
+            .filter(([, v]) => v && String(v).trim() !== '')
+            .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`)
+            .join('\n')
+        : '';
+
       const step1Prompt = prompt.content
         .replace(/\{\{email_content\}\}/g, emailContent)
-        .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory);
+        .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
+        .replace(/\{\{property_info\}\}/g, propertyInfoText);
 
       if (prompt.prompt_type === 'two_step') {
         console.log(`Running two-step prompt: ${prompt.title}`);
@@ -182,7 +191,8 @@ Deno.serve(async (req: Request) => {
         const step2Prompt = step2Template
           .replace(/\{\{email_content\}\}/g, emailContent)
           .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
-          .replace(/\{\{step1_result\}\}/g, step1Result);
+          .replace(/\{\{step1_result\}\}/g, step1Result)
+          .replace(/\{\{property_info\}\}/g, propertyInfoText);
 
         const step2Result = await callAI(step2Prompt);
         if (step2Result) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Plus, CreditCard as Edit, Trash2, Search, Copy, Check, X, Globe, GitBranch, ArrowRight } from 'lucide-react';
+import { MessageSquare, Plus, CreditCard as Edit, Trash2, Search, Copy, Check, X, Globe, GitBranch, ArrowRight, Home } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useEmails } from '../contexts/EmailContext';
 
@@ -15,9 +15,21 @@ interface Prompt {
   category: string;
   prompt_type: 'one_step' | 'two_step';
   step2_content: string | null;
+  property_info: PropertyInfo | null;
   created_at: string;
   updated_at: string;
   domains: string[];
+}
+
+interface PropertyInfo {
+  address: string;
+  price: string;
+  bedrooms: string;
+  bathrooms: string;
+  sqft: string;
+  property_type: string;
+  description: string;
+  features: string;
 }
 
 const categories = [
@@ -47,7 +59,17 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     category: 'General',
     prompt_type: 'one_step' as 'one_step' | 'two_step',
     step2_content: '',
-    domains: [] as string[]
+    domains: [] as string[],
+    propertyInfo: {
+      address: '',
+      price: '',
+      bedrooms: '',
+      bathrooms: '',
+      sqft: '',
+      property_type: '',
+      description: '',
+      features: ''
+    } as PropertyInfo
   });
 
   useEffect(() => {
@@ -136,12 +158,16 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         throw new Error('User not authenticated');
       }
 
+      const isRealEstate = formData.category === 'Real Estate';
+      const hasPropertyInfo = isRealEstate && Object.values(formData.propertyInfo).some(v => v.trim() !== '');
+
       const promptData = {
         title: formData.title.trim(),
         content: formData.content.trim(),
         category: formData.category,
         prompt_type: formData.prompt_type,
         step2_content: formData.prompt_type === 'two_step' ? (formData.step2_content.trim() || null) : null,
+        property_info: hasPropertyInfo ? formData.propertyInfo : null,
         user_id: user.data.user.id,
         updated_at: new Date().toISOString()
       };
@@ -191,7 +217,10 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       await fetchPrompts();
       setShowCreateModal(false);
       setEditingPrompt(null);
-      setFormData({ title: '', content: '', category: 'General', domains: [] });
+      setFormData({
+        title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [],
+        propertyInfo: { address: '', price: '', bedrooms: '', bathrooms: '', sqft: '', property_type: '', description: '', features: '' }
+      });
     } catch (error) {
       console.error('Error saving prompt:', error);
       alert('Failed to save prompt. Please try again.');
@@ -206,7 +235,11 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       category: prompt.category,
       prompt_type: prompt.prompt_type || 'one_step',
       step2_content: prompt.step2_content || '',
-      domains: prompt.domains || []
+      domains: prompt.domains || [],
+      propertyInfo: prompt.property_info || {
+        address: '', price: '', bedrooms: '', bathrooms: '',
+        sqft: '', property_type: '', description: '', features: ''
+      }
     });
     setShowCreateModal(true);
   };
@@ -263,7 +296,10 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   });
 
   const resetForm = () => {
-    setFormData({ title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [] });
+    setFormData({
+      title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [],
+      propertyInfo: { address: '', price: '', bedrooms: '', bathrooms: '', sqft: '', property_type: '', description: '', features: '' }
+    });
     setEditingPrompt(null);
     setShowCreateModal(false);
   };
@@ -468,6 +504,100 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                     ))}
                   </select>
                 </div>
+
+                {formData.category === 'Real Estate' && (
+                  <div className="border border-blue-200 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Home className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-300">Property Information</h4>
+                    </div>
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-3">
+                      Fill in property details below. Use <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{{property_info}}'}</code> in your prompt to inject this information for the AI to reference when answering questions.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.address}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, address: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="123 Main St, City, State 00000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Listing Price</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.price}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, price: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="$500,000"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Property Type</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.property_type}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, property_type: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Single Family, Condo, etc."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bedrooms</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.bedrooms}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, bedrooms: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="3"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bathrooms</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.bathrooms}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, bathrooms: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Square Footage</label>
+                        <input
+                          type="text"
+                          value={formData.propertyInfo.sqft}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, sqft: e.target.value } }))}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="1,800 sq ft"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Property Description</label>
+                        <textarea
+                          value={formData.propertyInfo.description}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, description: e.target.value } }))}
+                          rows={3}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                          placeholder="Charming home with open floor plan, updated kitchen..."
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Key Features / Amenities</label>
+                        <textarea
+                          value={formData.propertyInfo.features}
+                          onChange={(e) => setFormData(prev => ({ ...prev, propertyInfo: { ...prev.propertyInfo, features: e.target.value } }))}
+                          rows={2}
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                          placeholder="Pool, 2-car garage, hardwood floors, new roof (2022)..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label htmlFor="domains" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
