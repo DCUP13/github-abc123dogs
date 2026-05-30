@@ -55,7 +55,9 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [autoresponderDomains, setAutoresponderDomains] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortOrder, setSortOrder] = useState<'updated_desc' | 'updated_asc' | 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc'>('updated_desc');
+  const [sortOrder, setSortOrder] = useState<'updated_desc' | 'updated_asc' | 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc'>(
+    () => (localStorage.getItem('prompts_sort_order') as 'updated_desc' | 'updated_asc' | 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc') || 'updated_desc'
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
@@ -398,7 +400,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           <div>
             <select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+              onChange={(e) => { setSortOrder(e.target.value as typeof sortOrder); localStorage.setItem('prompts_sort_order', e.target.value); }}
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
               <option value="updated_desc">Last modified</option>
