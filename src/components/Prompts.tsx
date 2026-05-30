@@ -16,6 +16,7 @@ interface Prompt {
   prompt_type: 'one_step' | 'two_step';
   step2_content: string | null;
   property_info: PropertyInfo[] | null;
+  company_info: string | null;
   created_at: string;
   updated_at: string;
   domains: string[];
@@ -66,7 +67,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     prompt_type: 'one_step' as 'one_step' | 'two_step',
     step2_content: '',
     domains: [] as string[],
-    properties: [] as PropertyInfo[]
+    properties: [] as PropertyInfo[],
+    company_info: ''
   });
 
   useEffect(() => {
@@ -159,6 +161,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         prompt_type: formData.prompt_type,
         step2_content: formData.prompt_type === 'two_step' ? (formData.step2_content.trim() || null) : null,
         property_info: isRealEstate && filledProperties.length > 0 ? filledProperties : null,
+        company_info: formData.category === 'General' ? (formData.company_info.trim() || null) : null,
         user_id: user.data.user.id,
         updated_at: new Date().toISOString()
       };
@@ -203,7 +206,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       prompt_type: prompt.prompt_type || 'one_step',
       step2_content: prompt.step2_content || '',
       domains: prompt.domains || [],
-      properties
+      properties,
+      company_info: prompt.company_info || ''
     });
     setCollapsedProperties(new Set());
     setShowCreateModal(true);
@@ -284,7 +288,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   });
 
   const resetForm = () => {
-    setFormData({ title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [], properties: [] });
+    setFormData({ title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [], properties: [], company_info: '' });
     setCollapsedProperties(new Set());
     setEditingPrompt(null);
     setShowCreateModal(false);
@@ -560,6 +564,32 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         className="w-full px-4 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
                         placeholder="Based on this analysis: {{step1_result}}\n\nWrite a professional reply to: {{email_content}}"
                       />
+                    </div>
+                  )}
+
+                  {/* Company Info — General category only, at the bottom */}
+                  {formData.category === 'General' && (
+                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Company &amp; Product Details</span>
+                        </div>
+                      </div>
+                      <div className="px-4 pb-4 pt-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                          Describe your company, the products or services you offer, and any key selling points. Use{' '}
+                          <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{company_info}}'}</code>{' '}
+                          in your prompt to inject this context so the AI can reference it when responding.
+                        </p>
+                        <textarea
+                          value={formData.company_info}
+                          onChange={(e) => setFormData(prev => ({ ...prev, company_info: e.target.value }))}
+                          rows={6}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                          placeholder="Example: We are Acme Corp, a SaaS company that offers an AI-powered email autoresponder platform. Our core product helps businesses automatically reply to inbound emails using customizable AI prompts. Key features include domain-based routing, two-step prompts, real estate listing support, and CRM integration. Pricing starts at $49/month..."
+                        />
+                      </div>
                     </div>
                   )}
 
