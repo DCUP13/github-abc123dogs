@@ -55,6 +55,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [autoresponderDomains, setAutoresponderDomains] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortOrder, setSortOrder] = useState<'updated_desc' | 'updated_asc' | 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc'>('updated_desc');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
@@ -318,12 +319,24 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     return `Property ${index + 1}`;
   };
 
-  const filteredPrompts = prompts.filter(prompt => {
-    const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPrompts = prompts
+    .filter(prompt => {
+      const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prompt.content.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortOrder) {
+        case 'updated_asc':  return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        case 'updated_desc': return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        case 'created_desc': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created_asc':  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'title_asc':    return a.title.localeCompare(b.title);
+        case 'title_desc':   return b.title.localeCompare(a.title);
+        default:             return 0;
+      }
+    });
 
   const resetForm = () => {
     setFormData({ title: '', content: '', category: 'General', prompt_type: 'one_step', step2_content: '', domains: [], properties: [], company_info: '' });
@@ -380,6 +393,20 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
+            </select>
+          </div>
+          <div>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            >
+              <option value="updated_desc">Last modified</option>
+              <option value="updated_asc">Oldest modified</option>
+              <option value="created_desc">Newest created</option>
+              <option value="created_asc">Oldest created</option>
+              <option value="title_asc">Title A → Z</option>
+              <option value="title_desc">Title Z → A</option>
             </select>
           </div>
         </div>
