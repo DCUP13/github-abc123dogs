@@ -193,6 +193,14 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
 }
 
+function toHtmlBody(body: string): string {
+  const escaped = body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  return `<html><body><p>${escaped.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
+}
+
 async function sendIndividualSESEmail(
   email: EmailData,
   sesSettings: any,
@@ -202,6 +210,7 @@ async function sendIndividualSESEmail(
 
   const encoder = new TextEncoder()
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  const htmlBody = toHtmlBody(email.body)
 
   const emailContent = [
     `From: ${email.from_email}`,
@@ -214,7 +223,7 @@ async function sendIndividualSESEmail(
     `Content-Type: text/html; charset=UTF-8`,
     `Content-Transfer-Encoding: 7bit`,
     ``,
-    email.body,
+    htmlBody,
     `--${boundary}--`
   ].join('\r\n')
 
