@@ -124,6 +124,13 @@ serve(async (req) => {
             .delete()
             .eq('id', email.id)
 
+          // Increment sent_emails counter on the sending address — triggers
+          // update_dashboard_statistics so the dashboard reflects the change.
+          const sesTry = await supabaseClient.rpc('increment_sent_emails_ses', { p_address: email.from_email, p_user_id: email.user_id })
+          if (sesTry.error || sesTry.data === 0) {
+            await supabaseClient.rpc('increment_sent_emails_smtp', { p_address: email.from_email, p_user_id: email.user_id })
+          }
+
           results.push({ id: email.id, status: 'sent' })
         } else {
           await supabaseClient
