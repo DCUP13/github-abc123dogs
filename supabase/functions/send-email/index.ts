@@ -16,6 +16,10 @@ interface EmailData {
   reply_to_id?: string
   attachments: any[]
   user_id: string
+  // threading headers (populated at send time)
+  outgoing_message_id?: string
+  in_reply_to?: string
+  email_references?: string
 }
 
 serve(async (req) => {
@@ -62,11 +66,45 @@ serve(async (req) => {
       try {
         await supabaseClient
           .from('email_outbox')
-          .update({ 
+          .update({
             status: 'sending',
             updated_at: new Date().toISOString()
           })
           .eq('id', email.id)
+
+        // Build threading headers before sending
+        const domain = email.from_email.split('@')[1] || 'mail'
+        const outgoingMessageId = `<${crypto.randomUUID()}@${domain}>`
+        let inReplyTo: string | null = null
+        let emailReferences: string | null = null
+
+        if (email.reply_to_id) {
+          const { data: originalEmail } = await supabaseClient
+            .from('emails')
+            .select('message_id')
+            .eq('id', email.reply_to_id)
+            .maybeSingle()
+
+          if (originalEmail?.message_id) {
+            const origId = originalEmail.message_id.startsWith('<')
+              ? originalEmail.message_id
+              : `<${originalEmail.message_id}>`
+            inReplyTo = origId
+
+            // Build References chain: original + any existing references on outbox record
+            const existingRefs = email.email_references || ''
+            emailReferences = existingRefs
+              ? `${existingRefs} ${origId}`
+              : origId
+          }
+        }
+
+        const enrichedEmail: EmailData = {
+          ...email,
+          outgoing_message_id: outgoingMessageId,
+          in_reply_to: inReplyTo ?? undefined,
+          email_references: emailReferences ?? undefined,
+        }
 
         const { data: sesSettings } = await supabaseClient
           .from('amazon_ses_settings')
@@ -86,7 +124,7 @@ serve(async (req) => {
 
         if (sesSettings && !emailSent) {
           try {
-            await sendViaSES(email, sesSettings)
+            await sendViaSES(enrichedEmail, sesSettings)
             emailSent = true
           } catch (error) {
             console.error('SES sending failed:', error)
@@ -96,7 +134,7 @@ serve(async (req) => {
 
         if (gmailSettings && !emailSent) {
           try {
-            await sendViaGmail(email, gmailSettings)
+            await sendViaGmail(enrichedEmail, gmailSettings)
             emailSent = true
           } catch (error) {
             console.error('Gmail sending failed:', error)
@@ -115,6 +153,9 @@ serve(async (req) => {
               body: email.body,
               reply_to_id: email.reply_to_id,
               attachments: email.attachments,
+              message_id: outgoingMessageId,
+              in_reply_to: inReplyTo,
+              email_references: emailReferences,
               sent_at: new Date().toISOString(),
               created_at: email.created_at
             })
@@ -124,8 +165,7 @@ serve(async (req) => {
             .delete()
             .eq('id', email.id)
 
-          // Increment sent_emails counter on the sending address — triggers
-          // update_dashboard_statistics so the dashboard reflects the change.
+          // Increment sent_emails counter — triggers update_dashboard_statistics
           const sesTry = await supabaseClient.rpc('increment_sent_emails_ses', { p_address: email.from_email, p_user_id: email.user_id })
           if (sesTry.error || sesTry.data === 0) {
             await supabaseClient.rpc('increment_sent_emails_smtp', { p_address: email.from_email, p_user_id: email.user_id })
@@ -135,7 +175,7 @@ serve(async (req) => {
         } else {
           await supabaseClient
             .from('email_outbox')
-            .update({ 
+            .update({
               status: 'failed',
               error_message: errorMessage || 'No email provider configured',
               updated_at: new Date().toISOString()
@@ -147,10 +187,10 @@ serve(async (req) => {
 
       } catch (error) {
         console.error(`Error processing email ${email.id}:`, error)
-        
+
         await supabaseClient
           .from('email_outbox')
-          .update({ 
+          .update({
             status: 'failed',
             error_message: error.message,
             updated_at: new Date().toISOString()
@@ -162,7 +202,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         processed: results.length,
         results
@@ -197,7 +237,7 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
     await sendIndividualSESEmail(email, sesSettings, recipient)
   }
 
-  console.log(`✅ Successfully sent individual emails to all ${recipients.length} recipients`)
+  console.log(`Successfully sent individual emails to all ${recipients.length} recipients`)
 }
 
 function toHtmlBody(body: string): string {
@@ -219,12 +259,22 @@ async function sendIndividualSESEmail(
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   const htmlBody = toHtmlBody(email.body)
 
-  const emailContent = [
+  const headers: string[] = [
     `From: ${email.from_email}`,
     `To: ${recipient}`,
     `Subject: ${email.subject}`,
+    `Message-ID: ${email.outgoing_message_id}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ]
+
+  if (email.in_reply_to) {
+    headers.push(`In-Reply-To: ${email.in_reply_to}`)
+    headers.push(`References: ${email.email_references || email.in_reply_to}`)
+  }
+
+  const emailContent = [
+    ...headers,
     ``,
     `--${boundary}`,
     `Content-Type: text/html; charset=UTF-8`,
@@ -310,7 +360,7 @@ async function sendIndividualSESEmail(
     reader.releaseLock()
     writer.releaseLock()
 
-    console.log(`✅ SES Email sent successfully to ${recipient}`)
+    console.log(`SES Email sent successfully to ${recipient}`)
   } finally {
     try {
       activeConn.close()
@@ -347,25 +397,35 @@ async function sendViaGmail(email: EmailData, gmailSettings: any) {
     await sendIndividualGmailEmail(email, gmailSettings, recipient)
   }
 
-  console.log(`✅ Successfully sent individual Gmail emails to all ${recipients.length} recipients`)
+  console.log(`Successfully sent individual Gmail emails to all ${recipients.length} recipients`)
 }
 
 async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, recipient: string) {
   console.log(`Sending individual Gmail email to: ${recipient}`)
 
-  const emailMessage = [
+  const headerLines: string[] = [
     `From: ${email.from_email}`,
     `To: ${recipient}`,
     `Subject: ${email.subject}`,
+    `Message-ID: ${email.outgoing_message_id}`,
     `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    email.body
-  ].join('\r\n')
+  ]
+
+  if (email.in_reply_to) {
+    headerLines.push(`In-Reply-To: ${email.in_reply_to}`)
+    headerLines.push(`References: ${email.email_references || email.in_reply_to}`)
+  }
+
+  const _emailMessage = [...headerLines, ``, email.body].join('\r\n')
 
   console.log(`Gmail email message headers for ${recipient}:`)
   console.log(`  From: ${email.from_email}`)
   console.log(`  To: ${recipient}`)
   console.log(`  Subject: ${email.subject}`)
+  if (email.in_reply_to) {
+    console.log(`  In-Reply-To: ${email.in_reply_to}`)
+    console.log(`  References: ${email.email_references || email.in_reply_to}`)
+  }
 
   await new Promise(resolve => setTimeout(resolve, 1000))
 
@@ -373,5 +433,5 @@ async function sendIndividualGmailEmail(email: EmailData, gmailSettings: any, re
     throw new Error('Gmail SMTP connection failed')
   }
 
-  console.log(`📧 Gmail Email sent to ${recipient}`)
+  console.log(`Gmail Email sent to ${recipient}`)
 }
