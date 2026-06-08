@@ -117,6 +117,16 @@ interface DraftEmail {
   updated_at: string;
 }
 
+interface ThreadMessage {
+  id: string;
+  type: 'received' | 'sent';
+  from: string;
+  to: string;
+  body: string;
+  timestamp: string;
+  isCurrent: boolean;
+}
+
 type TabType = 'inbox' | 'outbox' | 'sent' | 'drafts';
 
 const formatReceiverList = (receiver: string | string[]): string => {
@@ -150,7 +160,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   const [selectedDraft, setSelectedDraft] = useState<DraftEmail | null>(null);
   const [inboxMode, setInboxMode] = useState<'master' | 'regular'>('master');
   const [isTogglingMode, setIsTogglingMode] = useState(false);
-  const [threadOriginalEmail, setThreadOriginalEmail] = useState<Email | null>(null);
+  const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
 
   const isManager = userRole === 'owner' || userRole === 'manager';
 
@@ -181,23 +191,83 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
 
   useEffect(() => {
     if (activeTab === 'sent' && selectedEmail && (selectedEmail as SentEmail).reply_to_id) {
-      fetchThreadOriginalEmail((selectedEmail as SentEmail).reply_to_id!);
+      buildThreadMessages(selectedEmail as SentEmail);
     } else {
-      setThreadOriginalEmail(null);
+      setThreadMessages([]);
     }
   }, [selectedEmail, activeTab]);
 
-  const fetchThreadOriginalEmail = async (emailId: string) => {
-    try {
-      const { data } = await supabase
+  const buildThreadMessages = async (sentEmail: SentEmail) => {
+    if (!sentEmail.reply_to_id) return;
+
+    const msgs: ThreadMessage[] = [];
+
+    // Original inbox email (root of the thread)
+    const { data: originalEmail } = await supabase
+      .from('emails')
+      .select('id, sender, receiver, subject, body, created_at')
+      .eq('id', sentEmail.reply_to_id)
+      .maybeSingle();
+
+    if (originalEmail) {
+      msgs.push({
+        id: originalEmail.id,
+        type: 'received',
+        from: originalEmail.sender,
+        to: formatReceiverList(originalEmail.receiver),
+        body: originalEmail.body,
+        timestamp: originalEmail.created_at,
+        isCurrent: false,
+      });
+
+      // Follow-up inbox emails from the same sender on the same base subject
+      const baseSubject = sentEmail.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+      const senderAddr = (originalEmail.sender.match(/<(.+)>/) || [null, originalEmail.sender])[1];
+      const { data: followUps } = await supabase
         .from('emails')
         .select('id, sender, receiver, subject, body, created_at')
-        .eq('id', emailId)
-        .maybeSingle();
-      setThreadOriginalEmail(data || null);
-    } catch (e) {
-      console.error('Error fetching thread original email:', e);
+        .ilike('sender', `%${senderAddr}%`)
+        .neq('id', sentEmail.reply_to_id)
+        .gte('created_at', originalEmail.created_at)
+        .order('created_at', { ascending: true });
+
+      for (const f of followUps || []) {
+        const fBase = f.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+        if (fBase === baseSubject) {
+          msgs.push({
+            id: f.id,
+            type: 'received',
+            from: f.sender,
+            to: formatReceiverList(f.receiver),
+            body: f.body,
+            timestamp: f.created_at,
+            isCurrent: false,
+          });
+        }
+      }
     }
+
+    // All sent emails in this thread (same reply_to_id)
+    const { data: allSent } = await supabase
+      .from('email_sent')
+      .select('id, to_email, from_email, subject, body, sent_at')
+      .eq('reply_to_id', sentEmail.reply_to_id)
+      .order('sent_at', { ascending: true });
+
+    for (const s of allSent || []) {
+      msgs.push({
+        id: s.id,
+        type: 'sent',
+        from: s.from_email,
+        to: s.to_email,
+        body: s.body,
+        timestamp: s.sent_at,
+        isCurrent: s.id === sentEmail.id,
+      });
+    }
+
+    msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    setThreadMessages(msgs);
   };
 
   const fetchInboxMode = async () => {
@@ -982,38 +1052,61 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
             </div>
 
             <div className="p-6">
-              <div className="prose dark:prose-invert max-w-none">
-                <div
-                  className="text-gray-900 dark:text-white"
-                  dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(selectedEmail.body) }}
-                />
-              </div>
-
-              {activeTab === 'sent' && threadOriginalEmail && (
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Reply className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Original Message</span>
-                  </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 border-gray-300 dark:border-gray-500">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mb-3">
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">From:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{threadOriginalEmail.sender}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">To:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{formatReceiverList(threadOriginalEmail.receiver)}</span>
-                      </div>
-                      <span className="text-gray-400 dark:text-gray-500 text-xs">
-                        {new Date(threadOriginalEmail.created_at).toLocaleString()}
-                      </span>
-                    </div>
+              {/* Sent tab: show full conversation thread */}
+              {activeTab === 'sent' && threadMessages.length > 0 ? (
+                <div className="space-y-4">
+                  {threadMessages.map((msg, idx) => (
                     <div
-                      className="text-sm text-gray-700 dark:text-gray-300"
-                      dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(threadOriginalEmail.body) }}
-                    />
-                  </div>
+                      key={msg.id}
+                      className={`rounded-xl border transition-shadow ${
+                        msg.isCurrent
+                          ? 'border-indigo-300 dark:border-indigo-600 shadow-sm ring-1 ring-indigo-200 dark:ring-indigo-700'
+                          : 'border-gray-200 dark:border-gray-700'
+                      } ${
+                        msg.type === 'received'
+                          ? 'bg-gray-50 dark:bg-gray-700/40'
+                          : 'bg-white dark:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
+                        <div className="flex items-center gap-3 text-sm min-w-0">
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+                            msg.type === 'received'
+                              ? 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
+                              : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
+                          }`}>
+                            {msg.from.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="font-medium text-gray-900 dark:text-white truncate block">{msg.from}</span>
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">to {msg.to}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                          {msg.isCurrent && (
+                            <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">Latest</span>
+                          )}
+                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                            {new Date(msg.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${idx + 1 < threadMessages.length ? 'invisible' : 'invisible'}`} />
+                        </div>
+                      </div>
+                      <div className="px-4 py-3">
+                        <div
+                          className="text-sm text-gray-800 dark:text-gray-200"
+                          dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(msg.body) }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="prose dark:prose-invert max-w-none">
+                  <div
+                    className="text-gray-900 dark:text-white"
+                    dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(selectedEmail.body) }}
+                  />
                 </div>
               )}
 
