@@ -150,6 +150,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   const [selectedDraft, setSelectedDraft] = useState<DraftEmail | null>(null);
   const [inboxMode, setInboxMode] = useState<'master' | 'regular'>('master');
   const [isTogglingMode, setIsTogglingMode] = useState(false);
+  const [threadOriginalEmail, setThreadOriginalEmail] = useState<Email | null>(null);
 
   const isManager = userRole === 'owner' || userRole === 'manager';
 
@@ -177,6 +178,27 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       fetchDraftEmails();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'sent' && selectedEmail && (selectedEmail as SentEmail).reply_to_id) {
+      fetchThreadOriginalEmail((selectedEmail as SentEmail).reply_to_id!);
+    } else {
+      setThreadOriginalEmail(null);
+    }
+  }, [selectedEmail, activeTab]);
+
+  const fetchThreadOriginalEmail = async (emailId: string) => {
+    try {
+      const { data } = await supabase
+        .from('emails')
+        .select('id, sender, receiver, subject, body, created_at')
+        .eq('id', emailId)
+        .maybeSingle();
+      setThreadOriginalEmail(data || null);
+    } catch (e) {
+      console.error('Error fetching thread original email:', e);
+    }
+  };
 
   const fetchInboxMode = async () => {
     try {
@@ -966,6 +988,34 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                   dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(selectedEmail.body) }}
                 />
               </div>
+
+              {activeTab === 'sent' && threadOriginalEmail && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Reply className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Original Message</span>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 border-gray-300 dark:border-gray-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mb-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500 dark:text-gray-400">From:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{threadOriginalEmail.sender}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500 dark:text-gray-400">To:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{formatReceiverList(threadOriginalEmail.receiver)}</span>
+                      </div>
+                      <span className="text-gray-400 dark:text-gray-500 text-xs">
+                        {new Date(threadOriginalEmail.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div
+                      className="text-sm text-gray-700 dark:text-gray-300"
+                      dangerouslySetInnerHTML={{ __html: formatPlainTextEmail(threadOriginalEmail.body) }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {activeTab === 'inbox' && hasAttachments((selectedEmail as Email).attachments) && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">

@@ -96,6 +96,24 @@ serve(async (req) => {
             emailReferences = existingRefs
               ? `${existingRefs} ${origId}`
               : origId
+          } else {
+            // Incoming email has no stored Message-ID — chain off the most recent
+            // sent reply in this thread so Gmail can still group them.
+            const { data: prevSent } = await supabaseClient
+              .from('email_sent')
+              .select('message_id, email_references')
+              .eq('reply_to_id', email.reply_to_id)
+              .not('message_id', 'is', null)
+              .order('sent_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (prevSent?.message_id) {
+              inReplyTo = prevSent.message_id
+              emailReferences = prevSent.email_references
+                ? `${prevSent.email_references} ${prevSent.message_id}`
+                : prevSent.message_id
+            }
           }
         }
 
