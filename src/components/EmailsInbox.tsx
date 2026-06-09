@@ -907,10 +907,12 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                             {activeTab === 'sent' && (email as SentEmail).reply_to_id && (
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
                                 <Reply className="w-3 h-3" />
-                                <span className="text-xs font-medium">Reply</span>
+                                <span className="text-xs font-medium">
+                                  Reply{(email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count! > 0 ? ` · ${(email as SentEmail).reply_count}` : ''}
+                                </span>
                               </div>
                             )}
-                            {activeTab === 'sent' && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count > 0 && (
+                            {activeTab === 'sent' && !(email as SentEmail).reply_to_id && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count! > 0 && (
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                                 <MessageSquare className="w-3 h-3" />
                                 <span className="text-xs font-medium">{(email as SentEmail).reply_count}</span>
