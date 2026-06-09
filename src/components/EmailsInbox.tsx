@@ -200,70 +200,64 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   const buildThreadMessages = async (sentEmail: SentEmail) => {
     if (!sentEmail.reply_to_id) return;
 
-    const msgs: ThreadMessage[] = [];
-
-    // Original inbox email (root of the thread)
-    const { data: originalEmail } = await supabase
+    // Anchor on the inbox email this was directly replying to, to get sender + base subject
+    const { data: anchorEmail } = await supabase
       .from('emails')
       .select('id, sender, receiver, subject, body, created_at')
       .eq('id', sentEmail.reply_to_id)
       .maybeSingle();
 
-    if (originalEmail) {
-      msgs.push({
-        id: originalEmail.id,
-        type: 'received',
-        from: originalEmail.sender,
-        to: formatReceiverList(originalEmail.receiver),
-        body: originalEmail.body,
-        timestamp: originalEmail.created_at,
-        isCurrent: false,
-      });
+    if (!anchorEmail) return;
 
-      // Follow-up inbox emails from the same sender on the same base subject
-      const baseSubject = sentEmail.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
-      const senderAddr = (originalEmail.sender.match(/<(.+)>/) || [null, originalEmail.sender])[1];
-      const { data: followUps } = await supabase
-        .from('emails')
-        .select('id, sender, receiver, subject, body, created_at')
-        .ilike('sender', `%${senderAddr}%`)
-        .neq('id', sentEmail.reply_to_id)
-        .gte('created_at', originalEmail.created_at)
-        .order('created_at', { ascending: true });
+    const baseSubject = sentEmail.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+    const rawSender = anchorEmail.sender;
+    const senderAddr = (rawSender.match(/<([^>]+)>/) || [null, rawSender])[1]?.toLowerCase().trim() ?? rawSender.toLowerCase().trim();
 
-      for (const f of followUps || []) {
-        const fBase = f.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
-        if (fBase === baseSubject) {
-          msgs.push({
-            id: f.id,
-            type: 'received',
-            from: f.sender,
-            to: formatReceiverList(f.receiver),
-            body: f.body,
-            timestamp: f.created_at,
-            isCurrent: false,
-          });
-        }
+    // All inbox emails from this sender whose base subject matches
+    const { data: allInbox } = await supabase
+      .from('emails')
+      .select('id, sender, receiver, subject, body, created_at')
+      .ilike('sender', `%${senderAddr}%`)
+      .order('created_at', { ascending: true });
+
+    const threadInboxIds: string[] = [];
+    const msgs: ThreadMessage[] = [];
+
+    for (const e of allInbox || []) {
+      const eBase = e.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+      if (eBase === baseSubject) {
+        threadInboxIds.push(e.id);
+        msgs.push({
+          id: e.id,
+          type: 'received',
+          from: e.sender,
+          to: formatReceiverList(e.receiver),
+          body: e.body,
+          timestamp: e.created_at,
+          isCurrent: false,
+        });
       }
     }
 
-    // All sent emails in this thread (same reply_to_id)
-    const { data: allSent } = await supabase
-      .from('email_sent')
-      .select('id, to_email, from_email, subject, body, sent_at')
-      .eq('reply_to_id', sentEmail.reply_to_id)
-      .order('sent_at', { ascending: true });
+    // All sent emails that reply to ANY inbox email in this thread
+    if (threadInboxIds.length > 0) {
+      const { data: allSent } = await supabase
+        .from('email_sent')
+        .select('id, to_email, from_email, subject, body, sent_at')
+        .in('reply_to_id', threadInboxIds)
+        .order('sent_at', { ascending: true });
 
-    for (const s of allSent || []) {
-      msgs.push({
-        id: s.id,
-        type: 'sent',
-        from: s.from_email,
-        to: s.to_email,
-        body: s.body,
-        timestamp: s.sent_at,
-        isCurrent: s.id === sentEmail.id,
-      });
+      for (const s of allSent || []) {
+        msgs.push({
+          id: s.id,
+          type: 'sent',
+          from: s.from_email,
+          to: s.to_email,
+          body: s.body,
+          timestamp: s.sent_at,
+          isCurrent: s.id === sentEmail.id,
+        });
+      }
     }
 
     msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
