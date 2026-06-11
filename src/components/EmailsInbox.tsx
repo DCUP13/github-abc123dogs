@@ -104,6 +104,7 @@ interface SentEmail {
   reply_count?: number;
   last_reply_at?: string;
   reply_to_id?: string;
+  thread_position?: number;
 }
 
 interface DraftEmail {
@@ -418,7 +419,30 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
         .select('id, to_email, from_email, subject, body, sent_at, created_at, reply_count, last_reply_at, reply_to_id')
         .order('sent_at', { ascending: false });
       if (error) throw error;
-      setSentEmails(data || []);
+
+      const rows = data || [];
+
+      // Compute thread_position: how many times the autoresponder has replied in this
+      // conversation up to and including each email. Group by (normalized subject + to_email),
+      // sort ascending by sent_at, assign 1-based index within each group.
+      const normalizeSubject = (s: string) =>
+        s.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+
+      const threadGroups = new Map<string, typeof rows>();
+      for (const email of rows) {
+        if (!email.reply_to_id) continue;
+        const key = `${normalizeSubject(email.subject)}::${email.to_email.toLowerCase().trim()}`;
+        if (!threadGroups.has(key)) threadGroups.set(key, []);
+        threadGroups.get(key)!.push(email);
+      }
+
+      const positionMap = new Map<string, number>();
+      for (const group of threadGroups.values()) {
+        group.sort((a, b) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime());
+        group.forEach((email, idx) => positionMap.set(email.id, idx + 1));
+      }
+
+      setSentEmails(rows.map(e => ({ ...e, thread_position: positionMap.get(e.id) })));
     } catch (error) {
       console.error('Error fetching sent emails:', error);
       setSentEmails([]);
@@ -968,7 +992,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
                                 <Reply className="w-3 h-3" />
                                 <span className="text-xs font-medium">
-                                  Reply · {(email as SentEmail).reply_count ?? 0}
+                                  Reply · {(email as SentEmail).thread_position ?? 1}
                                 </span>
                               </div>
                             )}
