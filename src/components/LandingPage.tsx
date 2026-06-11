@@ -92,7 +92,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-om-forest-deep">{label}</div>
-                        <div className="text-xs text-om-brown">{sub}</div>
+                        <div className="text-sm text-om-brown">{sub}</div>
                       </div>
                     </div>
                   ))}
@@ -179,12 +179,12 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 ].map(({ stat, label }) => (
                   <div key={label}>
                     <div className="text-5xl font-display font-semibold text-om-gold mb-1">{stat}</div>
-                    <div className="text-om-tan text-sm tracking-wide">{label}</div>
+                    <div className="text-om-tan text-base tracking-wide">{label}</div>
                   </div>
                 ))}
                 <div className="pt-6 border-t border-om-forest">
                   <TrendingUp className="w-8 h-8 mb-3 text-om-gold" />
-                  <p className="text-om-tan text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                  <p className="text-om-tan text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                     Join professionals who have transformed their business with LoiReply
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>

@@ -43,7 +43,7 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
               <Mail className="w-5 h-5 text-om-gold" />
               <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </div>
-            <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
               Transform your email management with AI-powered automation
             </p>
           </div>

@@ -170,7 +170,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                  <p className="text-om-mahogany text-sm" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -204,7 +204,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>

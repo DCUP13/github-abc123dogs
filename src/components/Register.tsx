@@ -74,7 +74,7 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
+          <label htmlFor="email" className="block text-sm font-medium text-om-brown uppercase tracking-widest mb-2">
             Email Address
           </label>
           <input
@@ -82,14 +82,14 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
+            className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-base"
             placeholder="you@example.com"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
+          <label htmlFor="password" className="block text-sm font-medium text-om-brown uppercase tracking-widest mb-2">
             Password
           </label>
           <div className="relative">
@@ -98,7 +98,7 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
+              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-base"
               placeholder="••••••••"
               required
             />
@@ -113,7 +113,7 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-om-brown uppercase tracking-widest mb-2">
             Confirm Password
           </label>
           <div className="relative">
@@ -122,7 +122,7 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
               type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
+              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-base"
               placeholder="••••••••"
               required
             />

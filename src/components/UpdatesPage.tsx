@@ -63,7 +63,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
             <p className="text-om-tan text-lg mb-7" style={{ fontFamily: "'EB Garamond', serif" }}>
               No upgrade fees. No hidden costs. No surprises. Every feature we release is automatically available to you.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-om-tan text-sm">
+            <div className="flex flex-wrap justify-center gap-6 text-om-tan text-base">
               {['New Features', 'Security Patches', 'Performance Improvements', 'Bug Fixes'].map(item => (
                 <div key={item} className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-om-gold" />
@@ -212,7 +212,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>

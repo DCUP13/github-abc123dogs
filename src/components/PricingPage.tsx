@@ -64,11 +64,11 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   <p className="text-xs text-om-brown uppercase tracking-widest mb-3">Starting at</p>
                   <div className="mb-2">
                     <span className="text-3xl font-display font-semibold text-om-forest-deep">$5,000</span>
-                    <span className="text-sm text-om-brown ml-2">initial investment</span>
+                    <span className="text-base text-om-brown ml-2">initial investment</span>
                   </div>
                   <div>
                     <span className="text-2xl font-display font-semibold text-om-forest-deep">$1,000<span className="text-base">/mo</span></span>
-                    <span className="text-sm text-om-brown ml-2">monthly service fee</span>
+                    <span className="text-base text-om-brown ml-2">monthly service fee</span>
                   </div>
                 </div>
                 <button
@@ -99,8 +99,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     <li key={title} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-om-forest mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="font-medium text-om-forest-deep text-sm">{title}</div>
-                        <div className="text-xs text-om-brown">{sub}</div>
+                        <div className="font-medium text-om-forest-deep text-base">{title}</div>
+                        <div className="text-sm text-om-brown">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -158,8 +158,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     <li key={title} className="flex items-start gap-3">
                       <Icon className={`w-4 h-4 ${ic} mt-0.5 flex-shrink-0`} />
                       <div>
-                        <div className="font-medium text-om-parchment text-sm">{title}</div>
-                        <div className="text-xs text-om-tan">{sub}</div>
+                        <div className="font-medium text-om-parchment text-base">{title}</div>
+                        <div className="text-sm text-om-tan">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -221,7 +221,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
