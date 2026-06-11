@@ -85,7 +85,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -110,7 +110,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                   <h3 className="text-2xl font-display font-semibold text-om-forest-deep mb-4">
                     Empowering Every Voice to Be Heard
                   </h3>
-                  <div className="space-y-4 text-om-mahogany text-[16px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                  <div className="space-y-4 text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                     <p>We started LoiReply because we saw too many businesses struggling to keep up with their email communications. Important messages were getting lost, opportunities were slipping away, and relationships were suffering due to delayed responses.</p>
                     <p>We believe that in our connected world, every email represents a person reaching out, a question seeking an answer, or an opportunity waiting to be seized. Our mission is to ensure that no email goes unanswered and no connection is lost due to time constraints or overwhelm.</p>
                     <p>By combining cutting-edge AI technology with a deep respect for human connection, we're helping individuals and teams transform how they communicate. We're not just automating responses—we're preserving relationships, protecting reputations, and enabling communities to thrive.</p>
@@ -142,7 +142,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                   <Icon className={`w-5 h-5 ${ic}`} />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-3">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -196,9 +196,63 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
         </div>
       </section>
 
-      <footer className="bg-om-forest-deep text-om-brown py-8 px-6">
-        <div className="max-w-7xl mx-auto text-center text-xs">
-          <p>&copy; 2025 LoiReply. All rights reserved.</p>
+      <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-10 mb-10">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-5 h-5 text-om-gold" />
+                <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                Transform your email management with AI-powered automation
+              </p>
+            </div>
+            {[
+              {
+                heading: 'Product',
+                links: [
+                  { label: 'Features', event: 'navigate-to-features' },
+                  { label: 'Pricing',  event: 'navigate-to-pricing' },
+                  { label: 'Security', event: 'navigate-to-security' },
+                  { label: 'Updates',  event: 'navigate-to-updates' },
+                ],
+              },
+              {
+                heading: 'Company',
+                links: [
+                  { label: 'About',   event: 'navigate-to-about' },
+                  { label: 'Contact', href: 'mailto:support@loireply.com?subject=Contact LoiReply Support' },
+                ],
+              },
+              {
+                heading: 'Legal',
+                links: [
+                  { label: 'Privacy Policy',   href: '#' },
+                  { label: 'Terms of Service', href: '#' },
+                  { label: 'Cookie Policy',    href: '#' },
+                ],
+              },
+            ].map(({ heading, links }) => (
+              <div key={heading}>
+                <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-sm">
+                  {links.map(({ label, event, href }: any) => (
+                    <li key={label}>
+                      {href ? (
+                        <a href={href} className="hover:text-om-parchment transition-colors">{label}</a>
+                      ) : (
+                        <button onClick={() => window.dispatchEvent(new CustomEvent(event))} className="hover:text-om-parchment transition-colors">{label}</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-om-forest pt-8 text-center text-xs text-om-brown/70">
+            <p>&copy; 2025 LoiReply. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>

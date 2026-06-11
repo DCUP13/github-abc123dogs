@@ -32,13 +32,72 @@ const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAc
   </header>
 );
 
-const omFooter = () => (
-  <footer className="bg-om-forest-deep text-om-brown py-8 px-6">
-    <div className="max-w-7xl mx-auto text-center text-xs">
-      <p>&copy; 2025 LoiReply. All rights reserved.</p>
-    </div>
-  </footer>
-);
+const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCookieClick?: () => void) => {
+  const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
+  return (
+    <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-10 mb-10">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Mail className="w-5 h-5 text-om-gold" />
+              <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+            </div>
+            <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              Transform your email management with AI-powered automation
+            </p>
+          </div>
+          {[
+            {
+              heading: 'Product',
+              links: [
+                { label: 'Features', onClick: nav('navigate-to-features') },
+                { label: 'Pricing',  onClick: nav('navigate-to-pricing') },
+                { label: 'Security', onClick: nav('navigate-to-security') },
+                { label: 'Updates',  onClick: nav('navigate-to-updates') },
+              ],
+            },
+            {
+              heading: 'Company',
+              links: [
+                { label: 'About',   onClick: nav('navigate-to-about') },
+                { label: 'Contact', href: 'mailto:support@loireply.com?subject=Contact LoiReply Support' },
+              ],
+            },
+            {
+              heading: 'Legal',
+              links: [
+                { label: 'Privacy Policy',   onClick: onPrivacyClick },
+                { label: 'Terms of Service', onClick: onTermsClick },
+                { label: 'Cookie Policy',    onClick: onCookieClick },
+              ],
+            },
+          ].map(({ heading, links }) => (
+            <div key={heading}>
+              <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
+              <ul className="space-y-2 text-sm">
+                {links.map(({ label, onClick, href }: any) => (
+                  <li key={label}>
+                    {href ? (
+                      <a href={href} className="hover:text-om-parchment transition-colors">{label}</a>
+                    ) : onClick ? (
+                      <button onClick={onClick} className="hover:text-om-parchment transition-colors">{label}</button>
+                    ) : (
+                      <span className="opacity-50">{label}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-om-forest pt-8 text-center text-xs text-om-brown/70">
+          <p>&copy; 2025 LoiReply. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  );
+};
 
 export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick }: FeaturesPageProps) {
   return (
@@ -80,7 +139,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -109,7 +168,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                   <Icon className="w-5 h-5 text-om-forest" />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -135,7 +194,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                   <Icon className="w-5 h-5 text-om-mahogany" />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -161,7 +220,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                   <Icon className="w-5 h-5 text-om-forest" />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-[15px] leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>

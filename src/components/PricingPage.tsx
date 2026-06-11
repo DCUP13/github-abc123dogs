@@ -57,7 +57,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   </div>
                   <h3 className="text-2xl font-display font-semibold text-om-forest-deep">Individual</h3>
                 </div>
-                <p className="text-om-mahogany mb-6 text-[15px]" style={{ fontFamily: "'EB Garamond', serif" }}>
+                <p className="text-om-mahogany mb-6 text-base" style={{ fontFamily: "'EB Garamond', serif" }}>
                   Perfect for solo professionals and consultants who want to automate their email workflow.
                 </p>
                 <div className="mb-6 p-4 bg-om-parchment border border-om-tan rounded-lg">
@@ -121,7 +121,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   </div>
                   <h3 className="text-2xl font-display font-semibold">Teams</h3>
                 </div>
-                <p className="text-om-tan mb-6 text-[15px]" style={{ fontFamily: "'EB Garamond', serif" }}>
+                <p className="text-om-tan mb-6 text-base" style={{ fontFamily: "'EB Garamond', serif" }}>
                   For agencies and teams that need advanced features, multiple domains, and dedicated support.
                 </p>
                 <div className="mb-6 p-4 bg-om-forest border border-om-forest-dark rounded-lg">
@@ -187,8 +187,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               ["What payment methods do you accept?", "We accept all major credit cards, ACH transfers, and wire transfers. For Teams plans, we can also arrange custom billing terms and invoicing."],
             ].map(([q, a]) => (
               <div key={q} className="bg-om-cream border border-om-tan rounded-lg p-6">
-                <h3 className="font-display font-semibold text-om-forest-deep mb-2 text-[15px]">{q}</h3>
-                <p className="text-om-mahogany text-[15px]" style={{ fontFamily: "'EB Garamond', serif" }}>{a}</p>
+                <h3 className="font-display font-semibold text-om-forest-deep mb-2 text-base">{q}</h3>
+                <p className="text-om-mahogany text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{a}</p>
               </div>
             ))}
           </div>
@@ -213,9 +213,63 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
         </div>
       </section>
 
-      <footer className="bg-om-forest-deep text-om-brown py-8 px-6">
-        <div className="max-w-7xl mx-auto text-center text-xs">
-          <p>&copy; 2025 LoiReply. All rights reserved.</p>
+      <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-10 mb-10">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-5 h-5 text-om-gold" />
+                <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                Transform your email management with AI-powered automation
+              </p>
+            </div>
+            {[
+              {
+                heading: 'Product',
+                links: [
+                  { label: 'Features', event: 'navigate-to-features' },
+                  { label: 'Pricing',  event: 'navigate-to-pricing' },
+                  { label: 'Security', event: 'navigate-to-security' },
+                  { label: 'Updates',  event: 'navigate-to-updates' },
+                ],
+              },
+              {
+                heading: 'Company',
+                links: [
+                  { label: 'About',   event: 'navigate-to-about' },
+                  { label: 'Contact', href: 'mailto:support@loireply.com?subject=Contact LoiReply Support' },
+                ],
+              },
+              {
+                heading: 'Legal',
+                links: [
+                  { label: 'Privacy Policy',   href: '#' },
+                  { label: 'Terms of Service', href: '#' },
+                  { label: 'Cookie Policy',    href: '#' },
+                ],
+              },
+            ].map(({ heading, links }) => (
+              <div key={heading}>
+                <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-sm">
+                  {links.map(({ label, event, href }: any) => (
+                    <li key={label}>
+                      {href ? (
+                        <a href={href} className="hover:text-om-parchment transition-colors">{label}</a>
+                      ) : (
+                        <button onClick={() => window.dispatchEvent(new CustomEvent(event))} className="hover:text-om-parchment transition-colors">{label}</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-om-forest pt-8 text-center text-xs text-om-brown/70">
+            <p>&copy; 2025 LoiReply. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
