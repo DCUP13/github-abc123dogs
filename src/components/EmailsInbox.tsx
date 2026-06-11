@@ -192,6 +192,8 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   useEffect(() => {
     if (activeTab === 'sent' && selectedEmail && (selectedEmail as SentEmail).reply_to_id) {
       buildThreadMessages(selectedEmail as SentEmail);
+    } else if (activeTab === 'inbox' && selectedEmail) {
+      buildInboxThreadMessages(selectedEmail as Email);
     } else {
       setThreadMessages([]);
     }
@@ -262,6 +264,64 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
 
     msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     setThreadMessages(msgs);
+  };
+
+  const buildInboxThreadMessages = async (inboxEmail: Email) => {
+    const baseSubject = inboxEmail.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+    const rawSender = inboxEmail.sender;
+    const senderAddr = (rawSender.match(/<([^>]+)>/) || [null, rawSender])[1]?.toLowerCase().trim() ?? rawSender.toLowerCase().trim();
+
+    const { data: allInbox } = await supabase
+      .from('emails')
+      .select('id, sender, receiver, subject, body, created_at')
+      .ilike('sender', `%${senderAddr}%`)
+      .order('created_at', { ascending: true });
+
+    const threadInboxIds: string[] = [];
+    const msgs: ThreadMessage[] = [];
+
+    for (const e of allInbox || []) {
+      const eBase = e.subject.replace(/^(Re:\s*|Fwd:\s*)+/gi, '').trim().toLowerCase();
+      if (eBase === baseSubject) {
+        threadInboxIds.push(e.id);
+        msgs.push({
+          id: e.id,
+          type: 'received',
+          from: e.sender,
+          to: formatReceiverList(e.receiver),
+          body: e.body,
+          timestamp: e.created_at,
+          isCurrent: e.id === inboxEmail.id,
+        });
+      }
+    }
+
+    if (threadInboxIds.length > 0) {
+      const { data: allSent } = await supabase
+        .from('email_sent')
+        .select('id, to_email, from_email, subject, body, sent_at')
+        .in('reply_to_id', threadInboxIds)
+        .order('sent_at', { ascending: true });
+
+      for (const s of allSent || []) {
+        msgs.push({
+          id: s.id,
+          type: 'sent',
+          from: s.from_email,
+          to: s.to_email,
+          body: s.body,
+          timestamp: s.sent_at,
+          isCurrent: false,
+        });
+      }
+    }
+
+    msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    if (msgs.length > 1) {
+      setThreadMessages(msgs);
+    } else {
+      setThreadMessages([]);
+    }
   };
 
   const fetchInboxMode = async () => {
@@ -908,7 +968,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
                                 <Reply className="w-3 h-3" />
                                 <span className="text-xs font-medium">
-                                  Reply{(email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count! > 0 ? ` · ${(email as SentEmail).reply_count}` : ''}
+                                  Reply · {(email as SentEmail).reply_count ?? 0}
                                 </span>
                               </div>
                             )}
@@ -1048,8 +1108,8 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
             </div>
 
             <div className="p-6">
-              {/* Sent tab: show full conversation thread */}
-              {activeTab === 'sent' && threadMessages.length > 0 ? (
+              {/* Thread view for sent replies and inbox conversations */}
+              {(activeTab === 'sent' || activeTab === 'inbox') && threadMessages.length > 0 ? (
                 <div className="space-y-4">
                   {threadMessages.map((msg, idx) => (
                     <div
@@ -1080,7 +1140,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                           {msg.isCurrent && (
-                            <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">Latest</span>
+                            <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">Selected</span>
                           )}
                           <span className="text-xs text-gray-400 dark:text-gray-500">
                             {new Date(msg.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
