@@ -55,26 +55,26 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
     <>
       <button
         onClick={onBackToHome}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-6 transition-colors"
+        className="flex items-center gap-2 text-om-brown hover:text-om-forest-deep mb-6 transition-colors text-sm"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Home
       </button>
       <div className="flex items-center gap-3 mb-8">
-        <UserPlus className="w-6 h-6 text-indigo-600" />
-        <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
+        <UserPlus className="w-5 h-5 text-om-forest" />
+        <h1 className="text-2xl font-display font-semibold text-om-forest-deep">Create Account</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {status === 'error' && (
-          <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg">
-            <AlertCircle className="w-4 h-4" />
-            {errorMessage}
+          <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <p>{errorMessage}</p>
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Email Address
           </label>
           <input
@@ -82,14 +82,14 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
             placeholder="you@example.com"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Password
           </label>
           <div className="relative">
@@ -98,26 +98,22 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
               placeholder="••••••••"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-om-brown hover:text-om-mahogany"
             >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="confirmPassword" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Confirm Password
           </label>
           <div className="relative">
@@ -126,20 +122,16 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
               type={showConfirmPassword ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
               placeholder="••••••••"
               required
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-om-brown hover:text-om-mahogany"
             >
-              {showConfirmPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -147,22 +139,22 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
         <button
           type="submit"
           disabled={status === 'loading' || status === 'success'}
-          className={`w-full py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-            status === 'loading' 
-              ? 'bg-indigo-400 cursor-wait' 
+          className={`w-full py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center gap-2 transition-all ${
+            status === 'loading'
+              ? 'bg-om-forest/60 cursor-wait text-om-cream'
               : status === 'success'
-              ? 'bg-green-500 cursor-default'
-              : 'bg-indigo-600 hover:bg-indigo-700'
-          } text-white`}
+              ? 'bg-om-forest-dark cursor-default text-om-cream'
+              : 'bg-om-forest hover:bg-om-forest-dark text-om-cream'
+          }`}
         >
           {status === 'loading' ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Creating Account...
+              <div className="w-4 h-4 border-2 border-om-cream border-t-transparent rounded-full animate-spin" />
+              Creating Account…
             </>
           ) : status === 'success' ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-om-cream border-t-transparent rounded-full animate-spin" />
               Account Created!
             </>
           ) : (
@@ -177,7 +169,7 @@ export function Register({ onLoginClick, onBackToHome }: RegisterProps) {
       <div className="mt-6 text-center">
         <button
           onClick={onLoginClick}
-          className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          className="inline-flex items-center gap-2 text-sm text-om-forest hover:text-om-forest-dark font-medium transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to login

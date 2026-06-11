@@ -426,8 +426,8 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-om-cream flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-om-gold border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -544,8 +544,8 @@ export default function App() {
                 onCookieClick={() => updateView('cookie-policy')}
               />
             ) : (
-              <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md">
+              <div className="min-h-screen bg-om-cream flex items-center justify-center p-4">
+                <div className="bg-white border border-om-tan rounded-xl shadow-sm p-8 w-full max-w-md">
                   {view === 'login' ? (
                     <Login
                       onRegisterClick={() => updateView('register')}

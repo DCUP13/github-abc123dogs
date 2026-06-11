@@ -252,36 +252,36 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     <>
       <button
         onClick={onBackToHome}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-6 transition-colors"
+        className="flex items-center gap-2 text-om-brown hover:text-om-forest-deep mb-6 transition-colors text-sm"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Home
       </button>
       <div className="flex items-center gap-3 mb-8">
-        <LogIn className="w-6 h-6 text-indigo-600" />
-        <h1 className="text-2xl font-bold text-gray-800">Login</h1>
+        <LogIn className="w-5 h-5 text-om-forest" />
+        <h1 className="text-2xl font-display font-semibold text-om-forest-deep">Sign In</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {status === 'error' && (
-          <div className="flex items-center gap-2 p-4 text-sm text-red-600 bg-red-50 rounded-lg">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <p>{errorMessage}</p>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <label className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Login As
           </label>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={() => setLoginType('member')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-all border ${
                 loginType === 'member'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  ? 'bg-om-forest border-om-forest text-om-cream'
+                  : 'bg-transparent border-om-tan text-om-mahogany hover:border-om-brown'
               }`}
             >
               Member
@@ -289,10 +289,10 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
             <button
               type="button"
               onClick={() => setLoginType('manager')}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-all border ${
                 loginType === 'manager'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  ? 'bg-om-forest border-om-forest text-om-cream'
+                  : 'bg-transparent border-om-tan text-om-mahogany hover:border-om-brown'
               }`}
             >
               Manager
@@ -301,7 +301,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="email" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Email Address
           </label>
           <input
@@ -309,14 +309,14 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
             type="email"
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
             placeholder="you@example.com"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="password" className="block text-xs font-medium text-om-brown uppercase tracking-widest mb-2">
             Password
           </label>
           <div className="relative">
@@ -325,20 +325,16 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2.5 border border-om-tan rounded bg-om-cream text-om-forest-deep placeholder-om-brown/50 focus:ring-1 focus:ring-om-gold focus:border-om-gold outline-none transition-colors text-sm"
               placeholder="••••••••"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-om-brown hover:text-om-mahogany"
             >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -346,28 +342,28 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         <button
           type="submit"
           disabled={status === 'loading' || status === 'success'}
-          className={`w-full py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-            status === 'loading' 
-              ? 'bg-indigo-400 cursor-wait' 
+          className={`w-full py-2.5 px-4 rounded text-sm font-medium flex items-center justify-center gap-2 transition-all ${
+            status === 'loading'
+              ? 'bg-om-forest/60 cursor-wait text-om-cream'
               : status === 'success'
-              ? 'bg-green-500 cursor-default'
-              : 'bg-indigo-600 hover:bg-indigo-700'
-          } text-white`}
+              ? 'bg-om-forest-dark cursor-default text-om-cream'
+              : 'bg-om-forest hover:bg-om-forest-dark text-om-cream'
+          }`}
         >
           {status === 'loading' ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Logging in...
+              <div className="w-4 h-4 border-2 border-om-cream border-t-transparent rounded-full animate-spin" />
+              Signing in…
             </>
           ) : status === 'success' ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-om-cream border-t-transparent rounded-full animate-spin" />
               Welcome Back!
             </>
           ) : (
             <>
               <LogIn className="w-4 h-4" />
-              Login
+              Sign In
             </>
           )}
         </button>
@@ -376,7 +372,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       <div className="mt-6 text-center">
         <button
           onClick={onRegisterClick}
-          className="inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          className="inline-flex items-center gap-2 text-sm text-om-forest hover:text-om-forest-dark font-medium transition-colors"
         >
           <UserPlus className="w-4 h-4" />
           Create an account
