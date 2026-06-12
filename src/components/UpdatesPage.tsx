@@ -16,18 +16,18 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
-              <span className="text-xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </button>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-xl text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-features'))} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-pricing'))} className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-about'))} className="hover:text-om-parchment transition-colors">About</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-security'))} className="hover:text-om-parchment transition-colors">Security</button>
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl font-medium transition-colors">Sign In</button>
-            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl font-medium transition-colors rounded">Get Started</button>
+            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors">Sign In</button>
+            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded">Get Started</button>
           </div>
         </div>
       </header>
@@ -40,11 +40,11 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
               <Rocket className="w-8 h-8 text-om-gold" />
             </div>
           </div>
-          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Always Improving</p>
+          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">Always Improving</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Continuous Innovation, No Extra Cost
           </h1>
-          <p className="text-xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
             Your subscription includes all updates, improvements, and new features. We're constantly evolving to provide you with the best email automation experience.
           </p>
         </div>
@@ -59,13 +59,13 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <Gift className="w-6 h-6 text-om-gold" />
               </div>
             </div>
-            <h2 className="text-3xl font-display font-semibold text-om-parchment mb-4">
+            <h2 className="text-4xl font-display font-semibold text-om-parchment mb-4">
               All Updates Included Forever
             </h2>
-            <p className="text-om-tan text-lg mb-7" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-om-tan text-xl mb-7" style={{ fontFamily: "'EB Garamond', serif" }}>
               No upgrade fees. No hidden costs. No surprises. Every feature we release is automatically available to you.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-om-tan text-base">
+            <div className="flex flex-wrap justify-center gap-6 text-om-tan text-lg">
               {['New Features', 'Security Patches', 'Performance Improvements', 'Bug Fixes'].map(item => (
                 <div key={item} className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-om-gold" />
@@ -81,8 +81,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Included</p>
-            <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">What You Get with Every Update</h2>
+            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Included</p>
+            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">What You Get with Every Update</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Continuous improvements across all aspects of the platform</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -98,8 +98,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
-                <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -110,8 +110,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Approach</p>
-            <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Our Update Philosophy</h2>
+            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Approach</p>
+            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Update Philosophy</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>How we approach product development and updates</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
@@ -127,7 +127,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                  <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -139,8 +139,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Roadmap</p>
-            <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">What's Coming Next</h2>
+            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Roadmap</p>
+            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">What's Coming Next</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>A glimpse at our upcoming features and improvements</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -156,8 +156,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <div className="w-11 h-11 bg-om-forest border border-om-forest-dark rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
-                <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -167,8 +167,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* Guarantees */}
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3 text-center">Guarantees</p>
-          <h2 className="text-3xl font-display font-semibold text-om-forest-deep text-center mb-10">Update Guarantees</h2>
+          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3 text-center">Guarantees</p>
+          <h2 className="text-4xl font-display font-semibold text-om-forest-deep text-center mb-10">Update Guarantees</h2>
           <div className="space-y-4">
             {[
               ['No Extra Charges',       'Your monthly subscription covers all updates and new features. We\'ll never charge extra for upgrades or new capabilities.'],
@@ -180,7 +180,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <CheckCircle className="w-5 h-5 text-om-forest mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                  <p className="text-om-mahogany text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -192,7 +192,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-20 px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">Start Getting Updates Today</h2>
-          <p className="text-om-tan text-lg mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Join LoiReply and get access to continuous improvements and new features at no extra cost
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -214,7 +214,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
@@ -245,8 +245,8 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-base">
+                <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-lg">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (
@@ -260,7 +260,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
               </div>
             ))}
           </div>
-          <div className="border-t border-om-forest pt-8 text-center text-xs text-om-brown/70">
+          <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
             <p>&copy; 2025 LoiReply. All rights reserved.</p>
           </div>
         </div>

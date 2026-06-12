@@ -16,18 +16,18 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
-              <span className="text-xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </button>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-xl text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-features'))} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-pricing'))} className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-about'))} className="hover:text-om-parchment transition-colors">About</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-security'))} className="hover:text-om-parchment transition-colors">Security</button>
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl font-medium transition-colors">Sign In</button>
-            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl font-medium transition-colors rounded">Get Started</button>
+            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors">Sign In</button>
+            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded">Get Started</button>
           </div>
         </div>
       </header>
@@ -35,11 +35,11 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Investment</p>
+          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">Investment</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
             Choose the plan that fits your needs. Whether you're an individual professional or managing a team, we have the right solution for you.
           </p>
         </div>
@@ -57,20 +57,20 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   <div className="w-11 h-11 bg-om-parchment border border-om-tan rounded-lg flex items-center justify-center">
                     <Users className="w-5 h-5 text-om-forest" />
                   </div>
-                  <h3 className="text-2xl font-display font-semibold text-om-forest-deep">Individual</h3>
+                  <h3 className="text-3xl font-display font-semibold text-om-forest-deep">Individual</h3>
                 </div>
-                <p className="text-om-mahogany mb-6 text-base" style={{ fontFamily: "'EB Garamond', serif" }}>
+                <p className="text-om-mahogany mb-6 text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>
                   Perfect for solo professionals and consultants who want to automate their email workflow.
                 </p>
                 <div className="mb-6 p-4 bg-om-parchment border border-om-tan rounded-lg">
-                  <p className="text-sm text-om-brown uppercase tracking-widest mb-3">Starting at</p>
+                  <p className="text-base text-om-brown uppercase tracking-widest mb-3">Starting at</p>
                   <div className="mb-2">
-                    <span className="text-3xl font-display font-semibold text-om-forest-deep">$5,000</span>
-                    <span className="text-base text-om-brown ml-2">initial investment</span>
+                    <span className="text-4xl font-display font-semibold text-om-forest-deep">$5,000</span>
+                    <span className="text-lg text-om-brown ml-2">initial investment</span>
                   </div>
                   <div>
-                    <span className="text-2xl font-display font-semibold text-om-forest-deep">$1,000<span className="text-base">/mo</span></span>
-                    <span className="text-base text-om-brown ml-2">monthly service fee</span>
+                    <span className="text-3xl font-display font-semibold text-om-forest-deep">$1,000<span className="text-lg">/mo</span></span>
+                    <span className="text-lg text-om-brown ml-2">monthly service fee</span>
                   </div>
                 </div>
                 <button
@@ -83,7 +83,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               </div>
 
               <div className="border-t border-om-tan pt-7">
-                <h4 className="font-display font-semibold text-om-forest-deep mb-5 text-sm tracking-wide uppercase">What's Included</h4>
+                <h4 className="font-display font-semibold text-om-forest-deep mb-5 text-base tracking-wide uppercase">What's Included</h4>
                 <ul className="space-y-4">
                   {[
                     ['One Linked Domain', 'Connect and manage one email domain'],
@@ -101,8 +101,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     <li key={title} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-om-forest mt-0.5 flex-shrink-0" />
                       <div>
-                        <div className="font-medium text-om-forest-deep text-base">{title}</div>
-                        <div className="text-base text-om-brown">{sub}</div>
+                        <div className="font-medium text-om-forest-deep text-lg">{title}</div>
+                        <div className="text-lg text-om-brown">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -112,7 +112,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
 
             {/* Teams */}
             <div className="bg-om-forest-deep rounded-xl p-8 text-om-parchment relative overflow-hidden hover:shadow-2xl transition-shadow">
-              <div className="absolute top-4 right-4 bg-om-gold/20 border border-om-gold/40 px-3 py-1 rounded text-xs font-medium text-om-gold tracking-wide">
+              <div className="absolute top-4 right-4 bg-om-gold/20 border border-om-gold/40 px-3 py-1 rounded text-sm font-medium text-om-gold tracking-wide">
                 Most Popular
               </div>
 
@@ -121,15 +121,15 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   <div className="w-11 h-11 bg-om-forest border border-om-forest-dark rounded-lg flex items-center justify-center">
                     <Users className="w-5 h-5 text-om-gold" />
                   </div>
-                  <h3 className="text-2xl font-display font-semibold">Teams</h3>
+                  <h3 className="text-3xl font-display font-semibold">Teams</h3>
                 </div>
-                <p className="text-om-tan mb-6 text-base" style={{ fontFamily: "'EB Garamond', serif" }}>
+                <p className="text-om-tan mb-6 text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>
                   For agencies and teams that need advanced features, multiple domains, and dedicated support.
                 </p>
                 <div className="mb-6 p-4 bg-om-forest border border-om-forest-dark rounded-lg">
-                  <p className="text-sm text-om-tan uppercase tracking-widest mb-3">Custom Pricing</p>
-                  <div className="text-3xl font-display font-semibold text-om-gold mb-1">Contact Sales</div>
-                  <div className="text-base text-om-tan">Tailored to your team's needs</div>
+                  <p className="text-base text-om-tan uppercase tracking-widest mb-3">Custom Pricing</p>
+                  <div className="text-4xl font-display font-semibold text-om-gold mb-1">Contact Sales</div>
+                  <div className="text-lg text-om-tan">Tailored to your team's needs</div>
                 </div>
                 <button
                   onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Team Plan Inquiry'}
@@ -141,7 +141,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               </div>
 
               <div className="border-t border-om-forest pt-7">
-                <h4 className="font-display font-semibold text-om-gold mb-5 text-sm tracking-wide uppercase">Everything in Individual, plus:</h4>
+                <h4 className="font-display font-semibold text-om-gold mb-5 text-base tracking-wide uppercase">Everything in Individual, plus:</h4>
                 <ul className="space-y-4">
                   {[
                     [Check,            'text-om-gold',   'Multiple Linked Domains',      'Connect unlimited email domains for your team'],
@@ -160,8 +160,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     <li key={title} className="flex items-start gap-3">
                       <Icon className={`w-4 h-4 ${ic} mt-0.5 flex-shrink-0`} />
                       <div>
-                        <div className="font-medium text-om-parchment text-base">{title}</div>
-                        <div className="text-base text-om-tan">{sub}</div>
+                        <div className="font-medium text-om-parchment text-lg">{title}</div>
+                        <div className="text-lg text-om-tan">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -175,8 +175,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* FAQ */}
       <section className="py-20 px-6 bg-om-parchment">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3 text-center">FAQ</p>
-          <h2 className="text-3xl font-display font-semibold text-om-forest-deep text-center mb-12">
+          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3 text-center">FAQ</p>
+          <h2 className="text-4xl font-display font-semibold text-om-forest-deep text-center mb-12">
             Frequently Asked Questions
           </h2>
           <div className="space-y-4">
@@ -189,8 +189,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               ["What payment methods do you accept?", "We accept all major credit cards, ACH transfers, and wire transfers. For Teams plans, we can also arrange custom billing terms and invoicing."],
             ].map(([q, a]) => (
               <div key={q} className="bg-om-cream border border-om-tan rounded-lg p-6">
-                <h3 className="font-display font-semibold text-om-forest-deep mb-2 text-base">{q}</h3>
-                <p className="text-om-mahogany text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{a}</p>
+                <h3 className="font-display font-semibold text-om-forest-deep mb-2 text-lg">{q}</h3>
+                <p className="text-om-mahogany text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{a}</p>
               </div>
             ))}
           </div>
@@ -201,7 +201,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-20 px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">Ready to Get Started?</h2>
-          <p className="text-om-tan text-lg mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Choose your plan and start automating your email workflow today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -223,7 +223,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-base leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
@@ -254,8 +254,8 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-base">
+                <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-lg">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (
@@ -269,7 +269,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
               </div>
             ))}
           </div>
-          <div className="border-t border-om-forest pt-8 text-center text-xs text-om-brown/70">
+          <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
             <p>&copy; 2025 LoiReply. All rights reserved.</p>
           </div>
         </div>
