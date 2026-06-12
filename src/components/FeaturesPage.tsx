@@ -7,30 +7,35 @@ interface FeaturesPageProps {
   onCreateAccountClick: () => void;
 }
 
-const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAccountClick: () => void) => (
+const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAccountClick: () => void) => {
+  const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
+  return (
   <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
     <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <button onClick={onBackClick} className="flex items-center gap-2 text-om-tan hover:text-om-parchment transition-colors text-sm">
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <div className="flex items-center gap-2">
-          <Mail className="w-6 h-6 text-om-gold" />
-          <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
-        </div>
-      </div>
       <div className="flex items-center gap-3">
-        <button onClick={onSignInClick} className="px-5 py-2 text-om-tan hover:text-om-parchment text-sm font-medium transition-colors">
+        <button onClick={onBackClick} className="flex items-center gap-2">
+          <Mail className="w-7 h-7 text-om-gold" />
+          <span className="text-xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+        </button>
+      </div>
+      <nav className="hidden md:flex items-center gap-8 text-base text-om-tan">
+        <button onClick={nav('navigate-to-features')} className="hover:text-om-parchment transition-colors">Features</button>
+        <button onClick={nav('navigate-to-pricing')} className="hover:text-om-parchment transition-colors">Pricing</button>
+        <button onClick={nav('navigate-to-about')} className="hover:text-om-parchment transition-colors">About</button>
+        <button onClick={nav('navigate-to-security')} className="hover:text-om-parchment transition-colors">Security</button>
+      </nav>
+      <div className="flex items-center gap-3">
+        <button onClick={onSignInClick} className="px-5 py-2 text-om-tan hover:text-om-parchment text-base font-medium transition-colors">
           Sign In
         </button>
-        <button onClick={onCreateAccountClick} className="px-5 py-2 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-sm font-medium transition-colors rounded">
+        <button onClick={onCreateAccountClick} className="px-5 py-2 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base font-medium transition-colors rounded">
           Get Started
         </button>
       </div>
     </div>
   </header>
-);
+  );
+};
 
 const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCookieClick?: () => void) => {
   const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
