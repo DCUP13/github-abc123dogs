@@ -23,9 +23,9 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="w-7 h-7 text-om-gold" />
-            <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+            <span className="text-xl md:text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-xl md:text-2xl text-om-tan">
             <button onClick={onFeaturesClick} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={onPricingClick}  className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={onAboutClick}    className="hover:text-om-parchment transition-colors">About</button>
@@ -34,13 +34,13 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           <div className="flex items-center gap-3">
             <button
               onClick={onSignInClick}
-              className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors"
+              className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors"
             >
               Sign In
             </button>
             <button
               onClick={onCreateAccountClick}
-              className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded"
+              className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded"
             >
               Get Started
             </button>
@@ -53,11 +53,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">AI-Powered Email Automation</p>
-              <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep leading-tight mb-6">
+              <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-4">AI-Powered Email Automation</p>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep leading-tight mb-6">
                 Transform Your Email Management
               </h1>
-              <p className="text-2xl text-om-mahogany mb-10 leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-xl md:text-2xl text-om-mahogany mb-10 leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Automate responses, manage clients, and sync your calendar. Save hours every day with AI-powered email automation that learns from your business.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -79,7 +79,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
 
             <div className="relative">
               <div className="bg-om-parchment border border-om-tan rounded-xl p-8 shadow-lg">
-                <p className="text-base font-medium text-om-brown uppercase tracking-widest mb-5">Platform Preview</p>
+                <p className="text-sm md:text-base font-medium text-om-brown uppercase tracking-widest mb-5">Platform Preview</p>
                 <div className="space-y-4">
                   {[
                     { icon: Mail,     label: 'Automated Responses', sub: 'AI handles 85% of inquiries',    bg: 'bg-om-cream',     ic: 'text-om-gold' },
@@ -91,8 +91,8 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                         <Icon className={`w-5 h-5 ${ic}`} />
                       </div>
                       <div>
-                        <div className="text-base font-semibold text-om-forest-deep">{label}</div>
-                        <div className="text-lg text-om-brown">{sub}</div>
+                        <div className="text-sm md:text-base font-semibold text-om-forest-deep">{label}</div>
+                        <div className="text-base md:text-lg text-om-brown">{sub}</div>
                       </div>
                     </div>
                   ))}
@@ -107,11 +107,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
       <section className="py-20 bg-om-parchment px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Capabilities</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-4">
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Capabilities</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-4">
               Everything You Need to Scale
             </h2>
-            <p className="text-xl text-om-mahogany max-w-2xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-lg md:text-xl text-om-mahogany max-w-2xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
               Powerful features that save time and increase productivity
             </p>
           </div>
@@ -129,8 +129,8 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 <div className="w-12 h-12 bg-om-parchment border border-om-tan rounded-lg flex items-center justify-center mb-5">
                   <Icon className={`w-6 h-6 ${ic}`} />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany leading-relaxed text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany leading-relaxed text-base md:text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -141,11 +141,11 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
       <section className="py-20 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Results</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-4">
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Results</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-4">
               Transform Your Business Results
             </h2>
-            <p className="text-xl text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-lg md:text-xl text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>
               See what's possible when you automate your email workflow
             </p>
           </div>
@@ -164,7 +164,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   </div>
                   <div>
                     <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                    <p className="text-om-mahogany text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                    <p className="text-om-mahogany text-base md:text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                   </div>
                 </div>
               ))}
@@ -178,13 +178,13 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   { stat: '3×',  label: 'Lead Conversion Rate' },
                 ].map(({ stat, label }) => (
                   <div key={label}>
-                    <div className="text-5xl font-display font-semibold text-om-gold mb-1">{stat}</div>
-                    <div className="text-om-tan text-lg tracking-wide">{label}</div>
+                    <div className="text-3xl md:text-5xl font-display font-semibold text-om-gold mb-1">{stat}</div>
+                    <div className="text-om-tan text-base md:text-lg tracking-wide">{label}</div>
                   </div>
                 ))}
                 <div className="pt-6 border-t border-om-forest">
                   <TrendingUp className="w-8 h-8 mb-3 text-om-gold" />
-                  <p className="text-om-tan text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                  <p className="text-om-tan text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                     Join professionals who have transformed their business with LoiReply
                   </p>
                 </div>
@@ -197,10 +197,10 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
       {/* CTA */}
       <section className="py-20 bg-om-forest px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">
+          <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Start automating your emails today and see results in minutes
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -230,7 +230,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
@@ -262,8 +262,8 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-lg">
+                <h4 className="font-display text-om-gold text-sm md:text-base tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-base md:text-lg">
                   {links.map(({ label, onClick, href }: any) => (
                     <li key={label}>
                       {href ? (
@@ -277,7 +277,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
               </div>
             ))}
           </div>
-          <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
+          <div className="border-t border-om-forest pt-8 text-center text-xs md:text-sm text-om-brown/70">
             <p>&copy; 2025 LoiReply. All rights reserved.</p>
           </div>
         </div>

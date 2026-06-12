@@ -16,18 +16,18 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
-              <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              <span className="text-xl md:text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </button>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-xl md:text-2xl text-om-tan">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-features'))} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-pricing'))} className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-about'))} className="hover:text-om-parchment transition-colors">About</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-security'))} className="hover:text-om-parchment transition-colors">Security</button>
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors">Sign In</button>
-            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded">Get Started</button>
+            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors">Sign In</button>
+            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded">Get Started</button>
           </div>
         </div>
       </header>
@@ -40,11 +40,11 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
               <Heart className="w-8 h-8 text-om-gold" />
             </div>
           </div>
-          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">Our Story</p>
-          <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
+          <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-4">Our Story</p>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Transforming Communities,<br />One Email at a Time
           </h1>
-          <p className="text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-xl md:text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
             At LoiReply, we believe that every email matters and every person deserves a prompt, thoughtful response. We're on a mission to ensure no one gets left behind.
           </p>
         </div>
@@ -54,11 +54,11 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-14 px-6 bg-om-forest-deep">
         <div className="max-w-4xl mx-auto">
           <div className="border border-om-forest rounded-xl p-10 text-center">
-            <p className="text-base text-om-gold font-medium tracking-widest uppercase mb-4">Our Mantra</p>
-            <h2 className="text-4xl font-display font-semibold text-om-parchment mb-4">
+            <p className="text-sm md:text-base text-om-gold font-medium tracking-widest uppercase mb-4">Our Mantra</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-parchment mb-4">
               "No One Left Behind, No Email Unanswered"
             </h2>
-            <p className="text-om-tan text-xl" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-om-tan text-lg md:text-xl" style={{ fontFamily: "'EB Garamond', serif" }}>
               We're committed to helping you maintain your reputation by ensuring every email receives the attention it deserves, delivered with speed and care.
             </p>
           </div>
@@ -69,8 +69,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Principles</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Core Values</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Principles</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Core Values</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>The principles that guide everything we do</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -86,8 +86,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -98,8 +98,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Purpose</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Mission</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Purpose</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Mission</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Why we do what we do</p>
           </div>
           <div className="max-w-4xl mx-auto">
@@ -109,10 +109,10 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                   <Target className="w-7 h-7 text-om-forest" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-display font-semibold text-om-forest-deep mb-4">
+                  <h3 className="text-2xl md:text-3xl font-display font-semibold text-om-forest-deep mb-4">
                     Empowering Every Voice to Be Heard
                   </h3>
-                  <div className="space-y-4 text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+                  <div className="space-y-4 text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                     <p>We started LoiReply because we saw too many businesses struggling to keep up with their email communications. Important messages were getting lost, opportunities were slipping away, and relationships were suffering due to delayed responses.</p>
                     <p>We believe that in our connected world, every email represents a person reaching out, a question seeking an answer, or an opportunity waiting to be seized. Our mission is to ensure that no email goes unanswered and no connection is lost due to time constraints or overwhelm.</p>
                     <p>By combining cutting-edge AI technology with a deep respect for human connection, we're helping individuals and teams transform how they communicate. We're not just automating responses—we're preserving relationships, protecting reputations, and enabling communities to thrive.</p>
@@ -128,8 +128,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Impact</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">Why Prompt Responses Matter</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Impact</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-3">Why Prompt Responses Matter</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>The impact of timely communication</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
@@ -143,8 +143,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className={`w-5 h-5 ${ic}`} />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-3">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-3">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -155,8 +155,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3">Promise</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Commitment to You</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Promise</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-3">Our Commitment to You</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>What you can expect from LoiReply</p>
           </div>
           <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
@@ -172,7 +172,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                  <p className="text-om-mahogany text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-base md:text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -183,8 +183,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       {/* CTA */}
       <section className="py-20 px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">Join Our Community</h2>
-          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">Join Our Community</h2>
+          <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Be part of a movement that values every connection and ensures no one gets left behind
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -206,7 +206,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
@@ -237,8 +237,8 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-lg">
+                <h4 className="font-display text-om-gold text-sm md:text-base tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-base md:text-lg">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (
@@ -252,7 +252,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
               </div>
             ))}
           </div>
-          <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
+          <div className="border-t border-om-forest pt-8 text-center text-xs md:text-sm text-om-brown/70">
             <p>&copy; 2025 LoiReply. All rights reserved.</p>
           </div>
         </div>

@@ -16,18 +16,18 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
-              <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+              <span className="text-xl md:text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </button>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-xl md:text-2xl text-om-tan">
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-features'))} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-pricing'))} className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-about'))} className="hover:text-om-parchment transition-colors">About</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-security'))} className="hover:text-om-parchment transition-colors">Security</button>
           </nav>
           <div className="flex items-center gap-3">
-            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors">Sign In</button>
-            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded">Get Started</button>
+            <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors">Sign In</button>
+            <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded">Get Started</button>
           </div>
         </div>
       </header>
@@ -40,11 +40,11 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
               <Shield className="w-8 h-8 text-om-forest" />
             </div>
           </div>
-          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">Trust & Safety</p>
-          <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
+          <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-4">Trust & Safety</p>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Security First, Always
           </h1>
-          <p className="text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-xl md:text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
             Your data security and privacy are our top priorities. We employ industry-leading security measures to protect your communications and sensitive information.
           </p>
         </div>
@@ -54,8 +54,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Encryption</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Data Encryption & Protection</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Encryption</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Data Encryption & Protection</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Multiple layers of encryption to keep your data secure</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -71,8 +71,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-parchment border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-forest" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -83,8 +83,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Access</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Access Control & Authentication</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Access</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Access Control & Authentication</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Advanced authentication to protect your account</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,8 +100,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -112,8 +112,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Compliance</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Compliance & Privacy</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Compliance</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Compliance & Privacy</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Meeting the highest standards for data protection</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -129,7 +129,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                  <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -140,8 +140,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* Commitments */}
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-3 text-center">Commitments</p>
-          <h2 className="text-4xl font-display font-semibold text-om-forest-deep text-center mb-10">
+          <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3 text-center">Commitments</p>
+          <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep text-center mb-10">
             Our Security Commitments
           </h2>
           <div className="space-y-4">
@@ -155,7 +155,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <CheckCircle className="w-5 h-5 text-om-forest mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                  <p className="text-om-mahogany text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                  <p className="text-om-mahogany text-base md:text-lg" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -166,8 +166,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* CTA */}
       <section className="py-20 px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">Questions About Security?</h2>
-          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">Questions About Security?</h2>
+          <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Our team is here to answer any security questions you may have
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -189,7 +189,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <Mail className="w-5 h-5 text-om-gold" />
                 <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
               </div>
-              <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+              <p className="text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
                 Transform your email management with AI-powered automation
               </p>
             </div>
@@ -220,8 +220,8 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
               },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-lg">
+                <h4 className="font-display text-om-gold text-sm md:text-base tracking-widest uppercase mb-4">{heading}</h4>
+                <ul className="space-y-2 text-base md:text-lg">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (
@@ -235,7 +235,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
               </div>
             ))}
           </div>
-          <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
+          <div className="border-t border-om-forest pt-8 text-center text-xs md:text-sm text-om-brown/70">
             <p>&copy; 2025 LoiReply. All rights reserved.</p>
           </div>
         </div>

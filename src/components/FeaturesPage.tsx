@@ -15,20 +15,20 @@ const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAc
       <div className="flex items-center gap-3">
         <button onClick={onBackClick} className="flex items-center gap-2">
           <Mail className="w-7 h-7 text-om-gold" />
-          <span className="text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
+          <span className="text-xl md:text-2xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
         </button>
       </div>
-      <nav className="hidden md:flex items-center gap-8 text-2xl text-om-tan">
+      <nav className="hidden md:flex items-center gap-8 text-xl md:text-2xl text-om-tan">
         <button onClick={nav('navigate-to-features')} className="hover:text-om-parchment transition-colors">Features</button>
         <button onClick={nav('navigate-to-pricing')} className="hover:text-om-parchment transition-colors">Pricing</button>
         <button onClick={nav('navigate-to-about')} className="hover:text-om-parchment transition-colors">About</button>
         <button onClick={nav('navigate-to-security')} className="hover:text-om-parchment transition-colors">Security</button>
       </nav>
       <div className="flex items-center gap-3">
-        <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-2xl font-medium transition-colors">
+        <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors">
           Sign In
         </button>
-        <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-2xl font-medium transition-colors rounded">
+        <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded">
           Get Started
         </button>
       </div>
@@ -48,7 +48,7 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
               <Mail className="w-5 h-5 text-om-gold" />
               <span className="font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
             </div>
-            <p className="text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+            <p className="text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
               Transform your email management with AI-powered automation
             </p>
           </div>
@@ -79,8 +79,8 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
             },
           ].map(({ heading, links }) => (
             <div key={heading}>
-              <h4 className="font-display text-om-gold text-base tracking-widest uppercase mb-4">{heading}</h4>
-              <ul className="space-y-2 text-lg">
+              <h4 className="font-display text-om-gold text-sm md:text-base tracking-widest uppercase mb-4">{heading}</h4>
+              <ul className="space-y-2 text-base md:text-lg">
                 {links.map(({ label, onClick, href }: any) => (
                   <li key={label}>
                     {href ? (
@@ -96,7 +96,7 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
             </div>
           ))}
         </div>
-        <div className="border-t border-om-forest pt-8 text-center text-sm text-om-brown/70">
+        <div className="border-t border-om-forest pt-8 text-center text-xs md:text-sm text-om-brown/70">
           <p>&copy; 2025 LoiReply. All rights reserved.</p>
         </div>
       </div>
@@ -112,11 +112,11 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
         <div className="max-w-7xl mx-auto text-center mb-4">
-          <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-4">Platform Overview</p>
-          <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
+          <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-4">Platform Overview</p>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Powerful Features for Modern Email Management
           </h1>
-          <p className="text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-xl md:text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
             Everything you need to automate, organise, and optimise your email communications in one comprehensive platform.
           </p>
         </div>
@@ -126,8 +126,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Automation</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">AI-Powered Automation</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Automation</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">AI-Powered Automation</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Let intelligent automation handle your repetitive email tasks</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -143,8 +143,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-parchment border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-gold" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -155,8 +155,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Relationships</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Client & Contact Management</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Relationships</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Client & Contact Management</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Build and maintain strong relationships with powerful CRM tools</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -172,8 +172,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-forest" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -184,8 +184,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Scheduling</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Calendar & Scheduling</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Scheduling</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Calendar & Scheduling</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Seamlessly integrate your email with calendar management</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -198,8 +198,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-parchment border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-mahogany" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -210,8 +210,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-base font-medium tracking-widest uppercase mb-2">Protection</p>
-            <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-2">Security & Compliance</h2>
+            <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Protection</p>
+            <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep mb-2">Security & Compliance</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Enterprise-grade security to protect your communications</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -224,8 +224,8 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
                 <div className="w-11 h-11 bg-om-cream border border-om-tan rounded-lg flex items-center justify-center mb-4">
                   <Icon className="w-5 h-5 text-om-forest" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <h3 className="text-lg md:text-xl font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
+                <p className="text-om-mahogany text-base md:text-lg leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -235,10 +235,10 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* CTA */}
       <section className="py-20 px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-display font-semibold text-om-cream mb-5">
+          <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">
             Ready to Transform Your Email Workflow?
           </h2>
-          <p className="text-om-tan text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
+          <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
             Join professionals who have streamlined their communications with LoiReply
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
