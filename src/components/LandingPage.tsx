@@ -92,7 +92,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-om-forest-deep">{label}</div>
-                        <div className="text-sm text-om-brown">{sub}</div>
+                        <div className="text-base text-om-brown">{sub}</div>
                       </div>
                     </div>
                   ))}
@@ -130,7 +130,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   <Icon className={`w-6 h-6 ${ic}`} />
                 </div>
                 <h3 className="text-lg font-display font-semibold text-om-forest-deep mb-2">{title}</h3>
-                <p className="text-om-mahogany leading-relaxed text-[15px]" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                <p className="text-om-mahogany leading-relaxed text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
               </div>
             ))}
           </div>
@@ -164,7 +164,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   </div>
                   <div>
                     <h3 className="font-display font-semibold text-om-forest-deep mb-1">{title}</h3>
-                    <p className="text-om-mahogany text-[15px]" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
+                    <p className="text-om-mahogany text-base" style={{ fontFamily: "'EB Garamond', serif" }}>{body}</p>
                   </div>
                 </div>
               ))}
