@@ -75,7 +75,7 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
           ].map(({ heading, links }) => (
             <div key={heading}>
               <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-base">
                 {links.map(({ label, onClick, href }: any) => (
                   <li key={label}>
                     {href ? (
@@ -107,7 +107,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
         <div className="max-w-7xl mx-auto text-center mb-4">
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-4">Platform Overview</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Platform Overview</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Powerful Features for Modern Email Management
           </h1>
@@ -121,7 +121,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Automation</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Automation</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">AI-Powered Automation</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Let intelligent automation handle your repetitive email tasks</p>
           </div>
@@ -150,7 +150,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Relationships</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Relationships</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Client & Contact Management</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Build and maintain strong relationships with powerful CRM tools</p>
           </div>
@@ -179,7 +179,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Scheduling</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Scheduling</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Calendar & Scheduling</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Seamlessly integrate your email with calendar management</p>
           </div>
@@ -205,7 +205,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Protection</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Protection</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Security & Compliance</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Enterprise-grade security to protect your communications</p>
           </div>

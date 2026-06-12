@@ -38,7 +38,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
               <Rocket className="w-8 h-8 text-om-gold" />
             </div>
           </div>
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-4">Always Improving</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Always Improving</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Continuous Innovation, No Extra Cost
           </h1>
@@ -79,7 +79,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Included</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Included</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">What You Get with Every Update</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Continuous improvements across all aspects of the platform</p>
           </div>
@@ -108,7 +108,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Approach</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Approach</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Our Update Philosophy</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>How we approach product development and updates</p>
           </div>
@@ -137,7 +137,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Roadmap</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Roadmap</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">What's Coming Next</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>A glimpse at our upcoming features and improvements</p>
           </div>
@@ -165,7 +165,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* Guarantees */}
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3 text-center">Guarantees</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3 text-center">Guarantees</p>
           <h2 className="text-3xl font-display font-semibold text-om-forest-deep text-center mb-10">Update Guarantees</h2>
           <div className="space-y-4">
             {[
@@ -244,7 +244,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-base">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (

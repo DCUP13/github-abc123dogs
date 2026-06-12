@@ -38,7 +38,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
               <Heart className="w-8 h-8 text-om-gold" />
             </div>
           </div>
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-4">Our Story</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Our Story</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Transforming Communities,<br />One Email at a Time
           </h1>
@@ -52,7 +52,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-14 px-6 bg-om-forest-deep">
         <div className="max-w-4xl mx-auto">
           <div className="border border-om-forest rounded-xl p-10 text-center">
-            <p className="text-xs text-om-gold font-medium tracking-widest uppercase mb-4">Our Mantra</p>
+            <p className="text-sm text-om-gold font-medium tracking-widest uppercase mb-4">Our Mantra</p>
             <h2 className="text-3xl font-display font-semibold text-om-parchment mb-4">
               "No One Left Behind, No Email Unanswered"
             </h2>
@@ -67,7 +67,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Principles</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Principles</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Our Core Values</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>The principles that guide everything we do</p>
           </div>
@@ -96,7 +96,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Purpose</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Purpose</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Our Mission</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Why we do what we do</p>
           </div>
@@ -126,7 +126,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Impact</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Impact</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Why Prompt Responses Matter</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>The impact of timely communication</p>
           </div>
@@ -153,7 +153,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Promise</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Promise</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-3">Our Commitment to You</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>What you can expect from LoiReply</p>
           </div>
@@ -236,7 +236,7 @@ export function AboutPage({ onBackClick, onSignInClick, onCreateAccountClick }: 
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-base">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (

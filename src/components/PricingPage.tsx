@@ -33,7 +33,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-4">Investment</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Investment</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Simple, Transparent Pricing
           </h1>
@@ -61,7 +61,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   Perfect for solo professionals and consultants who want to automate their email workflow.
                 </p>
                 <div className="mb-6 p-4 bg-om-parchment border border-om-tan rounded-lg">
-                  <p className="text-xs text-om-brown uppercase tracking-widest mb-3">Starting at</p>
+                  <p className="text-sm text-om-brown uppercase tracking-widest mb-3">Starting at</p>
                   <div className="mb-2">
                     <span className="text-3xl font-display font-semibold text-om-forest-deep">$5,000</span>
                     <span className="text-base text-om-brown ml-2">initial investment</span>
@@ -100,7 +100,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                       <Check className="w-4 h-4 text-om-forest mt-0.5 flex-shrink-0" />
                       <div>
                         <div className="font-medium text-om-forest-deep text-base">{title}</div>
-                        <div className="text-sm text-om-brown">{sub}</div>
+                        <div className="text-base text-om-brown">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -125,9 +125,9 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   For agencies and teams that need advanced features, multiple domains, and dedicated support.
                 </p>
                 <div className="mb-6 p-4 bg-om-forest border border-om-forest-dark rounded-lg">
-                  <p className="text-xs text-om-tan uppercase tracking-widest mb-3">Custom Pricing</p>
+                  <p className="text-sm text-om-tan uppercase tracking-widest mb-3">Custom Pricing</p>
                   <div className="text-3xl font-display font-semibold text-om-gold mb-1">Contact Sales</div>
-                  <div className="text-xs text-om-tan">Tailored to your team's needs</div>
+                  <div className="text-base text-om-tan">Tailored to your team's needs</div>
                 </div>
                 <button
                   onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Team Plan Inquiry'}
@@ -159,7 +159,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                       <Icon className={`w-4 h-4 ${ic} mt-0.5 flex-shrink-0`} />
                       <div>
                         <div className="font-medium text-om-parchment text-base">{title}</div>
-                        <div className="text-sm text-om-tan">{sub}</div>
+                        <div className="text-base text-om-tan">{sub}</div>
                       </div>
                     </li>
                   ))}
@@ -173,7 +173,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
       {/* FAQ */}
       <section className="py-20 px-6 bg-om-parchment">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3 text-center">FAQ</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3 text-center">FAQ</p>
           <h2 className="text-3xl font-display font-semibold text-om-forest-deep text-center mb-12">
             Frequently Asked Questions
           </h2>
@@ -253,7 +253,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-base">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (

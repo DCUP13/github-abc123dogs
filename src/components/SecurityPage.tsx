@@ -38,7 +38,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
               <Shield className="w-8 h-8 text-om-forest" />
             </div>
           </div>
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-4">Trust & Safety</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-4">Trust & Safety</p>
           <h1 className="text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
             Security First, Always
           </h1>
@@ -52,7 +52,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Encryption</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Encryption</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Data Encryption & Protection</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Multiple layers of encryption to keep your data secure</p>
           </div>
@@ -81,7 +81,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Access</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Access</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Access Control & Authentication</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Advanced authentication to protect your account</p>
           </div>
@@ -110,7 +110,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       <section className="py-16 px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-2">Compliance</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-2">Compliance</p>
             <h2 className="text-3xl font-display font-semibold text-om-forest-deep mb-2">Compliance & Privacy</h2>
             <p className="text-om-mahogany" style={{ fontFamily: "'EB Garamond', serif" }}>Meeting the highest standards for data protection</p>
           </div>
@@ -138,7 +138,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
       {/* Commitments */}
       <section className="py-16 px-6 bg-om-cream">
         <div className="max-w-4xl mx-auto">
-          <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3 text-center">Commitments</p>
+          <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3 text-center">Commitments</p>
           <h2 className="text-3xl font-display font-semibold text-om-forest-deep text-center mb-10">
             Our Security Commitments
           </h2>
@@ -219,7 +219,7 @@ export function SecurityPage({ onBackClick, onSignInClick, onCreateAccountClick 
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-base">
                   {links.map(({ label, event, href }: any) => (
                     <li key={label}>
                       {href ? (

@@ -79,7 +79,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
 
             <div className="relative">
               <div className="bg-om-parchment border border-om-tan rounded-xl p-8 shadow-lg">
-                <p className="text-xs font-medium text-om-brown uppercase tracking-widest mb-5">Platform Preview</p>
+                <p className="text-sm font-medium text-om-brown uppercase tracking-widest mb-5">Platform Preview</p>
                 <div className="space-y-4">
                   {[
                     { icon: Mail,     label: 'Automated Responses', sub: 'AI handles 85% of inquiries',    bg: 'bg-om-cream',     ic: 'text-om-gold' },
@@ -107,7 +107,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
       <section className="py-20 bg-om-parchment px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Capabilities</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Capabilities</p>
             <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-4">
               Everything You Need to Scale
             </h2>
@@ -141,7 +141,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
       <section className="py-20 px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-om-gold text-xs font-medium tracking-widest uppercase mb-3">Results</p>
+            <p className="text-om-gold text-sm font-medium tracking-widest uppercase mb-3">Results</p>
             <h2 className="text-4xl font-display font-semibold text-om-forest-deep mb-4">
               Transform Your Business Results
             </h2>
@@ -263,7 +263,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <h4 className="font-display text-om-gold text-sm tracking-widest uppercase mb-4">{heading}</h4>
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-2 text-base">
                   {links.map(({ label, onClick, href }: any) => (
                     <li key={label}>
                       {href ? (
