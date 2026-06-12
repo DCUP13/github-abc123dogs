@@ -25,7 +25,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <Mail className="w-7 h-7 text-om-gold" />
             <span className="text-xl font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-base text-om-tan">
+          <nav className="hidden md:flex items-center gap-8 text-xl text-om-tan">
             <button onClick={onFeaturesClick} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={onPricingClick}  className="hover:text-om-parchment transition-colors">Pricing</button>
             <button onClick={onAboutClick}    className="hover:text-om-parchment transition-colors">About</button>
@@ -34,13 +34,13 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           <div className="flex items-center gap-3">
             <button
               onClick={onSignInClick}
-              className="px-8 py-3 text-om-tan hover:text-om-parchment text-4xl font-medium transition-colors"
+              className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl font-medium transition-colors"
             >
               Sign In
             </button>
             <button
               onClick={onCreateAccountClick}
-              className="px-8 py-3 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-4xl font-medium transition-colors rounded"
+              className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl font-medium transition-colors rounded"
             >
               Get Started
             </button>
