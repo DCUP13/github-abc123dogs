@@ -1,5 +1,5 @@
-import React from 'react';
-import { Mail, ArrowLeft, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarChart3, CheckCircle, MessageSquare, Target, Globe, Sparkles, Brain, FileText, Bell, Lock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, ArrowLeft, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarChart3, CheckCircle, MessageSquare, Target, Globe, Sparkles, Brain, FileText, Bell, Lock, Menu, X } from 'lucide-react';
 
 interface FeaturesPageProps {
   onBackClick: () => void;
@@ -7,8 +7,9 @@ interface FeaturesPageProps {
   onCreateAccountClick: () => void;
 }
 
-const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAccountClick: () => void) => {
-  const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
+function OmHeader({ onBackClick, onSignInClick, onCreateAccountClick }: { onBackClick: () => void; onSignInClick: () => void; onCreateAccountClick: () => void }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const nav = (event: string) => () => { window.dispatchEvent(new CustomEvent(event)); setMobileMenuOpen(false); };
   return (
   <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
     <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -20,22 +21,41 @@ const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAc
       </div>
       <nav className="hidden md:flex items-center gap-8 text-xl md:text-2xl text-om-tan">
         <button onClick={nav('navigate-to-features')} className="hover:text-om-parchment transition-colors">Features</button>
-        <button onClick={nav('navigate-to-pricing')} className="hover:text-om-parchment transition-colors">Pricing</button>
-        <button onClick={nav('navigate-to-about')} className="hover:text-om-parchment transition-colors">About</button>
+        <button onClick={nav('navigate-to-pricing')}  className="hover:text-om-parchment transition-colors">Pricing</button>
+        <button onClick={nav('navigate-to-about')}    className="hover:text-om-parchment transition-colors">About</button>
         <button onClick={nav('navigate-to-security')} className="hover:text-om-parchment transition-colors">Security</button>
       </nav>
       <div className="flex items-center gap-3">
-        <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors">
+        <button onClick={onSignInClick} className="hidden md:block px-6 py-2.5 text-om-tan hover:text-om-parchment text-xl md:text-2xl font-medium transition-colors">
           Sign In
         </button>
-        <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded">
+        <button onClick={onCreateAccountClick} className="hidden md:block px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl md:text-2xl font-medium transition-colors rounded">
           Get Started
+        </button>
+        <button
+          onClick={() => setMobileMenuOpen(o => !o)}
+          className="md:hidden p-2 text-om-tan hover:text-om-parchment transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
     </div>
+    {mobileMenuOpen && (
+      <div className="md:hidden bg-om-forest-deep border-t border-om-forest px-6 py-4 flex flex-col gap-4">
+        <button onClick={nav('navigate-to-features')} className="text-left text-xl text-om-tan hover:text-om-parchment transition-colors py-1">Features</button>
+        <button onClick={nav('navigate-to-pricing')}  className="text-left text-xl text-om-tan hover:text-om-parchment transition-colors py-1">Pricing</button>
+        <button onClick={nav('navigate-to-about')}    className="text-left text-xl text-om-tan hover:text-om-parchment transition-colors py-1">About</button>
+        <button onClick={nav('navigate-to-security')} className="text-left text-xl text-om-tan hover:text-om-parchment transition-colors py-1">Security</button>
+        <div className="border-t border-om-forest pt-4 flex flex-col gap-3">
+          <button onClick={() => { onSignInClick(); setMobileMenuOpen(false); }} className="text-left text-xl text-om-tan hover:text-om-parchment font-medium transition-colors">Sign In</button>
+          <button onClick={() => { onCreateAccountClick(); setMobileMenuOpen(false); }} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-xl font-medium transition-colors rounded text-center">Get Started</button>
+        </div>
+      </div>
+    )}
   </header>
   );
-};
+}
 
 const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCookieClick?: () => void) => {
   const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
@@ -107,7 +127,7 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
 export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick }: FeaturesPageProps) {
   return (
     <div className="min-h-screen bg-om-cream font-body">
-      {omHeader(onBackClick, onSignInClick, onCreateAccountClick)}
+      <OmHeader onBackClick={onBackClick} onSignInClick={onSignInClick} onCreateAccountClick={onCreateAccountClick} />
 
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
