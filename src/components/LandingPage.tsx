@@ -34,13 +34,13 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           <div className="flex items-center gap-3">
             <button
               onClick={onSignInClick}
-              className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-lg font-medium transition-colors"
+              className="px-8 py-3 text-om-tan hover:text-om-parchment text-4xl font-medium transition-colors"
             >
               Sign In
             </button>
             <button
               onClick={onCreateAccountClick}
-              className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-lg font-medium transition-colors rounded"
+              className="px-8 py-3 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-4xl font-medium transition-colors rounded"
             >
               Get Started
             </button>

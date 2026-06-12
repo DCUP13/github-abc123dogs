@@ -25,10 +25,10 @@ const omHeader = (onBackClick: () => void, onSignInClick: () => void, onCreateAc
         <button onClick={nav('navigate-to-security')} className="hover:text-om-parchment transition-colors">Security</button>
       </nav>
       <div className="flex items-center gap-3">
-        <button onClick={onSignInClick} className="px-6 py-2.5 text-om-tan hover:text-om-parchment text-lg font-medium transition-colors">
+        <button onClick={onSignInClick} className="px-8 py-3 text-om-tan hover:text-om-parchment text-4xl font-medium transition-colors">
           Sign In
         </button>
-        <button onClick={onCreateAccountClick} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-lg font-medium transition-colors rounded">
+        <button onClick={onCreateAccountClick} className="px-8 py-3 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-4xl font-medium transition-colors rounded">
           Get Started
         </button>
       </div>
