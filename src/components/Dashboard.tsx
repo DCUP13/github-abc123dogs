@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, FileText, Send, Users, Layout, Globe, UserPlus } from 'lucide-react';
+import { Mail, FileText, Send, Users, LayoutGrid as Layout, Globe, UserPlus } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { supabase } from '../lib/supabase';
 
@@ -113,9 +113,9 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
   ];
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-black dark:text-white mb-8">Dashboard Overview</h1>
+        <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-black dark:text-white mb-8">Dashboard Overview</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats_cards.map((card, index) => {
@@ -133,7 +133,7 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       {card.title}
                     </h3>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
+                    <p className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                       {card.value}
                     </p>
                   </div>

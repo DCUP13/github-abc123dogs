@@ -213,7 +213,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="text-center py-12">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading team...</p>
@@ -223,7 +223,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   }
 
   return (
-    <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         {organization && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
@@ -244,7 +244,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                   </div>
                 )}
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                     {organization.name}
                   </h1>
                   {organization.description && (
@@ -313,7 +313,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         )}
 
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Team Members</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Team Members</h2>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">

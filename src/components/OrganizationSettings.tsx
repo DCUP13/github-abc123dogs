@@ -142,7 +142,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <div className="bg-white rounded-lg p-4 md:p-8 max-w-2xl w-full mx-4">
           <div className="text-center">Loading...</div>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
   if (error && !organization) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+        <div className="bg-white rounded-lg p-4 md:p-8 max-w-2xl w-full mx-4">
           <div className="text-red-600 mb-4">{error}</div>
           <button
             onClick={onClose}
@@ -167,9 +167,9 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 my-8">
+      <div className="bg-white rounded-lg p-4 md:p-8 max-w-2xl w-full mx-4 my-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2">
             <Building2 className="w-6 h-6" />
             Organization Settings
           </h2>

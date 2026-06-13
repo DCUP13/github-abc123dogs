@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, Edit2 } from 'lucide-react';
+import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, CreditCard as Edit2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Toggle } from './Toggle';
 
@@ -603,7 +603,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <Plug className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Integrations</h1>
+              <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Integrations</h1>
             </div>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
@@ -638,7 +638,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                   <div key={integration.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl">{template?.icon || '🔌'}</span>
+                        <span className="text-xl md:text-2xl md:text-3xl">{template?.icon || '🔌'}</span>
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-white">{integration.integration_name}</h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">{template?.description}</p>
@@ -788,8 +788,8 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-3xl">{selectedTemplate.icon}</span>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-xl md:text-2xl md:text-3xl">{selectedTemplate.icon}</span>
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     {editingIntegration ? `Edit ${selectedTemplate.name}` : `Connect ${selectedTemplate.name}`}
                   </h2>
                 </div>
@@ -871,7 +871,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     {selectedEvent ? 'Edit Event' : 'Add Event'}
                   </h2>
                 </div>

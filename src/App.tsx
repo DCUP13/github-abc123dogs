@@ -27,7 +27,7 @@ import { TeamManagement } from './components/TeamManagement';
 import { TeamView } from './components/TeamView';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
 type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
@@ -48,6 +48,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const updateView = (newView: View) => {
     setPreviousView(view);
@@ -442,22 +443,36 @@ export default function App() {
             )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
               <div className="flex min-h-screen bg-white dark:bg-gray-900">
-                <div className="fixed inset-y-0 left-0 w-64">
-                  <Sidebar
-                    onSignOut={handleSignOut}
-                    onHomeClick={() => updateView('dashboard')}
-                    onSettingsClick={() => updateView('settings')}
-                    onEmailsClick={() => updateView('emails')}
-                    onAddressesClick={() => updateView('addresses')}
-                    onPromptsClick={() => updateView('prompts')}
-                    onCRMClick={() => updateView('crm')}
-                    onCalendarClick={() => updateView('calendar')}
-                    onSupportClick={() => updateView('support')}
-                    onIntegrationsClick={() => updateView('integrations')}
-                    onTeamClick={() => updateView('team-view')}
-                  />
-                </div>
-                <div className="flex-1 ml-64">
+                <Sidebar
+                  onSignOut={handleSignOut}
+                  onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}
+                  onSettingsClick={() => { updateView('settings'); setMobileNavOpen(false); }}
+                  onEmailsClick={() => { updateView('emails'); setMobileNavOpen(false); }}
+                  onAddressesClick={() => { updateView('addresses'); setMobileNavOpen(false); }}
+                  onPromptsClick={() => { updateView('prompts'); setMobileNavOpen(false); }}
+                  onCRMClick={() => { updateView('crm'); setMobileNavOpen(false); }}
+                  onCalendarClick={() => { updateView('calendar'); setMobileNavOpen(false); }}
+                  onSupportClick={() => { updateView('support'); setMobileNavOpen(false); }}
+                  onIntegrationsClick={() => { updateView('integrations'); setMobileNavOpen(false); }}
+                  onTeamClick={() => { updateView('team-view'); setMobileNavOpen(false); }}
+                  isOpen={mobileNavOpen}
+                  onClose={() => setMobileNavOpen(false)}
+                />
+                <div className="flex-1 md:ml-64 min-w-0">
+                  {/* Mobile top bar */}
+                  <div className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-indigo-800 dark:bg-gray-800 text-white shadow">
+                    <button
+                      onClick={() => setMobileNavOpen(true)}
+                      className="p-1.5 rounded hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
+                      aria-label="Open navigation"
+                    >
+                      <Menu className="w-5 h-5" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-indigo-300 dark:text-gray-400" />
+                      <span className="font-semibold text-sm tracking-wide">LoiReply</span>
+                    </div>
+                  </div>
                   {view === 'dashboard' && (
                     <Dashboard onSignOut={handleSignOut} currentView={view} />
                   )}
@@ -482,7 +497,7 @@ export default function App() {
                     <CRM onSignOut={handleSignOut} currentView={view} />
                   )}
                   {view === 'calendar' && (
-                    <div className="p-8">
+                    <div className="p-4 md:p-8">
                       <Calendar />
                     </div>
                   )}

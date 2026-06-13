@@ -75,14 +75,14 @@ export function Support({ onSignOut, currentView }: SupportProps) {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support</h1>
+            <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Support</h1>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
             Need help? Send us a message and we'll get back to you as soon as possible.
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-8">
           {submitStatus === 'success' && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Plus, X, MapPin, Mail, FileText, Save, Clock, Server, AlertCircle, Calendar, Phone, User, Building, DollarSign } from 'lucide-react';
+import { LayoutGrid as Layout, Plus, X, MapPin, Mail, FileText, Save, Clock, Server, AlertCircle, Calendar, Phone, User, Building, DollarSign } from 'lucide-react';
 import type { Template } from '../features/templates/types';
 import type { EmailEntry } from './Emails';
 import { TemplatesContext } from '../App';
@@ -513,21 +513,21 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-white dark:bg-gray-900 flex items-center justify-center min-h-screen">
+      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 flex items-center justify-center min-h-screen">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900">
       <div className="max-w-4xl mx-auto">
         {!currentCampaign ? (
           <>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Layout className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campaigns</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Campaigns</h1>
               </div>
               <button
                 onClick={handleCreateCampaign}
@@ -658,7 +658,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                   type="text"
                   value={currentCampaign.name}
                   onChange={(e) => handleUpdateCampaign({ name: e.target.value })}
-                  className="text-2xl font-bold bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white"
+                  className="text-xl md:text-2xl font-bold bg-transparent border-none focus:ring-0 text-gray-900 dark:text-white"
                   placeholder="Campaign Name"
                 />
               </div>
@@ -698,7 +698,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                         {currentCampaign.city}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                             State
@@ -947,7 +947,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Sender City

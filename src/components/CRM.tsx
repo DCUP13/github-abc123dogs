@@ -477,7 +477,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -486,14 +486,14 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const filteredClients = getFilteredClients();
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {!selectedClient ? (
           <div>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">CRM</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">CRM</h1>
               </div>
               <button
                 onClick={() => setShowClientForm(true)}
@@ -654,7 +654,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <X className="w-5 h-5" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     {selectedClient.first_name} {selectedClient.last_name}
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
@@ -865,7 +865,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                       <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
                         <div className="flex-1">
@@ -927,7 +927,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         {/* Client Form Modal */}
         {showClientForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {editingClient ? 'Edit Client' : 'Add New Client'}
@@ -941,7 +941,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </div>
 
               <form onSubmit={handleSaveClient} className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       First Name *
@@ -968,7 +968,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Email
@@ -1005,7 +1005,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       City
@@ -1041,7 +1041,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Client Type
@@ -1072,7 +1072,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Budget Min
@@ -1209,7 +1209,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         {/* Interaction Form Modal */}
         {showInteractionForm && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-4 sm:mx-auto">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Add Interaction

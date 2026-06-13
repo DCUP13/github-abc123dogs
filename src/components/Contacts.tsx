@@ -153,12 +153,12 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
   const friends = filteredContacts.filter(contact => contact.status === 'friend');
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contacts</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Contacts</h1>
           </div>
           <button
             onClick={() => setShowInviteModal(true)}
@@ -325,7 +325,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
 
       {showInviteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md mx-4 sm:mx-auto">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Invite Friends
             </h2>

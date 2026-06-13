@@ -198,16 +198,16 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+      <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
         
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">

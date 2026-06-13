@@ -737,21 +737,21 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {!selectedEmail ? (
           <>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Emails</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Emails</h1>
               </div>
               <div className="flex gap-2">
                 <button

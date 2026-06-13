@@ -382,19 +382,19 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Prompts</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Prompts</h1>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -520,7 +520,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
               <div className="flex items-center justify-between p-6 pb-0">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
@@ -623,7 +623,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   {/* Prompt Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prompt Type</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, prompt_type: 'one_step' }))}
@@ -778,7 +778,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
                                 {/* Property fields */}
                                 {!isCollapsed && (
-                                  <div className="px-4 pb-4 pt-3 grid grid-cols-2 gap-3">
+                                  <div className="px-4 pb-4 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="col-span-2">
                                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                                       <input
