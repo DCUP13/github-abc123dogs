@@ -484,7 +484,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         </span>
                       )}
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleDuplicatePrompt(prompt)} disabled={duplicatingId === prompt.id} className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" title="Duplicate prompt">
                         {duplicatingId === prompt.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                       </button>
