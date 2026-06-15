@@ -232,17 +232,18 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-6xl mx-auto p-4 md:p-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Team Management</h1>
+        <div className="flex items-center justify-between mb-8 gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate">Team Management</h1>
           </div>
           <button
             onClick={() => setShowInviteDialog(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Invite Member
+            <span className="hidden xs:inline sm:inline">Invite Member</span>
+            <span className="xs:hidden sm:hidden">Invite</span>
           </button>
         </div>
 
@@ -271,21 +272,21 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                 members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    className="flex items-start sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg gap-3"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm sm:text-base">
                           {member.name?.charAt(0).toUpperCase() || '?'}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{member.name || 'Unknown'}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">{member.name || 'Unknown'}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{member.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                         member.role === 'owner'
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-400'
                           : member.role === 'manager'
@@ -297,7 +298,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => handleRemoveMember(member.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -318,30 +319,30 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
                 invitations.map((invitation) => (
                   <div
                     key={invitation.id}
-                    className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
+                    className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{invitation.email}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Invited {new Date(invitation.created_at).toLocaleDateString()}
-                        </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white break-all text-sm sm:text-base">{invitation.email}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Invited {new Date(invitation.created_at).toLocaleDateString()}
+                          </p>
+                          {invitation.role && (
+                            <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              invitation.role === 'manager'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
+                            }`}>
+                              {invitation.role}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {invitation.role && (
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          invitation.role === 'manager'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'
-                        }`}>
-                          {invitation.role}
-                        </span>
-                      )}
                       <button
                         onClick={() => handleDeleteInvitation(invitation.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
