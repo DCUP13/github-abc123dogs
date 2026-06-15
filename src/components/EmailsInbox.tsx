@@ -753,10 +753,10 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                 <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
                 <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">Emails</h1>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <button
                   onClick={() => setShowComposeDialog(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">New Email</span>
@@ -764,7 +764,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                 <button
                   onClick={handleRefresh}
                   disabled={isProcessingEmails}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span className="hidden sm:inline">Refresh</span>
@@ -773,7 +773,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                   <button
                     onClick={handleProcessOutbox}
                     disabled={isProcessingEmails}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 md:px-4 md:py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white ${
                       isProcessingEmails
                         ? 'bg-indigo-400 cursor-wait'
                         : 'bg-indigo-600 hover:bg-indigo-700'
@@ -949,44 +949,29 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          {/* From + To row — stacks to two lines on small screens */}
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[140px] sm:max-w-none">
+                          {/* From + To + badges — flex-wrap keeps them on one line on desktop,
+                              wraps gracefully on narrow screens */}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
+                            <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+                              <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[130px] sm:max-w-[220px] lg:max-w-none">
                                 {activeTab === 'inbox' ? (email as Email).sender :
                                  activeTab === 'outbox' ? (email as OutboxEmail).from_email :
                                  activeTab === 'sent' ? (email as SentEmail).from_email :
                                  (email as DraftEmail).sender}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 min-w-0">
-                              <span className="flex-shrink-0">→</span>
-                              <span className="truncate max-w-[120px] sm:max-w-none">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                              <span>to</span>
+                              <span className="truncate max-w-[110px] sm:max-w-[180px] lg:max-w-none">
                                 {activeTab === 'inbox' ? formatReceiverList((email as Email).receiver) :
                                  activeTab === 'outbox' ? (email as OutboxEmail).to_email :
                                  activeTab === 'sent' ? (email as SentEmail).to_email :
                                  formatReceiverList((email as DraftEmail).receiver)}
                               </span>
                             </div>
-                          </div>
-
-                          {/* Subject */}
-                          <div className="mb-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {email.subject || '(No Subject)'}
-                            </span>
-                          </div>
-
-                          {/* Preview text */}
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {truncateText(email.body, 100)}
-                          </div>
-
-                          {/* Badges row — always visible below preview, not pushed off-screen */}
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                             {activeTab === 'outbox' && (
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                 (email as OutboxEmail).status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
                                 (email as OutboxEmail).status === 'sending' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
                                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
@@ -995,16 +980,16 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                               </span>
                             )}
                             {(activeTab === 'inbox' || activeTab === 'drafts') && hasAttachments((email as Email | DraftEmail).attachments) && (
-                              <Paperclip className="w-3.5 h-3.5 text-gray-400" />
+                              <Paperclip className="w-4 h-4 text-gray-400" />
                             )}
                             {activeTab === 'inbox' && (email as Email).user_reply_count !== undefined && (email as Email).user_reply_count > 0 && (
-                              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                                 <Reply className="w-3 h-3" />
                                 <span className="text-xs font-medium">{(email as Email).user_reply_count}</span>
                               </div>
                             )}
                             {activeTab === 'sent' && (email as SentEmail).reply_to_id && (
-                              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
                                 <Reply className="w-3 h-3" />
                                 <span className="text-xs font-medium">
                                   Reply · {(email as SentEmail).thread_position ?? 1}
@@ -1012,16 +997,22 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                               </div>
                             )}
                             {activeTab === 'sent' && !(email as SentEmail).reply_to_id && (email as SentEmail).reply_count !== undefined && (email as SentEmail).reply_count! > 0 && (
-                              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                                 <MessageSquare className="w-3 h-3" />
                                 <span className="text-xs font-medium">{(email as SentEmail).reply_count}</span>
                               </div>
                             )}
                           </div>
+                          <div className="mb-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {email.subject || '(No Subject)'}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {truncateText(email.body, 100)}
+                          </div>
                         </div>
-
-                        {/* Timestamp + Delete — fixed width, never overflow */}
-                        <div className="flex flex-col items-end gap-1.5 ml-3 flex-shrink-0">
+                        <div className="flex flex-col items-end gap-1 ml-3 flex-shrink-0">
                           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
                             <Clock className="w-3 h-3" />
                             {formatDate(
