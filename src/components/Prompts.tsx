@@ -58,6 +58,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [sortOrder, setSortOrder] = useState<'updated_desc' | 'updated_asc' | 'created_desc' | 'created_asc' | 'title_asc' | 'title_desc'>('updated_desc');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [collapsedProperties, setCollapsedProperties] = useState<Set<number>>(new Set());
 
@@ -249,8 +250,14 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     setShowCreateModal(true);
   };
 
-  const handleDeletePrompt = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this prompt?')) return;
+  const handleDeletePrompt = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     try {
       const { error } = await supabase.from('prompts').delete().eq('id', id);
       if (error) throw error;
@@ -517,6 +524,36 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             ))
           )}
         </div>
+
+        {confirmDeleteId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Delete prompt</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">This action cannot be undone.</p>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
