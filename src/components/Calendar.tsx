@@ -252,35 +252,50 @@ export function Calendar() {
       {/* Mobile: stacked rows. Desktop: original two-group layout */}
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
 
-        {/* Row 1 on mobile: title + Today + Sync */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
-          <button
-            onClick={navigateToday}
-            className="px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            Today
-          </button>
-          <button
-            onClick={handleGoogleSync}
-            disabled={isSyncing}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs sm:text-sm font-medium rounded-md ${
-              isGoogleConnected
-                ? 'text-white bg-green-600 hover:bg-green-700'
-                : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-            } disabled:opacity-50`}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="hidden xs:inline sm:inline">
-              {isSyncing ? 'Syncing...' : isGoogleConnected ? 'Sync Google' : 'Connect Google'}
-            </span>
-            <span className="xs:hidden sm:hidden">
-              {isSyncing ? '...' : isGoogleConnected ? 'Sync' : 'Connect'}
-            </span>
-          </button>
+        {/* Row 1 on mobile: title + Today on left, Sync + New on right */}
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
+            <button
+              onClick={navigateToday}
+              className="px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Today
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleGoogleSync}
+              disabled={isSyncing}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs sm:text-sm font-medium rounded-md ${
+                isGoogleConnected
+                  ? 'text-white bg-green-600 hover:bg-green-700'
+                  : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+              } disabled:opacity-50`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="sm:inline hidden">
+                {isSyncing ? 'Syncing...' : isGoogleConnected ? 'Sync Google' : 'Connect Google'}
+              </span>
+              <span className="sm:hidden">
+                {isSyncing ? '...' : isGoogleConnected ? 'Sync' : 'Connect'}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedDate(new Date());
+                setShowEventDialog(true);
+              }}
+              className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs sm:text-sm font-medium"
+            >
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">New Event</span>
+              <span className="sm:hidden">New</span>
+            </button>
+          </div>
         </div>
 
-        {/* Row 2 on mobile: nav arrows + date label + view tabs + New Event */}
+        {/* Row 2 on mobile: nav arrows + date label + view tabs */}
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <button
@@ -315,18 +330,6 @@ export function Calendar() {
               </button>
             ))}
           </div>
-
-          <button
-            onClick={() => {
-              setSelectedDate(new Date());
-              setShowEventDialog(true);
-            }}
-            className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs sm:text-sm font-medium"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline">New Event</span>
-            <span className="sm:hidden">New</span>
-          </button>
         </div>
       </div>
 
