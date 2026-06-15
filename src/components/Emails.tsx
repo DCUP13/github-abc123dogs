@@ -110,15 +110,15 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
                   isLocked ? 'border-2 border-yellow-400 dark:border-yellow-500' : ''
                 }`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
                     {email.type === 'ses' ? (
-                      <Server className="w-5 h-5 text-orange-500" />
+                      <Server className="w-5 h-5 text-orange-500 flex-shrink-0" />
                     ) : (
-                      <Mail className="w-5 h-5 text-red-500" />
+                      <Mail className="w-5 h-5 text-red-500 flex-shrink-0" />
                     )}
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           {email.address}
                         </h3>
@@ -134,26 +134,21 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right space-y-1">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleResetSentEmails(email)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                        title="Reset sent emails count"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        Reset Count
-                      </button>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div className="flex flex-col gap-1 sm:text-right sm:items-end">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {remaining.toLocaleString()} emails remaining
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {sentEmails.toLocaleString()} sent today
+                      {sentEmails.toLocaleString()} sent today &middot; {limit.toLocaleString()} daily limit
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      of {limit.toLocaleString()} daily limit
-                    </p>
+                    <button
+                      onClick={() => handleResetSentEmails(email)}
+                      className="inline-flex items-center gap-1.5 self-start sm:self-end mt-1 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-700 rounded-lg transition-colors"
+                      title="Reset sent emails count"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Reset Count
+                    </button>
                   </div>
                 </div>
 
