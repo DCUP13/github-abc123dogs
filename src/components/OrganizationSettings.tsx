@@ -171,7 +171,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
   return (
     /* Overlay — on mobile: full screen sheet; on sm+: centered modal */
     <div className="fixed inset-0 bg-black/50 z-50 flex sm:items-center sm:justify-center sm:p-4">
-      <div className={panelClass} style={{ height: '100%' }}>
+      <div className={panelClass + ' h-full sm:h-auto'}>
         {/* Sticky header */}
         <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 pb-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 sm:static sm:border-none sm:pb-0">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
