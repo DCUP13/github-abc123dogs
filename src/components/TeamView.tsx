@@ -226,54 +226,54 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-6xl mx-auto">
         {organization && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-4 flex-1">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                 {organization.logo_url ? (
                   <img
                     src={organization.logo_url}
                     alt={`${organization.name} logo`}
-                    className="w-16 h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-600"
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-600 flex-shrink-0"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
                   </div>
                 )}
-                <div className="flex-1">
-                  <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2 break-words">
                     {organization.name}
                   </h1>
                   {organization.description && (
-                    <p className="text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-2 sm:mb-3">
                       {organization.description}
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     {organization.industry && (
                       <div className="flex items-center gap-1">
-                        <Briefcase className="w-4 h-4" />
+                        <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span>{organization.industry}</span>
                       </div>
                     )}
                     {organization.company_size && (
                       <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
+                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span>{organization.company_size}</span>
                       </div>
                     )}
                     {organization.location && (
                       <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
+                        <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span>{organization.location}</span>
                       </div>
                     )}
                     {organization.website && (
                       <div className="flex items-center gap-1">
-                        <Globe className="w-4 h-4" />
+                        <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <a
                           href={organization.website}
                           target="_blank"
@@ -287,27 +287,25 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {(userRole === 'owner' || userRole === 'manager') && (
-                  <>
-                    <button
-                      onClick={() => setShowSettingsDialog(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
-                      title="Organization Settings"
-                    >
-                      <Settings className="w-5 h-5" />
-                      Settings
-                    </button>
-                    <button
-                      onClick={() => setShowInviteDialog(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      Add Member
-                    </button>
-                  </>
-                )}
-              </div>
+              {(userRole === 'owner' || userRole === 'manager') && (
+                <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  <button
+                    onClick={() => setShowSettingsDialog(true)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm font-medium"
+                    title="Organization Settings"
+                  >
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => setShowInviteDialog(true)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                    Add Member
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -428,29 +426,26 @@ export function TeamView({ onSignOut }: TeamViewProps) {
                   key={invitation.id}
                   className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-white">{invitation.email}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Invited {new Date(invitation.created_at).toLocaleDateString()} •
-                          Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <Mail className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base break-all">{invitation.email}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                          Invited {new Date(invitation.created_at).toLocaleDateString()} · Expires {new Date(invitation.expires_at).toLocaleDateString()}
                         </p>
+                        <span className="inline-block mt-2 px-2.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">
+                          {invitation.role || 'member'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400 rounded-full text-xs font-medium">
-                        {invitation.role || 'member'}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteInvitation(invitation.id)}
-                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete invitation"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeleteInvitation(invitation.id)}
+                      className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
+                      title="Delete invitation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
