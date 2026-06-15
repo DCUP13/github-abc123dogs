@@ -564,26 +564,28 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       <div
                         key={client.id}
                         onClick={() => setSelectedClient(client)}
-                        className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 mb-2">
+                              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                                 {client.first_name} {client.last_name}
                               </h3>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeInfo.color}`}>
-                                {typeInfo.label}
-                              </span>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.color}`}>
-                                {statusInfo.label}
-                              </span>
-                              {grade && (
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${getGradeColor(grade.grade_letter)}`}>
-                                  <Star className="w-3 h-3" />
-                                  {grade.grade_letter} ({grade.overall_score})
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1 sm:mt-0">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeInfo.color}`}>
+                                  {typeInfo.label}
                                 </span>
-                              )}
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusInfo.color}`}>
+                                  {statusInfo.label}
+                                </span>
+                                {grade && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full ${getGradeColor(grade.grade_letter)}`}>
+                                    <Star className="w-3 h-3" />
+                                    {grade.grade_letter} <span className="font-normal opacity-75">({grade.overall_score})</span>
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
