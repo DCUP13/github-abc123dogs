@@ -235,7 +235,8 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
     return (
       <div className="rich-text-editor">
-        <div className="toolbar flex items-center gap-1 p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="toolbar flex items-center gap-1 p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 flex-shrink-0">
           <select
             value={activeStyles.fontFamily}
             onChange={(e) => handleFontFamily(e.target.value)}
@@ -379,6 +380,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
           >
             <Type className="w-4 h-4" />
           </button>
+          </div>
         </div>
 
         <div

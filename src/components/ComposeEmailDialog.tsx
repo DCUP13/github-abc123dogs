@@ -269,8 +269,8 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-      <div className="w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+      <div className="w-full max-w-5xl my-2 sm:my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 1rem)' }}>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -288,7 +288,7 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-1 flex flex-col m-4">
               {/* Header Fields */}
               <div className="p-4 space-y-4 flex-shrink-0 bg-gray-50 dark:bg-gray-700/30">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* From Field */}
                   <div>
                     <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -321,7 +321,7 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
                         id="fromEmail"
                         value={fromEmail}
                         onChange={(e) => handleFromEmailChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white truncate"
                         required
                       >
                         <option value="">Select sender email</option>
@@ -379,7 +379,7 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
                         onKeyPress={handleToEmailKeyPress}
                         onBlur={handleToEmailBlur}
                         placeholder={toEmails.length === 0 ? "Enter email addresses..." : ""}
-                        className="flex-1 min-w-[200px] outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        className="flex-1 min-w-0 w-full outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
