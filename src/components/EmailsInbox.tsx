@@ -1035,16 +1035,17 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
           </>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              {/* Top bar: Back on left, actions on right — stacks on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <button
                   onClick={() => setSelectedEmail(null)}
-                  className="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  className="inline-flex items-center self-start text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to {activeTab}
                 </button>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2">
                   {activeTab === 'inbox' && (
                     <>
                       <button
@@ -1052,9 +1053,9 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           setIsReplyAll(false);
                           setShowReplyDialog(true);
                         }}
-                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
                       >
-                        <Reply className="w-4 h-4 mr-2" />
+                        <Reply className="w-4 h-4 mr-1.5" />
                         Reply
                       </button>
                       <button
@@ -1062,41 +1063,44 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           setIsReplyAll(true);
                           setShowReplyDialog(true);
                         }}
-                        className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg transition-colors"
                       >
-                        <Reply className="w-4 h-4 mr-2" />
+                        <Reply className="w-4 h-4 mr-1.5" />
                         Reply All
                       </button>
                     </>
                   )}
-                  <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                    <Clock className="w-4 h-4" />
-                    {new Date(
-                      activeTab === 'sent' && 'sent_at' in selectedEmail 
-                        ? (selectedEmail as any).sent_at 
-                        : selectedEmail.created_at
-                    ).toLocaleString()}
+                  <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="whitespace-nowrap">
+                      {new Date(
+                        activeTab === 'sent' && 'sent_at' in selectedEmail
+                          ? (selectedEmail as any).sent_at
+                          : selectedEmail.created_at
+                      ).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                   {selectedEmail.subject || '(No Subject)'}
                 </h1>
-                
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 dark:text-gray-400">From:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+
+                {/* From / To — side by side on desktop, stacked on mobile */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-1.5 text-sm">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">From:</span>
+                    <span className="font-medium text-gray-900 dark:text-white break-all min-w-0">
                       {activeTab === 'inbox' ? (selectedEmail as Email).sender :
                        activeTab === 'drafts' ? (selectedEmail as DraftEmail).sender :
                        'from_email' in selectedEmail ? (selectedEmail as any).from_email : 'Unknown'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 dark:text-gray-400">To:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">To:</span>
+                    <span className="font-medium text-gray-900 dark:text-white break-all min-w-0">
                       {activeTab === 'inbox' ? formatReceiverList((selectedEmail as Email).receiver) :
                        activeTab === 'drafts' ? formatReceiverList((selectedEmail as DraftEmail).receiver) :
                        'to_email' in selectedEmail ? (selectedEmail as any).to_email : 'Unknown'}
@@ -1158,8 +1162,8 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                             {msg.from.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <span className="font-medium text-gray-900 dark:text-white truncate block">{msg.from}</span>
-                            <span className="text-gray-400 dark:text-gray-500 text-xs">to {msg.to}</span>
+                            <span className="font-medium text-gray-900 dark:text-white break-all block">{msg.from}</span>
+                            <span className="text-gray-400 dark:text-gray-500 text-xs break-all">to {msg.to}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
