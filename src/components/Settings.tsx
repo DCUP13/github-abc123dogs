@@ -189,11 +189,11 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
   };
 
   const tabs = [
-    { id: 'general', label: 'General', icon: Server },
-    { id: 'amazon', label: 'Amazon SES', icon: Server },
-    { id: 'google', label: 'Google SMTP', icon: Mail },
-    { id: 'rapid-api', label: 'Rapid API', icon: Server },
-    { id: 'autoresponder', label: 'Autoresponder', icon: Mail }
+    { id: 'general', label: 'General', shortLabel: 'General', icon: Server },
+    { id: 'amazon', label: 'Amazon SES', shortLabel: 'Amazon', icon: Server },
+    { id: 'google', label: 'Google SMTP', shortLabel: 'Google', icon: Mail },
+    { id: 'rapid-api', label: 'Rapid API', shortLabel: 'API', icon: Server },
+    { id: 'autoresponder', label: 'Autoresponder', shortLabel: 'Auto', icon: Mail }
   ];
 
   if (isLoading) {
@@ -216,14 +216,15 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as SettingsTab)}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 ${
+                  className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <tab.icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </nav>
