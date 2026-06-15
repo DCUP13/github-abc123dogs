@@ -412,8 +412,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           </button>
         </div>
 
-        <div className="flex flex-col gap-3 mb-6">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative sm:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
@@ -427,7 +427,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             <select
               value={selectedCategory}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
               <option value="All">All Categories</option>
               {categories.map(category => (
@@ -437,7 +437,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             <select
               value={sortOrder}
               onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
-              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             >
               <option value="updated_desc">Last modified</option>
               <option value="updated_asc">Oldest modified</option>
