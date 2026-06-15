@@ -1152,7 +1152,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           : 'bg-white dark:bg-gray-800'
                       }`}
                     >
-                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50 gap-1.5 sm:gap-0">
                         <div className="flex items-center gap-3 text-sm min-w-0">
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
                             msg.type === 'received'
@@ -1161,19 +1161,18 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           }`}>
                             {msg.from.charAt(0).toUpperCase()}
                           </div>
-                          <div className="min-w-0">
-                            <span className="font-medium text-gray-900 dark:text-white break-all block">{msg.from}</span>
-                            <span className="text-gray-400 dark:text-gray-500 text-xs break-all">to {msg.to}</span>
+                          <div className="min-w-0 overflow-hidden">
+                            <span className="font-medium text-gray-900 dark:text-white truncate block">{msg.from}</span>
+                            <span className="text-gray-400 dark:text-gray-500 text-xs truncate block">to {msg.to}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                        <div className="flex items-center gap-2 flex-shrink-0 sm:ml-3 pl-10 sm:pl-0">
                           {msg.isCurrent && (
                             <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full">Selected</span>
                           )}
-                          <span className="text-xs text-gray-400 dark:text-gray-500">
+                          <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                             {new Date(msg.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${idx + 1 < threadMessages.length ? 'invisible' : 'invisible'}`} />
                         </div>
                       </div>
                       <div className="px-4 py-3">
