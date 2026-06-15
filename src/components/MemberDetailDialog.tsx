@@ -238,8 +238,9 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
 
   return (
     /* Mobile: full-screen sheet. Desktop: centered modal */
-    <div className="fixed inset-0 bg-black/50 z-50 flex sm:items-center sm:justify-center sm:p-4">
-      <div className="bg-white dark:bg-gray-800 w-full flex flex-col h-full sm:h-auto sm:rounded-lg sm:shadow-xl sm:max-w-5xl sm:max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-stretch sm:items-center justify-center sm:p-4">
+      <div className="bg-white dark:bg-gray-800 w-full flex flex-col overflow-hidden sm:rounded-xl sm:shadow-2xl sm:max-w-5xl sm:max-h-[90vh]">
 
         {/* Sticky header */}
         <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-6 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -499,6 +500,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

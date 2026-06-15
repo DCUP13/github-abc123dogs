@@ -139,8 +139,8 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
   };
 
   const panelClass =
-    'bg-white dark:bg-gray-800 w-full flex flex-col ' +
-    'sm:rounded-lg sm:shadow-xl sm:max-w-2xl sm:max-h-[90vh]';
+    'bg-white dark:bg-gray-800 w-full flex flex-col overflow-hidden ' +
+    'sm:rounded-xl sm:shadow-2xl sm:max-w-2xl sm:max-h-[90vh]';
 
   if (loading) {
     return (
@@ -170,10 +170,11 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
 
   return (
     /* Overlay — on mobile: full screen sheet; on sm+: centered modal */
-    <div className="fixed inset-0 bg-black/50 z-50 flex sm:items-center sm:justify-center sm:p-4">
-      <div className={panelClass + ' h-full sm:h-auto'}>
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-stretch sm:items-center justify-center sm:p-4">
+      <div className={panelClass}>
         {/* Sticky header */}
-        <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 pb-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10 sm:static sm:border-none sm:pb-0">
+        <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
             Organization Settings
@@ -337,6 +338,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
             </div>
           </form>
         </div>
+      </div>
       </div>
     </div>
   );
