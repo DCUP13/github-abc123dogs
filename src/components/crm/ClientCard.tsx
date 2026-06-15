@@ -78,40 +78,40 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 group hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 group hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+            <User className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+          <div className="min-w-0">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white truncate">
               {client.first_name} {client.last_name}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(client.client_type)}`}>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${getTypeColor(client.client_type)}`}>
                 {client.client_type}
               </span>
-              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
+              <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(client.status)}`}>
                 {client.status}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 sm:gap-2 flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(client)}
-            className="p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
             title="Edit client"
           >
-            <Edit className="w-4 h-4" />
+            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
           <button
             onClick={() => onDelete(client.id)}
-            className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
             title="Delete client"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
