@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Server, Mail } from 'lucide-react';
+import { ThemeContext } from '../App';
 import { GeneralTab } from './settings/GeneralTab';
 import { AmazonTab } from './settings/AmazonTab';
 import { GoogleTab } from './settings/GoogleTab';
@@ -18,6 +19,7 @@ interface SettingsProps {
 type SettingsTab = 'general' | 'amazon' | 'google' | 'rapid-api' | 'autoresponder';
 
 export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick }: SettingsProps) {
+  const { darkMode, colorScheme } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [settings, setSettings] = useState<GeneralSettings>({
     notifications: true,
@@ -196,10 +198,24 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
     { id: 'autoresponder', label: 'Autoresponder', shortLabel: 'Auto', icon: Mail }
   ];
 
+  const ACCENT: Record<string, { light: string; dark: string }> = {
+    indigo:  { light: '#4f46e5', dark: '#818cf8' },
+    forest:  { light: '#2d5a3d', dark: '#c9a84c' },
+    ocean:   { light: '#0369a1', dark: '#38bdf8' },
+    rose:    { light: '#e11d48', dark: '#fb7185' },
+    emerald: { light: '#059669', dark: '#34d399' },
+    amber:   { light: '#b45309', dark: '#fbbf24' },
+    violet:  { light: '#6d28d9', dark: '#a78bfa' },
+    sky:     { light: '#0284c7', dark: '#7dd3fc' },
+    slate:   { light: '#475569', dark: '#94a3b8' },
+    stone:   { light: '#78716c', dark: '#d6d3d1' },
+  };
+  const accentColor = (ACCENT[colorScheme] ?? ACCENT['indigo'])[darkMode ? 'dark' : 'light'];
+
   if (isLoading) {
     return (
       <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: accentColor, borderTopColor: 'transparent' }} />
       </div>
     );
   }
@@ -218,9 +234,10 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
                   onClick={() => setActiveTab(tab.id as SettingsTab)}
                   className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-1 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'border-[var(--accent)] text-[var(--accent)] dark:text-[var(--accent-dark)]'
+                      ? 'border-transparent'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
+                  style={activeTab === tab.id ? { borderBottomColor: accentColor, borderBottomWidth: '2px', color: accentColor } : undefined}
                 >
                   <tab.icon className="w-4 h-4 flex-shrink-0" />
                   <span className="sm:hidden">{tab.shortLabel}</span>

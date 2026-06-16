@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Home, Settings as SettingsIcon, LogOut, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug, X } from 'lucide-react';
+import { ThemeContext } from '../App';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -17,6 +18,19 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+const SCHEME_BG: Record<string, { bg: string; hover: string; border: string }> = {
+  indigo:  { bg: '#312e81', hover: '#3730a3', border: 'rgba(99,102,241,0.3)' },
+  forest:  { bg: '#1a3a26', hover: '#2d5a3d', border: 'rgba(45,90,61,0.4)' },
+  ocean:   { bg: '#0c4a6e', hover: '#075985', border: 'rgba(2,132,199,0.3)' },
+  rose:    { bg: '#881337', hover: '#9f1239', border: 'rgba(244,63,94,0.3)' },
+  emerald: { bg: '#064e3b', hover: '#065f46', border: 'rgba(16,185,129,0.3)' },
+  amber:   { bg: '#78350f', hover: '#92400e', border: 'rgba(217,119,6,0.3)' },
+  violet:  { bg: '#4c1d95', hover: '#5b21b6', border: 'rgba(124,58,237,0.3)' },
+  sky:     { bg: '#075985', hover: '#0369a1', border: 'rgba(14,165,233,0.3)' },
+  slate:   { bg: '#1e293b', hover: '#334155', border: 'rgba(100,116,139,0.3)' },
+  stone:   { bg: '#1c1917', hover: '#292524', border: 'rgba(168,162,158,0.3)' },
+};
+
 export function Sidebar({
   onSignOut,
   onHomeClick,
@@ -32,6 +46,13 @@ export function Sidebar({
   isOpen = false,
   onClose,
 }: SidebarProps) {
+  const { darkMode, colorScheme } = useContext(ThemeContext);
+  const scheme = SCHEME_BG[colorScheme] ?? SCHEME_BG['indigo'];
+
+  const sidebarBg = darkMode ? '#1f2937' : scheme.bg;
+  const hoverBg   = darkMode ? '#374151' : scheme.hover;
+  const borderColor = darkMode ? 'rgba(75,85,99,0.5)' : scheme.border;
+
   const nav = (handler: () => void) => () => {
     handler();
     onClose?.();
@@ -40,7 +61,9 @@ export function Sidebar({
   const navBtn = (onClick: () => void, Icon: React.ElementType, label: string) => (
     <button
       onClick={nav(onClick)}
-      className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-[var(--sb-hover)] dark:hover:bg-gray-700 transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors"
+      onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       <Icon className="w-4 h-4 flex-shrink-0" />
       {label}
@@ -49,7 +72,6 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile overlay backdrop */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -57,46 +79,52 @@ export function Sidebar({
         />
       )}
 
-      {/* Sidebar panel */}
       <div
         className={[
-          'fixed inset-y-0 left-0 z-50 w-64 bg-[var(--sb-bg)] dark:bg-gray-800 text-white flex flex-col transition-transform duration-300 ease-in-out',
-          // On mobile: slide in/out. On md+: always visible.
+          'fixed inset-y-0 left-0 z-50 w-64 text-white flex flex-col transition-transform duration-300 ease-in-out',
           'md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         ].join(' ')}
+        style={{ backgroundColor: sidebarBg }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--sb-border)] dark:border-gray-700">
+        <div
+          className="flex items-center justify-between px-6 py-5 border-b"
+          style={{ borderColor }}
+        >
           <h2 className="text-xl font-bold">Dashboard</h2>
           <button
             onClick={onClose}
-            className="md:hidden p-1 rounded hover:bg-[var(--sb-hover)] dark:hover:bg-gray-700 transition-colors"
+            className="md:hidden p-1 rounded transition-colors"
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Nav links */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navBtn(onHomeClick,         Home,        'Home')}
-          {navBtn(onEmailsClick,       Inbox,       'Emails')}
-          {navBtn(onAddressesClick,    Mail,        'Addresses')}
-          {navBtn(onPromptsClick,      MessageSquare,'Prompts')}
-          {navBtn(onCRMClick,          Users,       'CRM')}
-          {navBtn(onCalendarClick,     CalendarIcon,'Calendar')}
-          {navBtn(onIntegrationsClick, Plug,        'Integrations')}
-          {onTeamClick && navBtn(onTeamClick, Users, 'Team')}
-          {navBtn(onSettingsClick,     SettingsIcon,'Settings')}
+          {navBtn(onHomeClick,         Home,          'Home')}
+          {navBtn(onEmailsClick,       Inbox,         'Emails')}
+          {navBtn(onAddressesClick,    Mail,          'Addresses')}
+          {navBtn(onPromptsClick,      MessageSquare, 'Prompts')}
+          {navBtn(onCRMClick,          Users,         'CRM')}
+          {navBtn(onCalendarClick,     CalendarIcon,  'Calendar')}
+          {navBtn(onIntegrationsClick, Plug,          'Integrations')}
+          {onTeamClick && navBtn(onTeamClick, Users,  'Team')}
+          {navBtn(onSettingsClick,     SettingsIcon,  'Settings')}
         </nav>
 
-        {/* Footer */}
-        <div className="px-3 py-4 border-t border-[var(--sb-border)] dark:border-gray-700 space-y-1">
+        <div
+          className="px-3 py-4 border-t space-y-1"
+          style={{ borderColor }}
+        >
           {navBtn(onSupportClick, HelpCircle, 'Support')}
           <button
             onClick={nav(onSignOut)}
-            className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors text-red-300 hover:text-red-200"
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors text-red-300 hover:text-red-200"
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
             Sign out

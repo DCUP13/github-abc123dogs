@@ -46,6 +46,19 @@ export const ThemeContext = createContext<ThemeContextType>({
   updateColorScheme: async () => {},
 });
 
+const SCHEME_VARS: Record<string, Record<string, string>> = {
+  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8' },
+  forest:  { '--sb-bg': '#1a3a26', '--sb-hover': '#2d5a3d', '--sb-border': 'rgba(45,90,61,0.4)',     '--accent': '#2d5a3d', '--accent-dark': '#c9a84c' },
+  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#38bdf8' },
+  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#fb7185' },
+  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#34d399' },
+  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#fbbf24' },
+  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#a78bfa' },
+  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#7dd3fc' },
+  slate:   { '--sb-bg': '#1e293b', '--sb-hover': '#334155', '--sb-border': 'rgba(100,116,139,0.3)','--accent': '#475569', '--accent-dark': '#94a3b8' },
+  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#d6d3d1' },
+};
+
 export default function App() {
   const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(false);
@@ -460,7 +473,10 @@ export default function App() {
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme }}>
       <EmailProvider>
         <DashboardProvider>
-          <div className={darkMode ? 'dark' : ''} data-theme={colorScheme}>
+          <div
+            className={darkMode ? 'dark' : ''}
+            style={(SCHEME_VARS[colorScheme] ?? SCHEME_VARS['indigo']) as React.CSSProperties}
+          >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
@@ -483,16 +499,22 @@ export default function App() {
                 />
                 <div className="flex-1 md:ml-64 min-w-0">
                   {/* Mobile top bar */}
-                  <div className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[var(--sb-bg)] dark:bg-gray-800 text-white shadow">
+                  <div
+                    className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
+                    style={{ backgroundColor: darkMode ? '#1f2937' : (SCHEME_VARS[colorScheme]?.['--sb-bg'] ?? '#312e81') }}
+                  >
                     <button
                       onClick={() => setMobileNavOpen(true)}
-                      className="p-1.5 rounded hover:bg-[var(--sb-hover)] dark:hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded transition-colors"
+                      style={{}}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = darkMode ? '#374151' : (SCHEME_VARS[colorScheme]?.['--sb-hover'] ?? '#3730a3'))}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                       aria-label="Open navigation"
                     >
                       <Menu className="w-5 h-5" />
                     </button>
                     <div className="flex items-center gap-2">
-                      <Mail className="w-5 h-5 text-indigo-300 dark:text-gray-400" />
+                      <Mail className="w-5 h-5 text-white/60" />
                       <span className="font-semibold text-sm tracking-wide">LoiReply</span>
                     </div>
                   </div>
