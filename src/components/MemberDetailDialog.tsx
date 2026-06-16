@@ -40,7 +40,7 @@ interface DashboardStats {
 }
 
 const inputClass =
-  'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+  'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 export default function MemberDetailDialog({ memberId, memberName, memberEmail, onClose }: MemberDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<'emails' | 'domains' | 'settings' | 'stats'>('emails');
@@ -229,7 +229,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-4xl w-full">
+        <div className="app-card rounded-lg p-8 max-w-4xl w-full">
           <div className="text-center text-gray-700 dark:text-gray-300">Loading member data...</div>
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
     /* Mobile: full-screen sheet. Desktop: centered modal */
     <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
       <div className="flex min-h-full items-stretch sm:items-center justify-center sm:p-4">
-      <div className="bg-white dark:bg-gray-800 w-full flex flex-col overflow-hidden sm:rounded-xl sm:shadow-2xl sm:max-w-5xl sm:max-h-[90vh]">
+      <div className="app-card w-full flex flex-col overflow-hidden sm:rounded-xl sm:shadow-2xl sm:max-w-5xl sm:max-h-[90vh]">
 
         {/* Sticky header */}
         <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-6 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -355,7 +355,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                               <input type="number" value={account.daily_limit}
                                 onChange={(e) => handleUpdateEmailLimit(account.id, account.type, parseInt(e.target.value) || 0)}
                                 min={1} max={account.type === 'ses' ? 50000 : 500}
-                                className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                                className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded app-card text-gray-900 dark:text-white" />
                             </div>
                           </div>
                           <button onClick={() => handleRemoveEmail(account.id, account.type)} disabled={saving}
@@ -408,14 +408,14 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                           </button>
                         </div>
                         <div className="space-y-2">
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 app-card rounded-lg">
                             <div className="min-w-0 mr-4">
                               <p className="font-medium text-gray-800 dark:text-white text-sm">Autoresponder</p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">Automatically send AI-generated responses</p>
                             </div>
                             <Toggle checked={domain.autoresponder_enabled} onChange={(checked) => handleToggleDomainAutoresponder(domain.id, checked)} disabled={saving || domain.drafts_enabled} />
                           </div>
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 app-card rounded-lg">
                             <div className="min-w-0 mr-4">
                               <p className="font-medium text-gray-800 dark:text-white text-sm">Drafts Mode</p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">Save AI responses as drafts instead of sending</p>

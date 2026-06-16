@@ -256,7 +256,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
   if (allEmailOptions.length === 0) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md">
+        <div className="app-card rounded-xl shadow-lg p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit Draft</h3>
             <button
@@ -289,7 +289,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
       <div className="w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg flex flex-col h-full">
+        <div className="app-card rounded-xl shadow-lg flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit Draft</h3>
             <button
@@ -315,7 +315,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                           value={customFromEmail}
                           onChange={(e) => setCustomFromEmail(e.target.value)}
                           placeholder="your-email@domain.com"
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                           required
                         />
                         <button
@@ -335,7 +335,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                         id="fromEmail"
                         value={fromEmail}
                         onChange={(e) => handleFromEmailChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                         required
                       >
                         <option value="">Select sender email</option>
@@ -366,7 +366,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                     <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       To
                     </label>
-                    <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white dark:bg-gray-700 flex flex-wrap items-center gap-1">
+                    <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 app-card-inner flex flex-wrap items-center gap-1">
                       {toEmails.map((email, index) => (
                         <span
                           key={index}
@@ -413,7 +413,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="Email subject"
                   />
                 </div>
@@ -427,7 +427,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                   <RichTextEditor
                     ref={editorRef}
                     content={draft.body}
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-0"
+                    className="app-card text-gray-900 dark:text-white border-0"
                   />
                 </div>
               </div>
@@ -448,7 +448,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
                 className={`inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm ${
                   isSavingDraft || isSending
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-wait'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    : 'app-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500`}
               >
                 {isSavingDraft ? (

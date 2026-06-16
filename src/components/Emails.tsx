@@ -106,7 +106,7 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
             return (
               <div
                 key={email.id}
-                className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 ${
+                className={`app-card rounded-xl shadow-sm p-6 ${
                   isLocked ? 'border-2 border-yellow-400 dark:border-yellow-500' : ''
                 }`}
               >

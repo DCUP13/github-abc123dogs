@@ -139,7 +139,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
   };
 
   const panelClass =
-    'bg-white dark:bg-gray-800 w-full flex flex-col overflow-hidden ' +
+    'app-card w-full flex flex-col overflow-hidden ' +
     'sm:rounded-xl sm:shadow-2xl sm:max-w-2xl sm:max-h-[90vh]';
 
   if (loading) {

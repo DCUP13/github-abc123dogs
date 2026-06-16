@@ -261,7 +261,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
   if (allEmailOptions.length === 0) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md">
+        <div className="app-card rounded-xl shadow-lg p-6 w-full max-w-md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
             <button
@@ -294,7 +294,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
       <div className="w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg flex flex-col h-full">
+        <div className="app-card rounded-xl shadow-lg flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div>
@@ -330,7 +330,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                           value={customFromEmail}
                           onChange={(e) => setCustomFromEmail(e.target.value)}
                           placeholder="your-email@domain.com"
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                           required
                         />
                         <button
@@ -350,7 +350,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                         id="fromEmail"
                         value={fromEmail}
                         onChange={(e) => handleFromEmailChange(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                         required
                       >
                         <option value="">Select sender email</option>
@@ -387,7 +387,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                     <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       To
                     </label>
-                    <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white dark:bg-gray-700 flex flex-wrap items-center gap-1">
+                    <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 app-card-inner flex flex-wrap items-center gap-1">
                       {toEmails.map((email, index) => (
                         <span
                           key={index}
@@ -435,7 +435,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="Reply subject"
                   />
                 </div>
@@ -450,7 +450,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                   <RichTextEditor
                     ref={editorRef}
                     content={initialBody}
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-0"
+                    className="app-card text-gray-900 dark:text-white border-0"
                   />
                 </div>
               </div>

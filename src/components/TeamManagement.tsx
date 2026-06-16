@@ -263,7 +263,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
         )}
 
         <div className="grid gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="app-card rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Team Members</h2>
             <div className="space-y-3">
               {members.length === 0 ? (
@@ -310,7 +310,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="app-card rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations</h2>
             <div className="space-y-3">
               {invitations.length === 0 ? (
@@ -357,7 +357,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
 
       {showInviteDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="app-card rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Invite Team Member</h3>
               <button

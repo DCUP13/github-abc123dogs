@@ -635,7 +635,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
               {integrations.map(integration => {
                 const template = INTEGRATION_TEMPLATES.find(t => t.type === integration.integration_type);
                 return (
-                  <div key={integration.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+                  <div key={integration.id} className="app-card rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <span className="text-xl md:text-2xl md:text-3xl">{template?.icon || '🔌'}</span>
@@ -748,7 +748,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
             {INTEGRATION_TEMPLATES.map(template => {
               const isConnected = integrations.some(i => i.integration_type === template.type);
               return (
-                <div key={template.type} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                <div key={template.type} className="app-card rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
                   <div className="flex items-start gap-4 mb-4">
                     <span className="text-4xl">{template.icon}</span>
                     <div className="flex-1">
@@ -785,7 +785,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
         {showAddModal && selectedTemplate && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="app-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-xl md:text-2xl md:text-3xl">{selectedTemplate.icon}</span>
@@ -867,7 +867,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
 
         {showEventDialog && selectedIntegration && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="app-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />

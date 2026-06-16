@@ -18,17 +18,17 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const SCHEME_BG: Record<string, { bg: string; hover: string; border: string }> = {
-  classic: { bg: '#3730a3', hover: '#4338ca', border: 'rgba(67,56,202,0.3)' },
-  indigo:  { bg: '#312e81', hover: '#3730a3', border: 'rgba(99,102,241,0.3)' },
-  forest:  { bg: '#1a3a26', hover: '#2d5a3d', border: 'rgba(45,90,61,0.4)' },
-  ocean:   { bg: '#0c4a6e', hover: '#075985', border: 'rgba(2,132,199,0.3)' },
-  rose:    { bg: '#881337', hover: '#9f1239', border: 'rgba(244,63,94,0.3)' },
-  emerald: { bg: '#064e3b', hover: '#065f46', border: 'rgba(16,185,129,0.3)' },
-  amber:   { bg: '#78350f', hover: '#92400e', border: 'rgba(217,119,6,0.3)' },
-  violet:  { bg: '#4c1d95', hover: '#5b21b6', border: 'rgba(124,58,237,0.3)' },
-  sky:     { bg: '#075985', hover: '#0369a1', border: 'rgba(14,165,233,0.3)' },
-  stone:   { bg: '#1c1917', hover: '#292524', border: 'rgba(168,162,158,0.3)' },
+const SCHEME_BG: Record<string, { bg: string; hover: string; border: string; bgDark: string; hoverDark: string }> = {
+  classic: { bg: '#3730a3', hover: '#4338ca', border: 'rgba(67,56,202,0.3)',   bgDark: '#1e1b4b', hoverDark: '#2a2568' },
+  indigo:  { bg: '#312e81', hover: '#3730a3', border: 'rgba(99,102,241,0.3)',  bgDark: '#231e5c', hoverDark: '#2d2870' },
+  forest:  { bg: '#1a3a26', hover: '#2d5a3d', border: 'rgba(45,90,61,0.4)',    bgDark: '#132f1e', hoverDark: '#1a3c27' },
+  ocean:   { bg: '#0c4a6e', hover: '#075985', border: 'rgba(2,132,199,0.3)',   bgDark: '#0d263c', hoverDark: '#143249' },
+  rose:    { bg: '#881337', hover: '#9f1239', border: 'rgba(244,63,94,0.3)',   bgDark: '#2d0e16', hoverDark: '#3a1120' },
+  emerald: { bg: '#064e3b', hover: '#065f46', border: 'rgba(16,185,129,0.3)', bgDark: '#0e2a1c', hoverDark: '#133822' },
+  amber:   { bg: '#78350f', hover: '#92400e', border: 'rgba(217,119,6,0.3)',   bgDark: '#241508', hoverDark: '#2e1b0a' },
+  violet:  { bg: '#4c1d95', hover: '#5b21b6', border: 'rgba(124,58,237,0.3)', bgDark: '#1e1040', hoverDark: '#27134f' },
+  sky:     { bg: '#075985', hover: '#0369a1', border: 'rgba(14,165,233,0.3)', bgDark: '#0e2638', hoverDark: '#133148' },
+  stone:   { bg: '#1c1917', hover: '#292524', border: 'rgba(168,162,158,0.3)',bgDark: '#1a1815', hoverDark: '#22201e' },
 };
 
 export function Sidebar({
@@ -46,11 +46,11 @@ export function Sidebar({
   isOpen = false,
   onClose,
 }: SidebarProps) {
-  const { colorScheme } = useContext(ThemeContext);
-  const scheme = SCHEME_BG[colorScheme] ?? SCHEME_BG['indigo'];
+  const { darkMode, colorScheme } = useContext(ThemeContext);
+  const scheme = SCHEME_BG[colorScheme] ?? SCHEME_BG['classic'];
 
-  const sidebarBg   = scheme.bg;
-  const hoverBg     = scheme.hover;
+  const sidebarBg   = darkMode ? scheme.bgDark   : scheme.bg;
+  const hoverBg     = darkMode ? scheme.hoverDark : scheme.hover;
   const borderColor = scheme.border;
 
   const nav = (handler: () => void) => () => {
