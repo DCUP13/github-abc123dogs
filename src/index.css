@@ -2,6 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Color scheme themes ────────────────────────────────────────────── */
+/* Variables: --sb-bg (sidebar bg), --sb-hover (sidebar hover),
+   --sb-border (sidebar border), --accent (active/focus color),
+   --accent-dark (accent for dark mode text) */
+
+[data-theme="indigo"] {
+  --sb-bg: #312e81;
+  --sb-hover: #3730a3;
+  --sb-border: rgba(99, 102, 241, 0.3);
+  --accent: #4f46e5;
+  --accent-dark: #818cf8;
+}
+[data-theme="forest"] {
+  --sb-bg: #1a3a26;
+  --sb-hover: #2d5a3d;
+  --sb-border: rgba(45, 90, 61, 0.4);
+  --accent: #2d5a3d;
+  --accent-dark: #c9a84c;
+}
+[data-theme="ocean"] {
+  --sb-bg: #0c4a6e;
+  --sb-hover: #075985;
+  --sb-border: rgba(2, 132, 199, 0.3);
+  --accent: #0369a1;
+  --accent-dark: #38bdf8;
+}
+[data-theme="rose"] {
+  --sb-bg: #881337;
+  --sb-hover: #9f1239;
+  --sb-border: rgba(244, 63, 94, 0.3);
+  --accent: #e11d48;
+  --accent-dark: #fb7185;
+}
+[data-theme="emerald"] {
+  --sb-bg: #064e3b;
+  --sb-hover: #065f46;
+  --sb-border: rgba(16, 185, 129, 0.3);
+  --accent: #059669;
+  --accent-dark: #34d399;
+}
+[data-theme="amber"] {
+  --sb-bg: #78350f;
+  --sb-hover: #92400e;
+  --sb-border: rgba(217, 119, 6, 0.3);
+  --accent: #b45309;
+  --accent-dark: #fbbf24;
+}
+[data-theme="violet"] {
+  --sb-bg: #4c1d95;
+  --sb-hover: #5b21b6;
+  --sb-border: rgba(124, 58, 237, 0.3);
+  --accent: #6d28d9;
+  --accent-dark: #a78bfa;
+}
+[data-theme="sky"] {
+  --sb-bg: #075985;
+  --sb-hover: #0369a1;
+  --sb-border: rgba(14, 165, 233, 0.3);
+  --accent: #0284c7;
+  --accent-dark: #7dd3fc;
+}
+[data-theme="slate"] {
+  --sb-bg: #1e293b;
+  --sb-hover: #334155;
+  --sb-border: rgba(100, 116, 139, 0.3);
+  --accent: #475569;
+  --accent-dark: #94a3b8;
+}
+[data-theme="stone"] {
+  --sb-bg: #1c1917;
+  --sb-hover: #292524;
+  --sb-border: rgba(168, 162, 158, 0.3);
+  --accent: #78716c;
+  --accent-dark: #d6d3d1;
+}
+
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -19,7 +95,7 @@
 .toggle-checkbox:checked {
   left: auto;
   right: 0;
-  border-color: #4f46e5;
+  border-color: var(--accent, #4f46e5);
 }
 
 .toggle-checkbox:disabled {

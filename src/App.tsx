@@ -35,16 +35,21 @@ type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' 
 interface ThemeContextType {
   darkMode: boolean;
   toggleDarkMode: () => Promise<void>;
+  colorScheme: string;
+  updateColorScheme: (scheme: string) => Promise<void>;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
   toggleDarkMode: async () => {},
+  colorScheme: 'indigo',
+  updateColorScheme: async () => {},
 });
 
 export default function App() {
   const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(false);
+  const [colorScheme, setColorScheme] = useState('indigo');
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -104,14 +109,15 @@ export default function App() {
       // Now fetch or create user settings
       const { data, error } = await supabase
         .from('user_settings')
-        .select('dark_mode')
+        .select('dark_mode, color_scheme')
         .eq('user_id', user.data.user.id)
         .maybeSingle();
 
       if (error) throw error;
-      
+
       if (data) {
         setDarkMode(data.dark_mode);
+        setColorScheme(data.color_scheme || 'indigo');
       } else {
         // Create default settings if none exist
         const { error: insertError } = await supabase
@@ -413,6 +419,23 @@ export default function App() {
     }
   };
 
+  const updateColorScheme = async (scheme: string) => {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ color_scheme: scheme, updated_at: new Date().toISOString() })
+        .eq('user_id', user.data.user.id);
+
+      if (error) throw error;
+      setColorScheme(scheme);
+    } catch (error) {
+      console.error('Error updating color scheme:', error);
+    }
+  };
+
   const handleLogin = () => {
     updateView('dashboard');
   };
@@ -434,10 +457,10 @@ export default function App() {
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme }}>
       <EmailProvider>
         <DashboardProvider>
-          <div className={darkMode ? 'dark' : ''}>
+          <div className={darkMode ? 'dark' : ''} data-theme={colorScheme}>
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
@@ -460,10 +483,10 @@ export default function App() {
                 />
                 <div className="flex-1 md:ml-64 min-w-0">
                   {/* Mobile top bar */}
-                  <div className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-indigo-800 dark:bg-gray-800 text-white shadow">
+                  <div className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[var(--sb-bg)] dark:bg-gray-800 text-white shadow">
                     <button
                       onClick={() => setMobileNavOpen(true)}
-                      className="p-1.5 rounded hover:bg-indigo-700 dark:hover:bg-gray-700 transition-colors"
+                      className="p-1.5 rounded hover:bg-[var(--sb-hover)] dark:hover:bg-gray-700 transition-colors"
                       aria-label="Open navigation"
                     >
                       <Menu className="w-5 h-5" />

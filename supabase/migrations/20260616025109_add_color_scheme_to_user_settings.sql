@@ -1,0 +1,1 @@
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(50) DEFAULT 'indigo';
