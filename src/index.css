@@ -78,6 +78,21 @@
   --accent-dark: #d6d3d1;
 }
 
+/* ── Theme-aware background helpers ─────────────────────────────────── */
+/* These use CSS vars set via inline style on the app root div.          */
+/* Use app-bg on page containers, app-card on panels/cards.             */
+.app-bg {
+  background-color: var(--page-bg, #f9fafb);
+}
+.dark .app-bg {
+  background-color: var(--page-bg-d, #111827);
+}
+.app-card {
+  background-color: var(--card-bg, #ffffff);
+}
+.dark .app-card {
+  background-color: var(--card-bg-d, #1f2937);
+}
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;

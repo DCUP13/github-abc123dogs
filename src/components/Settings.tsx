@@ -221,11 +221,11 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
         
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="app-card rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex">
               {tabs.map(tab => (

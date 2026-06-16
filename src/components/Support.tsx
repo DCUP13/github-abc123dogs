@@ -70,7 +70,7 @@ export function Support({ onSignOut, currentView }: SupportProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen app-bg">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">

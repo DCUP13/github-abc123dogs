@@ -113,7 +113,7 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
   ];
 
   return (
-    <div className="p-4 md:p-8 bg-white dark:bg-gray-900">
+    <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-black dark:text-white mb-8">Dashboard Overview</h1>
         

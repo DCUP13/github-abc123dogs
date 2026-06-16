@@ -744,7 +744,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   }
 
   return (
-    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-7xl mx-auto">
         {!selectedEmail ? (
           <>

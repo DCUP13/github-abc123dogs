@@ -47,16 +47,16 @@ export const ThemeContext = createContext<ThemeContextType>({
 });
 
 const SCHEME_VARS: Record<string, Record<string, string>> = {
-  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8' },
-  forest:  { '--sb-bg': '#1a3a26', '--sb-hover': '#2d5a3d', '--sb-border': 'rgba(45,90,61,0.4)',     '--accent': '#2d5a3d', '--accent-dark': '#c9a84c' },
-  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#38bdf8' },
-  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#fb7185' },
-  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#34d399' },
-  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#fbbf24' },
-  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#a78bfa' },
-  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#7dd3fc' },
-  slate:   { '--sb-bg': '#1e293b', '--sb-hover': '#334155', '--sb-border': 'rgba(100,116,139,0.3)','--accent': '#475569', '--accent-dark': '#94a3b8' },
-  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#d6d3d1' },
+  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8', '--page-bg': '#f5f4ff', '--page-bg-d': '#1a1730', '--card-bg': '#ffffff', '--card-bg-d': '#252040' },
+  forest:  { '--sb-bg': '#1a3a26', '--sb-hover': '#2d5a3d', '--sb-border': 'rgba(45,90,61,0.4)',     '--accent': '#2d5a3d', '--accent-dark': '#c9a84c', '--page-bg': '#f2f7f4', '--page-bg-d': '#0d1f15', '--card-bg': '#ffffff', '--card-bg-d': '#162b1d' },
+  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#38bdf8', '--page-bg': '#f0f7ff', '--page-bg-d': '#091a28', '--card-bg': '#ffffff', '--card-bg-d': '#112236' },
+  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#fb7185', '--page-bg': '#fff0f3', '--page-bg-d': '#1f0a0f', '--card-bg': '#ffffff', '--card-bg-d': '#2d1219' },
+  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#34d399', '--page-bg': '#f0faf5', '--page-bg-d': '#071a12', '--card-bg': '#ffffff', '--card-bg-d': '#0e2a1d' },
+  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#fbbf24', '--page-bg': '#fffbf0', '--page-bg-d': '#1a0e05', '--card-bg': '#ffffff', '--card-bg-d': '#27180a' },
+  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#a78bfa', '--page-bg': '#f8f4ff', '--page-bg-d': '#160a2e', '--card-bg': '#ffffff', '--card-bg-d': '#21123e' },
+  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#7dd3fc', '--page-bg': '#f0f9ff', '--page-bg-d': '#071827', '--card-bg': '#ffffff', '--card-bg-d': '#0d253a' },
+  slate:   { '--sb-bg': '#1e293b', '--sb-hover': '#334155', '--sb-border': 'rgba(100,116,139,0.3)','--accent': '#475569', '--accent-dark': '#94a3b8', '--page-bg': '#f4f6f8', '--page-bg-d': '#0f151e', '--card-bg': '#ffffff', '--card-bg-d': '#1a2233' },
+  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#d6d3d1', '--page-bg': '#f9f8f7', '--page-bg-d': '#131110', '--card-bg': '#ffffff', '--card-bg-d': '#1e1c1a' },
 };
 
 export default function App() {
@@ -481,7 +481,7 @@ export default function App() {
               <TeamManagement onSignOut={handleSignOut} />
             )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
-              <div className="flex min-h-screen bg-white dark:bg-gray-900">
+              <div className="flex min-h-screen app-bg">
                 <Sidebar
                   onSignOut={handleSignOut}
                   onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}

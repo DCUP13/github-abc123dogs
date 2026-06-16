@@ -597,7 +597,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen app-bg">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">

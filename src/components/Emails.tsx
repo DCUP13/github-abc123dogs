@@ -62,7 +62,7 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
 
   if (allEmails.length === 0) {
     return (
-      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-8 app-bg min-h-screen">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -88,7 +88,7 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <Mail className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />

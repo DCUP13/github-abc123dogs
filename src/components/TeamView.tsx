@@ -223,7 +223,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-6xl mx-auto">
         {organization && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-8">

@@ -46,12 +46,12 @@ export function Sidebar({
   isOpen = false,
   onClose,
 }: SidebarProps) {
-  const { darkMode, colorScheme } = useContext(ThemeContext);
+  const { colorScheme } = useContext(ThemeContext);
   const scheme = SCHEME_BG[colorScheme] ?? SCHEME_BG['indigo'];
 
-  const sidebarBg = darkMode ? '#1f2937' : scheme.bg;
-  const hoverBg   = darkMode ? '#374151' : scheme.hover;
-  const borderColor = darkMode ? 'rgba(75,85,99,0.5)' : scheme.border;
+  const sidebarBg   = scheme.bg;
+  const hoverBg     = scheme.hover;
+  const borderColor = scheme.border;
 
   const nav = (handler: () => void) => () => {
     handler();
