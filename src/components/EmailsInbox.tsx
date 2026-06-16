@@ -263,7 +263,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       }
     }
 
-    msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     setThreadMessages(msgs);
   };
 
@@ -317,8 +317,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       }
     }
 
-    msgs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    if (msgs.length > 1) {
+    msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());    if (msgs.length > 1) {
       setThreadMessages(msgs);
     } else {
       setThreadMessages([]);
