@@ -317,8 +317,10 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       }
     }
 
-    msgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());    if (msgs.length > 1) {
-      setThreadMessages(msgs);
+    const cutoff = new Date(inboxEmail.created_at).getTime();
+    const filteredMsgs = msgs.filter(m => new Date(m.timestamp).getTime() <= cutoff);
+    filteredMsgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());    if (filteredMsgs.length > 1) {
+      setThreadMessages(filteredMsgs);
     } else {
       setThreadMessages([]);
     }
