@@ -19,7 +19,7 @@ interface SidebarProps {
 }
 
 const SCHEME_BG: Record<string, { bg: string; hover: string; border: string; bgDark: string; hoverDark: string }> = {
-  classic: { bg: '#3730a3', hover: '#4338ca', border: 'rgba(67,56,202,0.3)',   bgDark: '#1e1b4b', hoverDark: '#2a2568' },
+  classic: { bg: '#3730a3', hover: '#4338ca', border: 'rgba(67,56,202,0.3)',   bgDark: '#1f2937', hoverDark: '#374151' },
   indigo:  { bg: '#312e81', hover: '#3730a3', border: 'rgba(99,102,241,0.3)',  bgDark: '#231e5c', hoverDark: '#2d2870' },
   forest:  { bg: '#1a3a26', hover: '#2d5a3d', border: 'rgba(45,90,61,0.4)',    bgDark: '#132f1e', hoverDark: '#1a3c27' },
   ocean:   { bg: '#0c4a6e', hover: '#075985', border: 'rgba(2,132,199,0.3)',   bgDark: '#0d263c', hoverDark: '#143249' },
