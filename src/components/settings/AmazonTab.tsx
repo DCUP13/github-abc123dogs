@@ -393,7 +393,7 @@ export function AmazonTab({
             id="smtpUsername"
             value={emailSettings.smtpUsername}
             onChange={(e) => onEmailSettingChange('smtpUsername', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             placeholder="Enter SMTP username"
             required
           />
@@ -409,7 +409,7 @@ export function AmazonTab({
               id="smtpPassword"
               value={emailSettings.smtpPassword}
               onChange={(e) => onEmailSettingChange('smtpPassword', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white pr-10"
               placeholder="Enter SMTP password"
               required
             />
@@ -432,7 +432,7 @@ export function AmazonTab({
             id="smtpPort"
             value={emailSettings.smtpPort}
             onChange={(e) => onEmailSettingChange('smtpPort', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             placeholder="Enter SMTP port"
             required
           />
@@ -447,7 +447,7 @@ export function AmazonTab({
             id="smtpServer"
             value={emailSettings.smtpServer}
             onChange={(e) => onEmailSettingChange('smtpServer', e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             placeholder="Enter SMTP server"
             required
           />
@@ -528,7 +528,7 @@ export function AmazonTab({
                 alert('Failed to save noreply domain. Please try again.');
               }
             }}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
           >
             <option value="">Select a domain for noreply@ emails</option>
             {domains.map((domain) => (
@@ -576,7 +576,7 @@ export function AmazonTab({
                   setDomainError('');
                 }}
                 placeholder="example.com"
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
               />
               <button
                 type="submit"
@@ -590,7 +590,7 @@ export function AmazonTab({
             )}
           </form>
         ) : (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="mb-6 p-4 app-card-inner/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Your organization manager will set up and add verified domains to your account. Once added, the domains will appear in the list below and will be available for use.
             </p>
@@ -606,7 +606,7 @@ export function AmazonTab({
             domains.map((domain) => (
               <div
                 key={domain}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
+                className="flex items-center justify-between p-4 app-card-inner/50 rounded-lg group"
               >
                 <div className="flex items-center gap-3 flex-1">
                   <Globe className="w-5 h-5 text-gray-400 flex-shrink-0" />
@@ -650,7 +650,7 @@ export function AmazonTab({
                     setEmailError('');
                   }}
                   placeholder="Enter email address"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                 />
                 {emailError && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
@@ -668,7 +668,7 @@ export function AmazonTab({
                   onChange={(e) => setDailyLimit(Math.min(50000, Math.max(1, parseInt(e.target.value))))}
                   min="1"
                   max="50000"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                 />
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   Maximum number of emails that can be sent per day (1-50,000)
@@ -686,7 +686,7 @@ export function AmazonTab({
             </div>
           </form>
         ) : (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="mb-6 p-4 app-card-inner/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Your organization manager will set up and add sender email addresses to your account. Once added, the email addresses will appear in the list below and will be available for use in campaigns.
             </p>
@@ -702,7 +702,7 @@ export function AmazonTab({
             sesEmails.map((email) => (
               <div
                 key={email.address}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
+                className="flex items-center justify-between p-4 app-card-inner/50 rounded-lg group"
               >
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-gray-400" />
@@ -715,7 +715,7 @@ export function AmazonTab({
                         onChange={(e) => handleUpdateDailyLimit(email, Math.min(50000, Math.max(1, parseInt(e.target.value))))}
                         min="1"
                         max="50000"
-                        className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                       />
                       <span className="text-sm text-gray-500 dark:text-gray-400">
                         emails/day

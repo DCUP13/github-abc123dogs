@@ -123,7 +123,7 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
             return (
               <div
                 key={index}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+                className="app-card rounded-xl shadow-sm p-6"
               >
                 <div className="flex items-center gap-4">
                   <div className={`p-3 rounded-lg ${card.bgColor}`}>

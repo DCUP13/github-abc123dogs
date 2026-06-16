@@ -314,7 +314,7 @@ export function Templates({ onSignOut, currentView }: TemplatesProps) {
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+                  className="app-card rounded-xl shadow-sm p-6"
                 >
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     {template.name}

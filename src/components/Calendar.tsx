@@ -258,7 +258,7 @@ export function Calendar() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
             <button
               onClick={navigateToday}
-              className="px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 app-card border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Today
             </button>
@@ -270,7 +270,7 @@ export function Calendar() {
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs sm:text-sm font-medium rounded-md ${
                 isGoogleConnected
                   ? 'text-white bg-green-600 hover:bg-green-700'
-                  : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  : 'text-gray-700 dark:text-gray-300 app-card border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
               } disabled:opacity-50`}
             >
               <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -333,7 +333,7 @@ export function Calendar() {
         </div>
       </div>
 
-      <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="flex-1 app-card rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -715,7 +715,7 @@ function EventDialog({ selectedDate, onClose, onSave }: { selectedDate: Date; on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="app-card rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Event</h2>
           <button

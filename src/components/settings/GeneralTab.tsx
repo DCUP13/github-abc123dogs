@@ -10,6 +10,7 @@ interface GeneralTabProps {
 }
 
 const COLOR_SCHEMES = [
+  { id: 'classic', name: 'Classic',  sidebar: '#3730a3', accent: '#4f46e5' },
   { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', accent: '#4f46e5' },
   { id: 'forest',  name: 'Forest',   sidebar: '#1a3a26', accent: '#c9a84c' },
   { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', accent: '#0284c7' },
@@ -18,7 +19,6 @@ const COLOR_SCHEMES = [
   { id: 'amber',   name: 'Amber',    sidebar: '#78350f', accent: '#d97706' },
   { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', accent: '#7c3aed' },
   { id: 'sky',     name: 'Sky',      sidebar: '#075985', accent: '#0ea5e9' },
-  { id: 'slate',   name: 'Slate',    sidebar: '#1e293b', accent: '#64748b' },
   { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', accent: '#a8a29e' },
 ];
 
@@ -97,7 +97,7 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
                 onClick={() => updateColorScheme(scheme.id)}
                 className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${
                   isActive
-                    ? 'border-gray-400 dark:border-gray-300 bg-gray-50 dark:bg-gray-700'
+                    ? 'border-gray-400 dark:border-gray-300 app-card-inner'
                     : 'border-transparent hover:border-gray-200 dark:hover:border-gray-600'
                 }`}
                 title={scheme.name}

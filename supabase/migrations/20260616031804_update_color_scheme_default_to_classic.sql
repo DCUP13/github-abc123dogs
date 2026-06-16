@@ -1,0 +1,1 @@
+ALTER TABLE user_settings ALTER COLUMN color_scheme SET DEFAULT 'classic';

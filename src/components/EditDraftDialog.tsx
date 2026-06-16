@@ -302,7 +302,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
 
           <form onSubmit={handleSendDraft} className="flex-1 flex flex-col">
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-1 flex flex-col m-4">
-              <div className="p-4 space-y-4 flex-shrink-0 bg-gray-50 dark:bg-gray-700/30">
+              <div className="p-4 space-y-4 flex-shrink-0 app-card-inner/30">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

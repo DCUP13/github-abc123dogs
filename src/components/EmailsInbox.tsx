@@ -764,7 +764,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                 <button
                   onClick={handleRefresh}
                   disabled={isProcessingEmails}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span className="hidden sm:inline">Refresh</span>
@@ -913,12 +913,12 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                   placeholder="Search emails..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card text-gray-900 dark:text-white"
                 />
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+            <div className="app-card rounded-xl shadow-sm overflow-hidden">
               {filteredEmails.length === 0 ? (
                 <div className="text-center py-12">
                   <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -1034,7 +1034,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
             </div>
           </>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="app-card rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
               {/* Top bar: Back on left, actions on right — stacks on mobile */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -1148,8 +1148,8 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           : 'border-gray-200 dark:border-gray-700'
                       } ${
                         msg.type === 'received'
-                          ? 'bg-gray-50 dark:bg-gray-700/40'
-                          : 'bg-white dark:bg-gray-800'
+                          ? 'app-card-inner/40'
+                          : 'app-card'
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/50 gap-1.5 sm:gap-0">
@@ -1202,7 +1202,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     {(selectedEmail as Email).attachments.map((attachment: any, index: number) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                        className="flex items-center justify-between p-3 app-card-inner rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-lg">

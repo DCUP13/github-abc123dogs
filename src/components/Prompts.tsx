@@ -420,14 +420,14 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               placeholder="Search prompts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 app-card text-gray-900 dark:text-white text-sm"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={selectedCategory}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 app-card text-gray-900 dark:text-white text-sm"
             >
               <option value="All">All Categories</option>
               {categories.map(category => (
@@ -437,7 +437,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             <select
               value={sortOrder}
               onChange={(e) => handleSortChange(e.target.value as typeof sortOrder)}
-              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+              className="flex-1 sm:flex-none min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 app-card text-gray-900 dark:text-white text-sm"
             >
               <option value="updated_desc">Last modified</option>
               <option value="updated_asc">Oldest modified</option>
@@ -451,7 +451,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPrompts.length === 0 ? (
-            <div className="col-span-full text-center py-12 bg-white dark:bg-gray-800 rounded-xl">
+            <div className="col-span-full text-center py-12 app-card rounded-xl">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 {searchQuery || selectedCategory !== 'All' ? 'No prompts found' : 'No prompts yet'}
@@ -464,7 +464,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             </div>
           ) : (
             filteredPrompts.map((prompt) => (
-              <div key={prompt.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 group hover:shadow-md transition-shadow">
+              <div key={prompt.id} className="app-card rounded-xl shadow-sm p-6 group hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -523,7 +523,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
         {confirmDeleteId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-sm p-6">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-sm p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -553,7 +553,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4 max-h-[calc(100vh-2rem)] flex flex-col pr-2">
               <div className="flex items-center justify-between p-6 pb-0">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
@@ -726,7 +726,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   {/* Company Info — General category only, at the bottom */}
                   {formData.category === 'General' && (
                     <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
-                      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
+                      <div className="flex items-center justify-between px-4 py-3 app-card-inner/50">
                         <div className="flex items-center gap-2">
                           <MessageSquare className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Company &amp; Product Details</span>
@@ -782,9 +782,9 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                           {formData.properties.map((property, index) => {
                             const isCollapsed = collapsedProperties.has(index);
                             return (
-                              <div key={index} className="bg-white dark:bg-gray-800">
+                              <div key={index} className="app-card">
                                 {/* Property header row */}
-                                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50">
+                                <div className="flex items-center justify-between px-4 py-3 app-card-inner/50">
                                   <button
                                     type="button"
                                     onClick={() => togglePropertyCollapse(index)}

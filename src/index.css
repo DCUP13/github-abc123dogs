@@ -93,6 +93,12 @@
 .dark .app-card {
   background-color: var(--card-bg-d, #1f2937);
 }
+.app-card-inner {
+  background-color: var(--card-bg, #f9fafb);
+}
+.dark .app-card-inner {
+  background-color: var(--card-bg-inner-d, #374151);
+}
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;

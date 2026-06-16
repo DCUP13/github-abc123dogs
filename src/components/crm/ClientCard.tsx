@@ -78,7 +78,7 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 group hover:shadow-md transition-shadow">
+    <div className="app-card rounded-xl shadow-sm p-4 sm:p-6 group hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3 sm:mb-4">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">

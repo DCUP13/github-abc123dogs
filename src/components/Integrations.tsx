@@ -699,7 +699,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                                   .map(event => {
                                     const eventType = EVENT_TYPES.find(t => t.key === event.event_type);
                                     return (
-                                      <div key={event.id} className="mb-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                      <div key={event.id} className="mb-2 p-2 app-card-inner/50 rounded-lg">
                                         <div className="flex items-center justify-between mb-1">
                                           <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                                             {eventType?.label || event.event_type}

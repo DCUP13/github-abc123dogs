@@ -226,7 +226,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     <div className="p-4 md:p-8 app-bg min-h-screen">
       <div className="max-w-6xl mx-auto">
         {organization && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-8">
+          <div className="app-card rounded-lg shadow-lg p-4 sm:p-6 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                 {organization.logo_url ? (
@@ -314,7 +314,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Team Members</h2>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="app-card rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Active Members</h2>
           {members.length === 0 ? (
             <div className="text-center py-12">
@@ -418,7 +418,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         </div>
 
         {(userRole === 'owner' || userRole === 'manager') && invitations.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mt-6">
+          <div className="app-card rounded-lg shadow-lg p-6 mt-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations</h2>
             <div className="space-y-3">
               {invitations.map((invitation) => (
@@ -456,7 +456,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
       {showInviteDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="app-card rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Invite Team Member</h2>
               <button

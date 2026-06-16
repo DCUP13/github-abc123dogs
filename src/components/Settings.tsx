@@ -199,6 +199,7 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
   ];
 
   const ACCENT: Record<string, { light: string; dark: string }> = {
+    classic: { light: '#4f46e5', dark: '#818cf8' },
     indigo:  { light: '#4f46e5', dark: '#818cf8' },
     forest:  { light: '#2d5a3d', dark: '#c9a84c' },
     ocean:   { light: '#0369a1', dark: '#38bdf8' },
@@ -207,10 +208,9 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
     amber:   { light: '#b45309', dark: '#fbbf24' },
     violet:  { light: '#6d28d9', dark: '#a78bfa' },
     sky:     { light: '#0284c7', dark: '#7dd3fc' },
-    slate:   { light: '#475569', dark: '#94a3b8' },
     stone:   { light: '#78716c', dark: '#d6d3d1' },
   };
-  const accentColor = (ACCENT[colorScheme] ?? ACCENT['indigo'])[darkMode ? 'dark' : 'light'];
+  const accentColor = (ACCENT[colorScheme] ?? ACCENT['classic'])[darkMode ? 'dark' : 'light'];
 
   if (isLoading) {
     return (

@@ -175,7 +175,7 @@ export function AutoresponderTab() {
       </div>
 
       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="flex items-center justify-between p-4 app-card-inner/50 rounded-lg">
           <div className="flex-1">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white">
               AI Client Grading
@@ -199,7 +199,7 @@ export function AutoresponderTab() {
           {emails.map((email) => (
             <div
               key={email}
-              className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-3"
+              className="p-4 app-card-inner/50 rounded-lg space-y-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1">

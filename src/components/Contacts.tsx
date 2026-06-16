@@ -177,7 +177,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
               placeholder="Search users or contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card text-gray-900 dark:text-white"
             />
           </div>
         </div>
@@ -187,7 +187,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Search Results
             </h2>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="app-card rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
               {filteredUsers.map((user) => (
                 <div key={user.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
@@ -219,7 +219,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Pending Requests
             </h2>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="app-card rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
               {pendingRequests.map((contact) => (
                 <div key={contact.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
@@ -258,7 +258,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Sent Requests
             </h2>
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="app-card rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
               {sentRequests.map((contact) => (
                 <div key={contact.id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
@@ -291,7 +291,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Friends ({friends.length})
           </h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="app-card rounded-xl shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
             {friends.length === 0 ? (
               <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 No friends added yet
@@ -325,7 +325,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
 
       {showInviteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md mx-4 sm:mx-auto">
+          <div className="app-card rounded-xl shadow-lg p-6 w-full max-w-md mx-4 sm:mx-auto">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Invite Friends
             </h2>
@@ -360,7 +360,7 @@ export function Contacts({ onSignOut, currentView }: ContactsProps) {
                   <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or</span>
+                  <span className="px-2 app-card text-gray-500 dark:text-gray-400">Or</span>
                 </div>
               </div>
 

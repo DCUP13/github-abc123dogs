@@ -316,7 +316,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
           <form onSubmit={handleSend} className="flex-1 flex flex-col">
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden flex-1 flex flex-col m-4">
               {/* Header Fields */}
-              <div className="p-4 space-y-4 flex-shrink-0 bg-gray-50 dark:bg-gray-700/30">
+              <div className="p-4 space-y-4 flex-shrink-0 app-card-inner/30">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* From Field */}
                   <div>

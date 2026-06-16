@@ -513,7 +513,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     placeholder="Search clients..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 sm:pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                    className="w-full pl-9 sm:pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card text-gray-900 dark:text-white text-sm"
                   />
                 </div>
               </div>
@@ -521,7 +521,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card text-gray-900 dark:text-white text-sm"
                 >
                   <option value="all">All Types</option>
                   {clientTypes.map(type => (
@@ -531,7 +531,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card text-gray-900 dark:text-white text-sm"
                 >
                   <option value="all">All Statuses</option>
                   {clientStatuses.map(status => (
@@ -541,7 +541,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+            <div className="app-card rounded-xl shadow-sm overflow-hidden">
               {filteredClients.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -674,7 +674,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               <div className="flex gap-2 sm:flex-shrink-0">
                 <button
                   onClick={() => handleEditClient(selectedClient)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 sm:px-4 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-lg shadow-sm text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
                   <span className="ml-1.5 sm:ml-0">Edit</span>
@@ -691,7 +691,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <div className="app-card rounded-xl shadow-sm p-6">
                   <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Client Details</h2>
                   
                   <div className="space-y-4">
@@ -774,7 +774,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </div>
 
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                <div className="app-card rounded-xl shadow-sm p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white">Interaction History</h2>
                     <button
@@ -856,7 +856,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 </div>
 
                 {selectedClientGrade && (
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                  <div className="app-card rounded-xl shadow-sm p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-medium text-gray-900 dark:text-white">Client Grade</h2>
                       <div className="flex items-center gap-2">
@@ -870,7 +870,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center gap-2 p-3 app-card-inner/50 rounded-lg">
                         <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 dark:text-gray-400">Financial</div>
@@ -878,7 +878,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center gap-2 p-3 app-card-inner/50 rounded-lg">
                         <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 dark:text-gray-400">Motivation</div>
@@ -886,7 +886,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center gap-2 p-3 app-card-inner/50 rounded-lg">
                         <Calendar className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 dark:text-gray-400">Timeline</div>
@@ -894,7 +894,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center gap-2 p-3 app-card-inner/50 rounded-lg">
                         <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                         <div className="flex-1">
                           <div className="text-xs text-gray-500 dark:text-gray-400">Communication</div>
@@ -931,7 +931,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         {/* Client Form Modal */}
         {showClientForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-2xl mx-4 sm:mx-auto my-4">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   {editingClient ? 'Edit Client' : 'Add New Client'}
@@ -954,7 +954,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="text"
                       value={clientForm.first_name}
                       onChange={(e) => setClientForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                       required
                     />
                   </div>
@@ -966,7 +966,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="text"
                       value={clientForm.last_name}
                       onChange={(e) => setClientForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                       required
                     />
                   </div>
@@ -981,7 +981,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="email"
                       value={clientForm.email}
                       onChange={(e) => setClientForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -992,7 +992,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="tel"
                       value={clientForm.phone}
                       onChange={(e) => setClientForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -1005,7 +1005,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     type="text"
                     value={clientForm.address}
                     onChange={(e) => setClientForm(prev => ({ ...prev, address: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -1018,7 +1018,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="text"
                       value={clientForm.city}
                       onChange={(e) => setClientForm(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -1029,7 +1029,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="text"
                       value={clientForm.state}
                       onChange={(e) => setClientForm(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
@@ -1040,7 +1040,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="text"
                       value={clientForm.zip_code}
                       onChange={(e) => setClientForm(prev => ({ ...prev, zip_code: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -1053,7 +1053,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     <select
                       value={clientForm.client_type}
                       onChange={(e) => setClientForm(prev => ({ ...prev, client_type: e.target.value as any }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     >
                       {clientTypes.map(type => (
                         <option key={type.value} value={type.value}>{type.label}</option>
@@ -1067,7 +1067,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     <select
                       value={clientForm.status}
                       onChange={(e) => setClientForm(prev => ({ ...prev, status: e.target.value as any }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     >
                       {clientStatuses.map(status => (
                         <option key={status.value} value={status.value}>{status.label}</option>
@@ -1085,7 +1085,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="number"
                       value={clientForm.budget_min}
                       onChange={(e) => setClientForm(prev => ({ ...prev, budget_min: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                       placeholder="Minimum budget"
                     />
                   </div>
@@ -1097,7 +1097,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       type="number"
                       value={clientForm.budget_max}
                       onChange={(e) => setClientForm(prev => ({ ...prev, budget_max: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                       placeholder="Maximum budget"
                     />
                   </div>
@@ -1110,7 +1110,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <select
                     value={clientForm.property_type}
                     onChange={(e) => setClientForm(prev => ({ ...prev, property_type: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                   >
                     <option value="">Select property type</option>
                     {propertyTypes.map(type => (
@@ -1130,7 +1130,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                         value={newPreferredArea}
                         onChange={(e) => setNewPreferredArea(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPreferredArea())}
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                         placeholder="Add preferred area"
                       />
                       <button
@@ -1171,7 +1171,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     type="text"
                     value={clientForm.source}
                     onChange={(e) => setClientForm(prev => ({ ...prev, source: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="How did you meet this client?"
                   />
                 </div>
@@ -1184,7 +1184,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     value={clientForm.notes}
                     onChange={(e) => setClientForm(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="Additional notes about this client"
                   />
                 </div>
@@ -1213,7 +1213,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         {/* Interaction Form Modal */}
         {showInteractionForm && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-4 sm:mx-auto">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-md mx-4 sm:mx-auto">
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Add Interaction
@@ -1234,7 +1234,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <select
                     value={interactionForm.interaction_type}
                     onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_type: e.target.value as any }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                   >
                     {interactionTypes.map(type => (
                       <option key={type.value} value={type.value}>{type.label}</option>
@@ -1250,7 +1250,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     type="text"
                     value={interactionForm.subject}
                     onChange={(e) => setInteractionForm(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="Brief subject or title"
                   />
                 </div>
@@ -1263,7 +1263,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     type="datetime-local"
                     value={interactionForm.interaction_date}
                     onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -1276,7 +1276,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     type="datetime-local"
                     value={interactionForm.follow_up_date}
                     onChange={(e) => setInteractionForm(prev => ({ ...prev, follow_up_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -1288,7 +1288,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     value={interactionForm.notes}
                     onChange={(e) => setInteractionForm(prev => ({ ...prev, notes: e.target.value }))}
                     rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                     placeholder="Interaction details and notes"
                   />
                 </div>

@@ -253,7 +253,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
                   setEmailError('');
                 }}
                 placeholder="example@gmail.com"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
               />
               {emailError && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{emailError}</p>
@@ -274,7 +274,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
                     setPasswordError('');
                   }}
                   placeholder="Enter 16-character app password"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-24"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white pr-24"
                 />
                 <button
                   type="button"
@@ -300,7 +300,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
                 onChange={(e) => setDailyLimit(Math.min(500, Math.max(1, parseInt(e.target.value))))}
                 min="1"
                 max="500"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Maximum number of emails that can be sent per day (1-500)
@@ -317,7 +317,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
             </div>
           </form>
         ) : (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="mb-6 p-4 app-card-inner/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Your organization manager will set up and add Gmail addresses to your account. Once added, the email addresses will appear in the list below and will be available for use in campaigns.
             </p>
@@ -333,7 +333,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
             googleEmails.map((email) => (
               <div
                 key={email.address}
-                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg group"
+                className="flex items-center justify-between p-4 app-card-inner/50 rounded-lg group"
               >
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-gray-400" />
@@ -351,7 +351,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
                           onChange={(e) => handleUpdateDailyLimit(email, Math.min(500, Math.max(1, parseInt(e.target.value))))}
                           min="1"
                           max="500"
-                          className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
                         />
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           emails/day

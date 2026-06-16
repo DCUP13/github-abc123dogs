@@ -134,7 +134,7 @@ export function RapidAPITab() {
             max="100"
             value={settings.maxPages}
             onChange={(e) => setSettings(prev => ({ ...prev, maxPages: parseInt(e.target.value, 10) }))}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             required
           />
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -151,7 +151,7 @@ export function RapidAPITab() {
             id="apiKey"
             value={settings.apiKey}
             onChange={(e) => setSettings(prev => ({ ...prev, apiKey: e.target.value }))}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             placeholder="Enter your RapidAPI key"
             required
           />
@@ -166,7 +166,7 @@ export function RapidAPITab() {
             id="apiHost"
             value={settings.apiHost}
             onChange={(e) => setSettings(prev => ({ ...prev, apiHost: e.target.value }))}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
             placeholder="Enter the RapidAPI host"
             required
           />
