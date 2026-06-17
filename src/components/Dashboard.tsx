@@ -232,8 +232,8 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
               <div
                 key={index}
                 className="app-card rounded-xl shadow-sm p-6 transition-shadow duration-200 hover:shadow-md cursor-default"
-                onMouseEnter={() => hasDetails && setHoveredCard(index)}
-                onMouseLeave={() => setHoveredCard(null)}
+                onMouseEnter={() => hasDetails && window.matchMedia('(hover: hover)').matches && setHoveredCard(index)}
+                onMouseLeave={() => window.matchMedia('(hover: hover)').matches && setHoveredCard(null)}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
