@@ -11,15 +11,15 @@ interface GeneralTabProps {
 
 const COLOR_SCHEMES = [
   { id: 'classic', name: 'Classic',  sidebar: '#3730a3', accent: '#4f46e5' },
-  { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', accent: '#4f46e5' },
+  { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', accent: '#fbbf24' },
   { id: 'forest',  name: 'Forest',   sidebar: '#1a3a26', accent: '#c9a84c' },
-  { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', accent: '#0284c7' },
-  { id: 'rose',    name: 'Rose',     sidebar: '#881337', accent: '#e11d48' },
-  { id: 'emerald', name: 'Emerald',  sidebar: '#064e3b', accent: '#10b981' },
-  { id: 'amber',   name: 'Amber',    sidebar: '#78350f', accent: '#d97706' },
-  { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', accent: '#7c3aed' },
-  { id: 'sky',     name: 'Sky',      sidebar: '#075985', accent: '#0ea5e9' },
-  { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', accent: '#a8a29e' },
+  { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', accent: '#fb923c' },
+  { id: 'rose',    name: 'Rose',     sidebar: '#881337', accent: '#2dd4bf' },
+  { id: 'emerald', name: 'Emerald',  sidebar: '#064e3b', accent: '#f59e0b' },
+  { id: 'amber',   name: 'Amber',    sidebar: '#78350f', accent: '#38bdf8' },
+  { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', accent: '#fbbf24' },
+  { id: 'sky',     name: 'Sky',      sidebar: '#075985', accent: '#fb923c' },
+  { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', accent: '#c8a882' },
 ];
 
 export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
