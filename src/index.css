@@ -20,6 +20,8 @@
   --sb-border: rgba(45, 90, 61, 0.4);
   --accent: #2d5a3d;
   --accent-dark: #c9a84c;
+  --page-bg: #faf3e8;
+  --card-bg: #fffcf5;
 }
 [data-theme="ocean"] {
   --sb-bg: #0c4a6e;
@@ -105,6 +107,11 @@
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+.theme-spinner {
+  border-color: var(--accent, #4f46e5);
+  border-top-color: transparent;
 }
 
 .toggle-checkbox {

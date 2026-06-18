@@ -477,8 +477,8 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   if (isLoading) {
     return (
-      <div className="p-4 md:p-8 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-4 md:p-8 app-bg min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin theme-spinner" />
       </div>
     );
   }
