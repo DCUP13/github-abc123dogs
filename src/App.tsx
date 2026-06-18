@@ -49,23 +49,23 @@ export const ThemeContext = createContext<ThemeContextType>({
 const SCHEME_VARS: Record<string, Record<string, string>> = {
   classic: { '--sb-bg': '#3730a3', '--sb-hover': '#4338ca', '--sb-border': 'rgba(67,56,202,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8', '--page-bg': '#ffffff',  '--page-bg-d': '#111827', '--card-bg': '#ffffff', '--card-bg-d': '#1f2937', '--card-bg-inner-d': '#374151', '--sb-bg-d': '#1f2937', '--sb-hover-d': '#374151' },
   // Indigo: cool blue-purple sidebar + warm amber/honey page (complementary warm/cool contrast)
-  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#fbbf24', '--page-bg': '#fdf4e3',  '--page-bg-d': '#1a1730', '--card-bg': '#fffdf5', '--card-bg-d': '#252040', '--card-bg-inner-d': '#312c54', '--sb-bg-d': '#231e5c', '--sb-hover-d': '#2d2870' },
+  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#fbbf24', '--page-bg': '#fdefd0',  '--page-bg-d': '#1a1730', '--card-bg': '#fffaee', '--card-bg-d': '#252040', '--card-bg-inner-d': '#312c54', '--sb-bg-d': '#231e5c', '--sb-hover-d': '#2d2870' },
   // Forest: dark green sidebar + warm tan/cream/gold (matching landing page palette)
   forest:  { '--sb-bg': '#1a3a26', '--sb-hover': '#2d5a3d', '--sb-border': 'rgba(45,90,61,0.4)',     '--accent': '#2d5a3d', '--accent-dark': '#c9a84c', '--page-bg': '#faf3e8',  '--page-bg-d': '#18130b', '--card-bg': '#fffcf5', '--card-bg-d': '#241c0e', '--card-bg-inner-d': '#302515', '--sb-bg-d': '#132f1e', '--sb-hover-d': '#1a3c27' },
-  // Ocean: deep blue sidebar + warm sandy/peach page (warm/cool complementary)
-  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#fb923c', '--page-bg': '#fef3e2',  '--page-bg-d': '#091a28', '--card-bg': '#fffdf8', '--card-bg-d': '#112236', '--card-bg-inner-d': '#192e46', '--sb-bg-d': '#0d263c', '--sb-hover-d': '#143249' },
-  // Rose: deep crimson sidebar + cool sage/teal page (red/green complementary)
-  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#2dd4bf', '--page-bg': '#e8f5f2',  '--page-bg-d': '#1f0a0f', '--card-bg': '#f3fbf8', '--card-bg-d': '#2d1219', '--card-bg-inner-d': '#3d1a23', '--sb-bg-d': '#2d0e16', '--sb-hover-d': '#3a1120' },
-  // Emerald: deep green sidebar + warm amber/honey page (green/amber complementary)
-  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#f59e0b', '--page-bg': '#fef4e0',  '--page-bg-d': '#071a12', '--card-bg': '#fffef5', '--card-bg-d': '#0e2a1d', '--card-bg-inner-d': '#183828', '--sb-bg-d': '#0e2a1c', '--sb-hover-d': '#133822' },
-  // Amber: warm orange-brown sidebar + cool sky-blue page (orange/blue complementary)
-  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#38bdf8', '--page-bg': '#e8f3fd',  '--page-bg-d': '#1a0e05', '--card-bg': '#f3f9ff', '--card-bg-d': '#27180a', '--card-bg-inner-d': '#36220e', '--sb-bg-d': '#241508', '--sb-hover-d': '#2e1b0a' },
-  // Violet: deep purple sidebar + warm golden page (purple/gold complementary)
-  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#fbbf24', '--page-bg': '#fdf5e0',  '--page-bg-d': '#160a2e', '--card-bg': '#fffef5', '--card-bg-d': '#21123e', '--card-bg-inner-d': '#2d1855', '--sb-bg-d': '#1e1040', '--sb-hover-d': '#27134f' },
+  // Ocean: deep blue sidebar + warm sandy/coral page (warm/cool complementary)
+  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#fb923c', '--page-bg': '#fce8d0',  '--page-bg-d': '#091a28', '--card-bg': '#fff8f0', '--card-bg-d': '#112236', '--card-bg-inner-d': '#192e46', '--sb-bg-d': '#0d263c', '--sb-hover-d': '#143249' },
+  // Rose: deep crimson sidebar + teal/mint page (red/teal complementary)
+  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#2dd4bf', '--page-bg': '#cce6e2',  '--page-bg-d': '#1f0a0f', '--card-bg': '#e6f5f2', '--card-bg-d': '#2d1219', '--card-bg-inner-d': '#3d1a23', '--sb-bg-d': '#2d0e16', '--sb-hover-d': '#3a1120' },
+  // Emerald: deep green sidebar + warm amber page (green/amber complementary)
+  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#f59e0b', '--page-bg': '#fde8c4',  '--page-bg-d': '#071a12', '--card-bg': '#fff8ee', '--card-bg-d': '#0e2a1d', '--card-bg-inner-d': '#183828', '--sb-bg-d': '#0e2a1c', '--sb-hover-d': '#133822' },
+  // Amber: warm orange-brown sidebar + sky blue page (orange/blue complementary)
+  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#38bdf8', '--page-bg': '#d0e4f8',  '--page-bg-d': '#1a0e05', '--card-bg': '#eef5ff', '--card-bg-d': '#27180a', '--card-bg-inner-d': '#36220e', '--sb-bg-d': '#241508', '--sb-hover-d': '#2e1b0a' },
+  // Violet: deep purple sidebar + golden page (purple/gold complementary)
+  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#fbbf24', '--page-bg': '#fdecc8',  '--page-bg-d': '#160a2e', '--card-bg': '#fff8ee', '--card-bg-d': '#21123e', '--card-bg-inner-d': '#2d1855', '--sb-bg-d': '#1e1040', '--sb-hover-d': '#27134f' },
   // Sky: medium blue sidebar + warm peach/coral page (blue/orange complementary)
-  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#fb923c', '--page-bg': '#fef1e8',  '--page-bg-d': '#071827', '--card-bg': '#fffcf7', '--card-bg-d': '#0d253a', '--card-bg-inner-d': '#173348', '--sb-bg-d': '#0e2638', '--sb-hover-d': '#133148' },
-  // Stone: dark neutral sidebar + subtle warm copper page
-  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#c8a882', '--page-bg': '#f9f6f2',  '--page-bg-d': '#131110', '--card-bg': '#ffffff', '--card-bg-d': '#1e1c1a', '--card-bg-inner-d': '#282624', '--sb-bg-d': '#1a1815', '--sb-hover-d': '#22201e' },
+  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#fb923c', '--page-bg': '#fde0c8',  '--page-bg-d': '#071827', '--card-bg': '#fff4ec', '--card-bg-d': '#0d253a', '--card-bg-inner-d': '#173348', '--sb-bg-d': '#0e2638', '--sb-hover-d': '#133148' },
+  // Stone: dark neutral sidebar + subtle warm page
+  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#c8a882', '--page-bg': '#f0ece8',  '--page-bg-d': '#131110', '--card-bg': '#faf7f4', '--card-bg-d': '#1e1c1a', '--card-bg-inner-d': '#282624', '--sb-bg-d': '#1a1815', '--sb-hover-d': '#22201e' },
 };
 
 export default function App() {
