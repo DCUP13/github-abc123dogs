@@ -77,6 +77,13 @@ export default function App() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  useEffect(() => {
+    const vars = SCHEME_VARS[colorScheme] ?? SCHEME_VARS['classic'];
+    Object.entries(vars).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+  }, [colorScheme]);
+
   const updateView = (newView: View) => {
     setPreviousView(view);
     setView(newView);
