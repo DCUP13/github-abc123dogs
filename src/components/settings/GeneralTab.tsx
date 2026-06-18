@@ -10,16 +10,16 @@ interface GeneralTabProps {
 }
 
 const COLOR_SCHEMES = [
-  { id: 'classic', name: 'Classic',  sidebar: '#3730a3', accent: '#4f46e5' },
-  { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', accent: '#fbbf24' },
-  { id: 'forest',  name: 'Forest',   sidebar: '#1a3a26', accent: '#c9a84c' },
-  { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', accent: '#fb923c' },
-  { id: 'rose',    name: 'Rose',     sidebar: '#881337', accent: '#2dd4bf' },
-  { id: 'emerald', name: 'Emerald',  sidebar: '#064e3b', accent: '#f59e0b' },
-  { id: 'amber',   name: 'Amber',    sidebar: '#78350f', accent: '#38bdf8' },
-  { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', accent: '#fbbf24' },
-  { id: 'sky',     name: 'Sky',      sidebar: '#075985', accent: '#fb923c' },
-  { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', accent: '#c8a882' },
+  { id: 'classic', name: 'Classic',  sidebar: '#3730a3', pageBg: '#ffffff',  accent: '#4f46e5' },
+  { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', pageBg: '#fdf4e3',  accent: '#fbbf24' },
+  { id: 'forest',  name: 'Forest',   sidebar: '#1a3a26', pageBg: '#faf3e8',  accent: '#c9a84c' },
+  { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', pageBg: '#fef3e2',  accent: '#fb923c' },
+  { id: 'rose',    name: 'Rose',     sidebar: '#881337', pageBg: '#e8f5f2',  accent: '#2dd4bf' },
+  { id: 'emerald', name: 'Emerald',  sidebar: '#064e3b', pageBg: '#fef4e0',  accent: '#f59e0b' },
+  { id: 'amber',   name: 'Amber',    sidebar: '#78350f', pageBg: '#e8f3fd',  accent: '#38bdf8' },
+  { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', pageBg: '#fdf5e0',  accent: '#fbbf24' },
+  { id: 'sky',     name: 'Sky',      sidebar: '#075985', pageBg: '#fef1e8',  accent: '#fb923c' },
+  { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', pageBg: '#f9f6f2',  accent: '#c8a882' },
 ];
 
 export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
@@ -87,7 +87,7 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
 
       <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Color Scheme</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose an accent color for the sidebar and interface highlights.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose a color scheme for the sidebar and page backgrounds.</p>
         <div className="grid grid-cols-5 gap-2">
           {COLOR_SCHEMES.map(scheme => {
             const isActive = colorScheme === scheme.id;
@@ -102,16 +102,20 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
                 }`}
                 title={scheme.name}
               >
-                <div
-                  className="w-full h-9 rounded-lg relative overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: scheme.sidebar }}
-                >
-                  <div
-                    className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 rounded-full border border-white/30"
-                    style={{ backgroundColor: scheme.accent }}
-                  />
+                <div className="w-full h-9 rounded-lg overflow-hidden flex relative">
+                  {/* Sidebar strip on left */}
+                  <div className="w-1/3 h-full flex-shrink-0" style={{ backgroundColor: scheme.sidebar }} />
+                  {/* Page background on right */}
+                  <div className="flex-1 h-full flex items-center justify-center relative" style={{ backgroundColor: scheme.pageBg }}>
+                    <div
+                      className="w-2.5 h-2.5 rounded-full border border-black/10"
+                      style={{ backgroundColor: scheme.accent }}
+                    />
+                  </div>
                   {isActive && (
-                    <Check className="w-4 h-4 text-white drop-shadow" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Check className="w-4 h-4 drop-shadow" style={{ color: scheme.sidebar }} />
+                    </div>
                   )}
                 </div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 leading-none">
