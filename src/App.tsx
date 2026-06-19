@@ -78,10 +78,7 @@ export default function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    const vars = SCHEME_VARS[colorScheme] ?? SCHEME_VARS['classic'];
-    Object.entries(vars).forEach(([key, value]) => {
-      document.documentElement.style.setProperty(key, value);
-    });
+    document.documentElement.setAttribute('data-scheme', colorScheme);
   }, [colorScheme]);
 
   const updateView = (newView: View) => {
