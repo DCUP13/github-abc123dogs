@@ -51,7 +51,7 @@ export const ThemeContext = createContext<ThemeContextType>({
 });
 
 const SCHEME_VARS: Record<string, Record<string, string>> = {
-  classic: { '--sb-bg': '#3730a3', '--sb-hover': '#4338ca', '--sb-border': 'rgba(67,56,202,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8', '--page-bg': '#ffffff',  '--page-bg-d': '#111827', '--card-bg': '#ffffff', '--card-bg-d': '#1f2937', '--card-bg-inner-d': '#374151', '--sb-bg-d': '#1f2937', '--sb-hover-d': '#374151' },
+  classic: { '--sb-bg': '#3730a3', '--sb-hover': '#4338ca', '--sb-border': 'rgba(67,56,202,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8', '--page-bg': '#eef0fd',  '--page-bg-d': '#111827', '--card-bg': '#f8f9fe', '--card-bg-d': '#1f2937', '--card-bg-inner-d': '#374151', '--sb-bg-d': '#1f2937', '--sb-hover-d': '#374151' },
   // Indigo: cool blue-purple sidebar + warm amber/honey page (complementary warm/cool contrast)
   indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#fbbf24', '--page-bg': '#fdefd0',  '--page-bg-d': '#1a1730', '--card-bg': '#fffaee', '--card-bg-d': '#252040', '--card-bg-inner-d': '#312c54', '--sb-bg-d': '#231e5c', '--sb-hover-d': '#2d2870' },
   // Forest: dark green sidebar + warm tan/cream/gold (matching landing page palette)
@@ -502,6 +502,7 @@ export default function App() {
         <DashboardProvider>
           <div
             className={darkMode ? 'dark' : ''}
+            style={(SCHEME_VARS[colorScheme] ?? SCHEME_VARS['classic']) as React.CSSProperties}
           >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />

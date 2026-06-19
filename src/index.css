@@ -86,10 +86,10 @@
 /* app-card background is applied via style props using cardBg context. */
 .app-bg { background-color: inherit; }
 .dark .app-bg { background-color: inherit; }
-.app-card { background-color: #ffffff; }
-.dark .app-card { background-color: #1f2937; }
-.app-card-inner { background-color: #f9fafb; }
-.dark .app-card-inner { background-color: #374151; }
+.app-card { background-color: var(--card-bg, #ffffff); }
+.dark .app-card { background-color: var(--card-bg-d, #1f2937); }
+.app-card-inner { background-color: var(--card-bg, #f9fafb); }
+.dark .app-card-inner { background-color: var(--card-bg-inner-d, #374151); }
 
 .scrollbar-none {
   scrollbar-width: none;
