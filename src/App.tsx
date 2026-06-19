@@ -37,6 +37,8 @@ interface ThemeContextType {
   toggleDarkMode: () => Promise<void>;
   colorScheme: string;
   updateColorScheme: (scheme: string) => Promise<void>;
+  pageBg: string;
+  cardBg: string;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -44,6 +46,8 @@ export const ThemeContext = createContext<ThemeContextType>({
   toggleDarkMode: async () => {},
   colorScheme: 'indigo',
   updateColorScheme: async () => {},
+  pageBg: '#f9fafb',
+  cardBg: '#ffffff',
 });
 
 const SCHEME_VARS: Record<string, Record<string, string>> = {
@@ -493,18 +497,17 @@ export default function App() {
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb'), cardBg: darkMode ? (SCHEME_VARS[colorScheme]?.['--card-bg-d'] ?? '#1f2937') : (SCHEME_VARS[colorScheme]?.['--card-bg'] ?? '#ffffff') }}>
       <EmailProvider>
         <DashboardProvider>
           <div
             className={darkMode ? 'dark' : ''}
-            style={(SCHEME_VARS[colorScheme] ?? SCHEME_VARS['indigo']) as React.CSSProperties}
           >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
-              <div className="flex min-h-screen app-bg">
+              <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb') }}>
                 <Sidebar
                   onSignOut={handleSignOut}
                   onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}

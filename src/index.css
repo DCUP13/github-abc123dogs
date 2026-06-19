@@ -81,60 +81,15 @@
 }
 
 /* ── Theme-aware background helpers ─────────────────────────────────── */
-/* data-scheme attribute is set on <html> by App.tsx useEffect.          */
-/* Use app-bg on page containers, app-card on panels/cards.             */
-
-/* Defaults (classic / unset) */
-.app-bg   { background-color: #f9fafb; }
+/* Page background is set inline on the auth wrapper in App.tsx.        */
+/* app-bg inherits so inner containers show the same color.             */
+/* app-card background is applied via style props using cardBg context. */
+.app-bg { background-color: inherit; }
+.dark .app-bg { background-color: inherit; }
 .app-card { background-color: #ffffff; }
-.app-card-inner { background-color: #f9fafb; }
-
-/* Per-scheme page backgrounds */
-[data-scheme="indigo"]  .app-bg { background-color: #fdefd0; }
-[data-scheme="forest"]  .app-bg { background-color: #faf3e8; }
-[data-scheme="ocean"]   .app-bg { background-color: #fce8d0; }
-[data-scheme="rose"]    .app-bg { background-color: #cce6e2; }
-[data-scheme="emerald"] .app-bg { background-color: #fde8c4; }
-[data-scheme="amber"]   .app-bg { background-color: #d0e4f8; }
-[data-scheme="violet"]  .app-bg { background-color: #fdecc8; }
-[data-scheme="sky"]     .app-bg { background-color: #fde0c8; }
-[data-scheme="stone"]   .app-bg { background-color: #f0ece8; }
-
-/* Per-scheme card backgrounds */
-[data-scheme="indigo"]  .app-card { background-color: #fffaee; }
-[data-scheme="forest"]  .app-card { background-color: #fffcf5; }
-[data-scheme="ocean"]   .app-card { background-color: #fff8f0; }
-[data-scheme="rose"]    .app-card { background-color: #e6f5f2; }
-[data-scheme="emerald"] .app-card { background-color: #fff8ee; }
-[data-scheme="amber"]   .app-card { background-color: #eef5ff; }
-[data-scheme="violet"]  .app-card { background-color: #fff8ee; }
-[data-scheme="sky"]     .app-card { background-color: #fff4ec; }
-[data-scheme="stone"]   .app-card { background-color: #faf7f4; }
-
-/* Dark mode overrides */
-.dark .app-bg   { background-color: #111827; }
 .dark .app-card { background-color: #1f2937; }
+.app-card-inner { background-color: #f9fafb; }
 .dark .app-card-inner { background-color: #374151; }
-
-[data-scheme="indigo"].dark  .app-bg,  .dark [data-scheme="indigo"]  .app-bg  { background-color: #1a1730; }
-[data-scheme="forest"].dark  .app-bg,  .dark [data-scheme="forest"]  .app-bg  { background-color: #18130b; }
-[data-scheme="ocean"].dark   .app-bg,  .dark [data-scheme="ocean"]   .app-bg  { background-color: #091a28; }
-[data-scheme="rose"].dark    .app-bg,  .dark [data-scheme="rose"]    .app-bg  { background-color: #1f0a0f; }
-[data-scheme="emerald"].dark .app-bg,  .dark [data-scheme="emerald"] .app-bg  { background-color: #071a12; }
-[data-scheme="amber"].dark   .app-bg,  .dark [data-scheme="amber"]   .app-bg  { background-color: #1a0e05; }
-[data-scheme="violet"].dark  .app-bg,  .dark [data-scheme="violet"]  .app-bg  { background-color: #160a2e; }
-[data-scheme="sky"].dark     .app-bg,  .dark [data-scheme="sky"]     .app-bg  { background-color: #071827; }
-[data-scheme="stone"].dark   .app-bg,  .dark [data-scheme="stone"]   .app-bg  { background-color: #131110; }
-
-[data-scheme="indigo"].dark  .app-card, .dark [data-scheme="indigo"]  .app-card { background-color: #252040; }
-[data-scheme="forest"].dark  .app-card, .dark [data-scheme="forest"]  .app-card { background-color: #241c0e; }
-[data-scheme="ocean"].dark   .app-card, .dark [data-scheme="ocean"]   .app-card { background-color: #112236; }
-[data-scheme="rose"].dark    .app-card, .dark [data-scheme="rose"]    .app-card { background-color: #2d1219; }
-[data-scheme="emerald"].dark .app-card, .dark [data-scheme="emerald"] .app-card { background-color: #0e2a1d; }
-[data-scheme="amber"].dark   .app-card, .dark [data-scheme="amber"]   .app-card { background-color: #27180a; }
-[data-scheme="violet"].dark  .app-card, .dark [data-scheme="violet"]  .app-card { background-color: #21123e; }
-[data-scheme="sky"].dark     .app-card, .dark [data-scheme="sky"]     .app-card { background-color: #0d253a; }
-[data-scheme="stone"].dark   .app-card, .dark [data-scheme="stone"]   .app-card { background-color: #1e1c1a; }
 
 .scrollbar-none {
   scrollbar-width: none;
