@@ -454,18 +454,15 @@ export default function App() {
   };
 
   const updateColorScheme = async (scheme: string) => {
+    setColorScheme(scheme);
+    localStorage.setItem('app-color-scheme', scheme);
     try {
       const user = await supabase.auth.getUser();
-      if (!user.data.user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
+      if (!user.data.user) return;
+      await supabase
         .from('user_settings')
         .update({ color_scheme: scheme, updated_at: new Date().toISOString() })
         .eq('user_id', user.data.user.id);
-
-      if (error) throw error;
-      setColorScheme(scheme);
-      localStorage.setItem('app-color-scheme', scheme);
     } catch (error) {
       console.error('Error updating color scheme:', error);
     }
@@ -524,7 +521,7 @@ export default function App() {
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                 />
-                <div className="flex-1 md:ml-64 min-w-0">
+                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb') }}>
                   {/* Mobile top bar */}
                   <div
                     className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
