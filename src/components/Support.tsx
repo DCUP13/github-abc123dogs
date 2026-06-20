@@ -53,9 +53,14 @@ function SupportUser() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const requestsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     loadConversations();
+    subscribeToRequestUpdates();
+    return () => {
+      if (requestsChannelRef.current) supabase.removeChannel(requestsChannelRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -87,6 +92,21 @@ function SupportUser() {
     setConversations(data ?? []);
     setLoading(false);
     if (data && data.length === 0) setShowNewForm(true);
+  }
+
+  function subscribeToRequestUpdates() {
+    requestsChannelRef.current = supabase
+      .channel('user-support-requests')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'support_requests',
+      }, (payload) => {
+        setConversations(prev =>
+          prev.map(c => c.id === payload.new.id ? { ...c, ...(payload.new as SupportRequest) } : c)
+        );
+      })
+      .subscribe();
   }
 
   async function loadMessages(requestId: string) {
