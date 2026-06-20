@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, CreditCard as Edit2 } from 'lucide-react';
+import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, CreditCard as Edit2, Send, CheckCircle, MessageSquarePlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Toggle } from './Toggle';
 
@@ -138,6 +138,13 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [requestName, setRequestName] = useState('');
+  const [requestIntegration, setRequestIntegration] = useState('');
+  const [requestDetails, setRequestDetails] = useState('');
+  const [isRequestSubmitting, setIsRequestSubmitting] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [requestError, setRequestError] = useState('');
 
   useEffect(() => {
     loadIntegrations();
@@ -466,6 +473,56 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
     }
   };
 
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!requestName.trim() || !requestIntegration.trim() || !requestDetails.trim()) {
+      setRequestStatus('error');
+      setRequestError('Please fill in all fields');
+      return;
+    }
+
+    setIsRequestSubmitting(true);
+    setRequestStatus('idle');
+    setRequestError('');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-support-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: requestName.trim(),
+            subject: `Integration Request: ${requestIntegration.trim()}`,
+            message: requestDetails.trim(),
+            userEmail: user?.email || 'unknown',
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to send request');
+
+      setRequestStatus('success');
+      setRequestName('');
+      setRequestIntegration('');
+      setRequestDetails('');
+
+      setTimeout(() => setRequestStatus('idle'), 5000);
+    } catch (err) {
+      console.error('Error sending integration request:', err);
+      setRequestStatus('error');
+      setRequestError('Failed to send request. Please try again.');
+    } finally {
+      setIsRequestSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen app-bg">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -650,6 +707,92 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <div className="flex items-center gap-3 mb-2">
+            <MessageSquarePlus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Request an Integration</h2>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Don't see the integration you need? Let us know and we'll look into adding it.
+          </p>
+          <div className="app-card rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700 max-w-2xl">
+            {requestStatus === 'success' && (
+              <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-green-900 dark:text-green-100">Request sent!</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    We'll review your request and get back to you.
+                  </p>
+                </div>
+              </div>
+            )}
+            {requestStatus === 'error' && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-300">{requestError}</p>
+              </div>
+            )}
+            <form onSubmit={handleRequestSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Your Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={requestName}
+                  onChange={(e) => setRequestName(e.target.value)}
+                  placeholder="Enter your name"
+                  disabled={isRequestSubmitting}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Integration Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={requestIntegration}
+                  onChange={(e) => setRequestIntegration(e.target.value)}
+                  placeholder="e.g. HubSpot, Salesforce, Notion..."
+                  disabled={isRequestSubmitting}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  How would you use it? <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={requestDetails}
+                  onChange={(e) => setRequestDetails(e.target.value)}
+                  placeholder="Describe how you'd use this integration and what it would help you accomplish..."
+                  rows={4}
+                  disabled={isRequestSubmitting}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isRequestSubmitting}
+                className="w-full px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {isRequestSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Submit Request
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
 
