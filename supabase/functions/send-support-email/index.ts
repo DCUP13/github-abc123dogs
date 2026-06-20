@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,10 +16,7 @@ interface SupportRequest {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -32,17 +30,26 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing required fields");
     }
 
-    const AWS_ACCESS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID");
-    const AWS_SECRET_ACCESS_KEY = Deno.env.get("AWS_SECRET_ACCESS_KEY");
-    const AWS_REGION = Deno.env.get("AWS_REGION") || "us-east-1";
-    const FROM_EMAIL = "noreply@loireply.com";
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
-      throw new Error("AWS credentials not configured");
+    const { data: sesSettings, error: sesError } = await supabase
+      .from("amazon_ses_settings")
+      .select("smtp_server, smtp_port, smtp_username, smtp_password, noreply_domain")
+      .limit(1)
+      .single();
+
+    if (sesError || !sesSettings) {
+      throw new Error("Email provider not configured");
     }
 
-    const emailBody = `
-<!DOCTYPE html>
+    const fromEmail = `noreply@${sesSettings.noreply_domain}`;
+    const toEmail = "support@loireply.com";
+    const fullSubject = `Support Request: ${subject}`;
+
+    const htmlBody = `<!DOCTYPE html>
 <html>
 <head>
   <style>
@@ -76,7 +83,7 @@ Deno.serve(async (req: Request) => {
       </div>
       <div class="field">
         <div class="label">Message:</div>
-        <div class="value">${message.replace(/\n/g, '<br>')}</div>
+        <div class="value">${message.replace(/\n/g, "<br>")}</div>
       </div>
       <div class="footer">
         This message was sent from the LoiReply support form.
@@ -84,149 +91,145 @@ Deno.serve(async (req: Request) => {
     </div>
   </div>
 </body>
-</html>
-    `.trim();
+</html>`;
 
-    const host = `email.${AWS_REGION}.amazonaws.com`;
-    const service = "ses";
-    const method = "POST";
-    const endpoint = `https://${host}/v2/email/outbound-emails`;
-
-    const payload = JSON.stringify({
-      FromEmailAddress: FROM_EMAIL,
-      Destination: {
-        ToAddresses: ["support@loireply.com"],
-      },
-      ReplyToAddresses: [userEmail],
-      Content: {
-        Simple: {
-          Subject: {
-            Data: `Support Request: ${subject}`,
-            Charset: "UTF-8",
-          },
-          Body: {
-            Html: {
-              Data: emailBody,
-              Charset: "UTF-8",
-            },
-          },
-        },
-      },
+    await sendViaSmtp({
+      from: fromEmail,
+      to: toEmail,
+      replyTo: userEmail,
+      subject: fullSubject,
+      htmlBody,
+      smtpServer: sesSettings.smtp_server,
+      smtpPort: parseInt(sesSettings.smtp_port),
+      smtpUsername: sesSettings.smtp_username,
+      smtpPassword: sesSettings.smtp_password,
     });
-
-    const now = new Date();
-    const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, "");
-    const dateStamp = amzDate.substr(0, 8);
-
-    const payloadHash = await sha256(payload);
-
-    const canonicalHeaders = [
-      `host:${host}`,
-      `x-amz-date:${amzDate}`,
-    ].join("\n") + "\n";
-
-    const signedHeaders = "host;x-amz-date";
-
-    const canonicalRequest = `${method}\n/v2/email/outbound-emails\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-
-    const algorithm = "AWS4-HMAC-SHA256";
-    const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`;
-    const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${await sha256(
-      canonicalRequest
-    )}`;
-
-    const signingKey = await getSignatureKey(
-      AWS_SECRET_ACCESS_KEY,
-      dateStamp,
-      AWS_REGION,
-      service
-    );
-    const signature = await hmacSha256Hex(signingKey, stringToSign);
-
-    const authorizationHeader = `${algorithm} Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: authorizationHeader,
-        "Content-Type": "application/json",
-        "X-Amz-Date": amzDate,
-      },
-      body: payload,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("SES API error response:", errorText);
-      throw new Error(`SES API error: ${response.status} - ${errorText}`);
-    }
 
     return new Response(
       JSON.stringify({ success: true, message: "Support request sent successfully" }),
-      {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error in send-support-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 400,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
-async function sha256(message: string): Promise<string> {
+async function sendViaSmtp(opts: {
+  from: string;
+  to: string;
+  replyTo: string;
+  subject: string;
+  htmlBody: string;
+  smtpServer: string;
+  smtpPort: number;
+  smtpUsername: string;
+  smtpPassword: string;
+}) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const emailContent = [
+    `From: ${opts.from}`,
+    `To: ${opts.to}`,
+    `Reply-To: ${opts.replyTo}`,
+    `Subject: ${opts.subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    opts.htmlBody,
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  let conn: Deno.TcpConn | Deno.TlsConn;
+  let activeConn: Deno.TcpConn | Deno.TlsConn;
+
+  if (opts.smtpPort === 465) {
+    conn = await Deno.connectTls({ hostname: opts.smtpServer, port: opts.smtpPort });
+    activeConn = conn;
+  } else {
+    conn = await Deno.connect({ hostname: opts.smtpServer, port: opts.smtpPort, transport: "tcp" });
+    activeConn = conn;
+  }
+
+  try {
+    let reader = activeConn.readable.getReader();
+    let writer = activeConn.writable.getWriter();
+
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`EHLO ${opts.smtpServer}\r\n`));
+    await readSmtpResponse(reader);
+
+    if (opts.smtpPort === 587 || opts.smtpPort === 25) {
+      await writer.write(encoder.encode(`STARTTLS\r\n`));
+      await readSmtpResponse(reader);
+
+      reader.releaseLock();
+      writer.releaseLock();
+
+      const tlsConn = await Deno.startTls(conn as Deno.TcpConn, { hostname: opts.smtpServer });
+      activeConn = tlsConn;
+
+      reader = activeConn.readable.getReader();
+      writer = activeConn.writable.getWriter();
+
+      await writer.write(encoder.encode(`EHLO ${opts.smtpServer}\r\n`));
+      await readSmtpResponse(reader);
+    }
+
+    await writer.write(encoder.encode(`AUTH LOGIN\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`${btoa(opts.smtpUsername)}\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`${btoa(opts.smtpPassword)}\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`MAIL FROM:<${opts.from}>\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`RCPT TO:<${opts.to}>\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`DATA\r\n`));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(emailContent + "\r\n.\r\n"));
+    await readSmtpResponse(reader);
+
+    await writer.write(encoder.encode(`QUIT\r\n`));
+    await readSmtpResponse(reader);
+
+    reader.releaseLock();
+    writer.releaseLock();
+
+    console.log(`Support email sent successfully to ${opts.to}`);
+  } finally {
+    try { activeConn.close(); } catch (_) { /* ignore */ }
+  }
 }
 
-async function hmacSha256(key: Uint8Array, message: string): Promise<Uint8Array> {
-  const encoder = new TextEncoder();
-  const keyObject = await crypto.subtle.importKey(
-    "raw",
-    key,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    keyObject,
-    encoder.encode(message)
-  );
-  return new Uint8Array(signature);
-}
+async function readSmtpResponse(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
+  const decoder = new TextDecoder();
+  const { value, done } = await reader.read();
 
-async function hmacSha256Hex(key: Uint8Array, message: string): Promise<string> {
-  const signature = await hmacSha256(key, message);
-  return Array.from(signature)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+  if (done) throw new Error("SMTP connection closed unexpectedly");
 
-async function getSignatureKey(
-  key: string,
-  dateStamp: string,
-  regionName: string,
-  serviceName: string
-): Promise<Uint8Array> {
-  const encoder = new TextEncoder();
-  const kDate = await hmacSha256(encoder.encode("AWS4" + key), dateStamp);
-  const kRegion = await hmacSha256(kDate, regionName);
-  const kService = await hmacSha256(kRegion, serviceName);
-  const kSigning = await hmacSha256(kService, "aws4_request");
-  return kSigning;
+  const response = decoder.decode(value);
+  console.log("SMTP Response:", response.trim());
+
+  if (response.startsWith("4") || response.startsWith("5")) {
+    throw new Error(`SMTP Error: ${response.trim()}`);
+  }
+
+  return response;
 }
