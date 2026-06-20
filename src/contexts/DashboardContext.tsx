@@ -44,11 +44,17 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       const user = await supabase.auth.getUser();
       if (!user.data.user) return;
 
-      const { data, error } = await supabase
-        .from('dashboard_statistics')
-        .select('*')
-        .eq('user_id', user.data.user.id)
-        .maybeSingle();
+      const [{ data, error }, { count: promptCount }] = await Promise.all([
+        supabase
+          .from('dashboard_statistics')
+          .select('*')
+          .eq('user_id', user.data.user.id)
+          .maybeSingle(),
+        supabase
+          .from('prompts')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.data.user.id),
+      ]);
 
       if (error) throw error;
 
@@ -57,7 +63,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           totalEmailsRemaining: data.total_emails_remaining ?? 0,
           totalEmailAccounts: data.total_email_accounts ?? 0,
           totalEmailsSentToday: data.total_emails_sent_today ?? 0,
-          totalTemplates: data.total_templates ?? 0,
+          totalTemplates: promptCount ?? 0,
           totalCampaigns: data.total_campaigns ?? 0,
           totalDomains: data.total_domains || 0
         });
@@ -128,16 +134,14 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         },
         (payload) => {
           if (payload.new && mounted) {
-            setStats({
-              totalEmailsRemaining: payload.new.total_emails_remaining ?? 0,
-              totalEmailAccounts: payload.new.total_email_accounts ?? 0,
-              totalEmailsSentToday: payload.new.total_emails_sent_today ?? 0,
-              totalTemplates: payload.new.total_templates ?? 0,
-              totalCampaigns: payload.new.total_campaigns ?? 0,
-              totalDomains: payload.new.total_domains ?? 0
-            });
+            fetchStats();
           }
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'prompts' },
+        () => { if (mounted) fetchStats(); }
       )
       .subscribe();
 
