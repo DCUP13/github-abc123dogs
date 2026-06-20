@@ -50,33 +50,47 @@ export const ThemeContext = createContext<ThemeContextType>({
   cardBg: '#ffffff',
 });
 
-const SCHEME_VARS: Record<string, Record<string, string>> = {
-  // Classic: blue sidebar → neutral dark (unchanged)
-  classic: { '--sb-bg': '#3730a3', '--sb-hover': '#4338ca', '--sb-border': 'rgba(67,56,202,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#818cf8', '--page-bg': '#eef0fd',  '--page-bg-d': '#111827', '--card-bg': '#f8f9fe', '--card-bg-d': '#1f2937', '--card-bg-inner-d': '#374151', '--sb-bg-d': '#1f2937', '--sb-hover-d': '#374151' },
-  // Indigo: blue-purple sidebar → dark amber page (purple/amber complementary)
-  indigo:  { '--sb-bg': '#312e81', '--sb-hover': '#3730a3', '--sb-border': 'rgba(99,102,241,0.3)',   '--accent': '#4f46e5', '--accent-dark': '#fbbf24', '--page-bg': '#fdefd0',  '--page-bg-d': '#1e1406', '--card-bg': '#fffaee', '--card-bg-d': '#28200c', '--card-bg-inner-d': '#342c10', '--sb-bg-d': '#231e5c', '--sb-hover-d': '#2d2870' },
-  // Forest: green sidebar → dark rust/terracotta page (green/red-warm complementary)
-  forest:  { '--sb-bg': '#1a3a26', '--sb-hover': '#2d5a3d', '--sb-border': 'rgba(45,90,61,0.4)',     '--accent': '#2d5a3d', '--accent-dark': '#c9a84c', '--page-bg': '#faf3e8',  '--page-bg-d': '#1e1008', '--card-bg': '#fffcf5', '--card-bg-d': '#2a1810', '--card-bg-inner-d': '#362014', '--sb-bg-d': '#132f1e', '--sb-hover-d': '#1a3c27' },
-  // Ocean: teal-blue sidebar → dark coral page (blue/orange complementary)
-  ocean:   { '--sb-bg': '#0c4a6e', '--sb-hover': '#075985', '--sb-border': 'rgba(2,132,199,0.3)',    '--accent': '#0369a1', '--accent-dark': '#fb923c', '--page-bg': '#fce8d0',  '--page-bg-d': '#1c0e08', '--card-bg': '#fff8f0', '--card-bg-d': '#28180e', '--card-bg-inner-d': '#342012', '--sb-bg-d': '#0d263c', '--sb-hover-d': '#143249' },
-  // Rose: crimson sidebar → dark teal page (red/teal complementary, equal G+B channels)
-  rose:    { '--sb-bg': '#881337', '--sb-hover': '#9f1239', '--sb-border': 'rgba(244,63,94,0.3)',    '--accent': '#e11d48', '--accent-dark': '#2dd4bf', '--page-bg': '#cce6e2',  '--page-bg-d': '#071e1e', '--card-bg': '#e6f5f2', '--card-bg-d': '#0d2a2a', '--card-bg-inner-d': '#123434', '--sb-bg-d': '#2d0e16', '--sb-hover-d': '#3a1120' },
-  // Emerald: deep green sidebar → dark amber page (green/amber complementary)
-  emerald: { '--sb-bg': '#064e3b', '--sb-hover': '#065f46', '--sb-border': 'rgba(16,185,129,0.3)',  '--accent': '#059669', '--accent-dark': '#f59e0b', '--page-bg': '#fde8c4',  '--page-bg-d': '#1e1508', '--card-bg': '#fff8ee', '--card-bg-d': '#2c1e0a', '--card-bg-inner-d': '#38280e', '--sb-bg-d': '#0e2a1c', '--sb-hover-d': '#133822' },
-  // Amber: orange-brown sidebar → dark navy blue page (amber/blue complementary)
-  amber:   { '--sb-bg': '#78350f', '--sb-hover': '#92400e', '--sb-border': 'rgba(217,119,6,0.3)',   '--accent': '#b45309', '--accent-dark': '#38bdf8', '--page-bg': '#d0e4f8',  '--page-bg-d': '#081628', '--card-bg': '#eef5ff', '--card-bg-d': '#0e2238', '--card-bg-inner-d': '#122c44', '--sb-bg-d': '#241508', '--sb-hover-d': '#2e1b0a' },
-  // Violet: red-purple sidebar → dark yellow-green page (violet/chartreuse complementary, distinct from indigo)
-  violet:  { '--sb-bg': '#4c1d95', '--sb-hover': '#5b21b6', '--sb-border': 'rgba(124,58,237,0.3)', '--accent': '#6d28d9', '--accent-dark': '#fbbf24', '--page-bg': '#fdecc8',  '--page-bg-d': '#141806', '--card-bg': '#fff8ee', '--card-bg-d': '#1e2208', '--card-bg-inner-d': '#2a2e0e', '--sb-bg-d': '#1e1040', '--sb-hover-d': '#27134f' },
-  // Sky: sky blue sidebar → dark coral page (blue/orange complementary)
-  sky:     { '--sb-bg': '#075985', '--sb-hover': '#0369a1', '--sb-border': 'rgba(14,165,233,0.3)', '--accent': '#0284c7', '--accent-dark': '#fb923c', '--page-bg': '#fde0c8',  '--page-bg-d': '#1e0c08', '--card-bg': '#fff4ec', '--card-bg-d': '#2a180e', '--card-bg-inner-d': '#362010', '--sb-bg-d': '#0e2638', '--sb-hover-d': '#133148' },
-  // Stone: neutral sidebar → dark warm yellow page
-  stone:   { '--sb-bg': '#1c1917', '--sb-hover': '#292524', '--sb-border': 'rgba(168,162,158,0.3)','--accent': '#78716c', '--accent-dark': '#c8a882', '--page-bg': '#f0ece8',  '--page-bg-d': '#181606', '--card-bg': '#faf7f4', '--card-bg-d': '#221e0a', '--card-bg-inner-d': '#2c280e', '--sb-bg-d': '#1a1815', '--sb-hover-d': '#22201e' },
+const THEME_ACCENTS: Record<string, { '--accent': string; '--accent-dark': string }> = {
+  slate:   { '--accent': 'rgb(71, 85, 105)',   '--accent-dark': 'rgb(100, 116, 139)' },
+  blue:    { '--accent': 'rgb(37, 99, 235)',    '--accent-dark': 'rgb(59, 130, 246)' },
+  emerald: { '--accent': 'rgb(5, 150, 105)',    '--accent-dark': 'rgb(16, 185, 129)' },
+  violet:  { '--accent': 'rgb(124, 58, 237)',   '--accent-dark': 'rgb(139, 92, 246)' },
+  amber:   { '--accent': 'rgb(217, 119, 6)',    '--accent-dark': 'rgb(245, 158, 11)' },
+  rose:    { '--accent': 'rgb(225, 29, 72)',    '--accent-dark': 'rgb(244, 63, 94)' },
+  teal:    { '--accent': 'rgb(13, 148, 136)',   '--accent-dark': 'rgb(20, 184, 166)' },
+  indigo:  { '--accent': 'rgb(79, 70, 229)',    '--accent-dark': 'rgb(99, 102, 241)' },
+  fuchsia: { '--accent': 'rgb(192, 38, 211)',   '--accent-dark': 'rgb(217, 70, 239)' },
+  cyan:    { '--accent': 'rgb(8, 145, 178)',    '--accent-dark': 'rgb(6, 182, 212)' },
+};
+
+const DARK_VARS: Record<string, string> = {
+  '--page-bg': '#0f172a', '--page-bg-d': '#0f172a',
+  '--card-bg': '#1e293b', '--card-bg-d': '#1e293b', '--card-bg-inner-d': '#273348',
+  '--sb-bg': '#1e293b',   '--sb-bg-d': '#1e293b',
+  '--sb-hover': 'rgba(255,255,255,0.07)', '--sb-hover-d': 'rgba(255,255,255,0.07)',
+  '--sb-border': 'rgba(255,255,255,0.1)',
+};
+
+const LIGHT_VARS: Record<string, string> = {
+  '--page-bg': '#f8fafc', '--page-bg-d': '#f8fafc',
+  '--card-bg': '#ffffff', '--card-bg-d': '#ffffff', '--card-bg-inner-d': '#f1f5f9',
+  '--sb-bg': '#ffffff',   '--sb-bg-d': '#ffffff',
+  '--sb-hover': 'rgba(0,0,0,0.05)', '--sb-hover-d': 'rgba(0,0,0,0.05)',
+  '--sb-border': 'rgba(0,0,0,0.08)',
+};
+
+const THEME_MIGRATION: Record<string, string> = {
+  classic: 'blue', forest: 'emerald', ocean: 'teal', sky: 'cyan', stone: 'slate',
 };
 
 export default function App() {
   const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('app-dark-mode') === '1');
-  const [colorScheme, setColorScheme] = useState(() => localStorage.getItem('app-color-scheme') || 'classic');
+  const [colorScheme, setColorScheme] = useState(() => {
+    const stored = localStorage.getItem('app-color-scheme') || 'blue';
+    if (THEME_ACCENTS[stored]) return stored;
+    return THEME_MIGRATION[stored] || 'blue';
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -482,31 +496,32 @@ export default function App() {
   };
 
   if (isLoading) {
-    const vars = SCHEME_VARS[colorScheme] ?? SCHEME_VARS['classic'];
-    const bgColor = darkMode ? (vars['--page-bg-d'] || '#111827') : (vars['--page-bg'] || '#ffffff');
+    const bgColor = darkMode ? '#0f172a' : '#f8fafc';
+    const accent = THEME_ACCENTS[colorScheme] ?? THEME_ACCENTS['blue'];
+    const accentColor = darkMode ? accent['--accent-dark'] : accent['--accent'];
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
         <div
           className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: vars['--accent'] || '#4f46e5', borderTopColor: 'transparent' }}
+          style={{ borderColor: accentColor, borderTopColor: 'transparent' }}
         />
       </div>
     );
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb'), cardBg: darkMode ? (SCHEME_VARS[colorScheme]?.['--card-bg-d'] ?? '#1f2937') : (SCHEME_VARS[colorScheme]?.['--card-bg'] ?? '#ffffff') }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? '#0f172a' : '#f8fafc', cardBg: darkMode ? '#1e293b' : '#ffffff' }}>
       <EmailProvider>
         <DashboardProvider>
           <div
             className={darkMode ? 'dark' : ''}
-            style={(SCHEME_VARS[colorScheme] ?? SCHEME_VARS['classic']) as React.CSSProperties}
+            style={{ ...(darkMode ? DARK_VARS : LIGHT_VARS), ...(THEME_ACCENTS[colorScheme] ?? THEME_ACCENTS['blue']) } as React.CSSProperties}
           >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
-              <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb') }}>
+              <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
                 <Sidebar
                   onSignOut={handleSignOut}
                   onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}
@@ -522,24 +537,24 @@ export default function App() {
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                 />
-                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (SCHEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#111827') : (SCHEME_VARS[colorScheme]?.['--page-bg'] ?? '#f9fafb') }}>
+                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
                   {/* Mobile top bar */}
                   <div
-                    className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
-                    style={{ backgroundColor: darkMode ? (SCHEME_VARS[colorScheme]?.['--sb-bg-d'] ?? '#1e1b4b') : (SCHEME_VARS[colorScheme]?.['--sb-bg'] ?? '#3730a3') }}
+                    className={`md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 shadow border-b ${darkMode ? 'text-white border-white/10' : 'text-slate-800 border-slate-200'}`}
+                    style={{ backgroundColor: darkMode ? '#1e293b' : '#ffffff' }}
                   >
                     <button
                       onClick={() => setMobileNavOpen(true)}
                       className="p-1.5 rounded transition-colors"
                       style={{}}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = darkMode ? (SCHEME_VARS[colorScheme]?.['--sb-hover-d'] ?? '#2a2568') : (SCHEME_VARS[colorScheme]?.['--sb-hover'] ?? '#4338ca'))}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)')}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                       aria-label="Open navigation"
                     >
                       <Menu className="w-5 h-5" />
                     </button>
                     <div className="flex items-center gap-2">
-                      <Mail className="w-5 h-5 text-white/60" />
+                      <Mail className={`w-5 h-5 ${darkMode ? 'text-white/60' : 'text-slate-400'}`} />
                       <span className="font-semibold text-sm tracking-wide">LoiReply</span>
                     </div>
                   </div>

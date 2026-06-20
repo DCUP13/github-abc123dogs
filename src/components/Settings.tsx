@@ -199,18 +199,18 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
   ];
 
   const ACCENT: Record<string, { light: string; dark: string }> = {
-    classic: { light: '#4f46e5', dark: '#818cf8' },
-    indigo:  { light: '#4f46e5', dark: '#818cf8' },
-    forest:  { light: '#2d5a3d', dark: '#c9a84c' },
-    ocean:   { light: '#0369a1', dark: '#38bdf8' },
-    rose:    { light: '#e11d48', dark: '#fb7185' },
-    emerald: { light: '#059669', dark: '#34d399' },
-    amber:   { light: '#b45309', dark: '#fbbf24' },
-    violet:  { light: '#6d28d9', dark: '#a78bfa' },
-    sky:     { light: '#0284c7', dark: '#7dd3fc' },
-    stone:   { light: '#78716c', dark: '#d6d3d1' },
+    slate:   { light: 'rgb(71, 85, 105)',   dark: 'rgb(100, 116, 139)' },
+    blue:    { light: 'rgb(37, 99, 235)',    dark: 'rgb(59, 130, 246)' },
+    emerald: { light: 'rgb(5, 150, 105)',    dark: 'rgb(16, 185, 129)' },
+    violet:  { light: 'rgb(124, 58, 237)',   dark: 'rgb(139, 92, 246)' },
+    amber:   { light: 'rgb(217, 119, 6)',    dark: 'rgb(245, 158, 11)' },
+    rose:    { light: 'rgb(225, 29, 72)',    dark: 'rgb(244, 63, 94)' },
+    teal:    { light: 'rgb(13, 148, 136)',   dark: 'rgb(20, 184, 166)' },
+    indigo:  { light: 'rgb(79, 70, 229)',    dark: 'rgb(99, 102, 241)' },
+    fuchsia: { light: 'rgb(192, 38, 211)',   dark: 'rgb(217, 70, 239)' },
+    cyan:    { light: 'rgb(8, 145, 178)',    dark: 'rgb(6, 182, 212)' },
   };
-  const accentColor = (ACCENT[colorScheme] ?? ACCENT['classic'])[darkMode ? 'dark' : 'light'];
+  const accentColor = (ACCENT[colorScheme] ?? ACCENT['blue'])[darkMode ? 'dark' : 'light'];
 
   if (isLoading) {
     return (

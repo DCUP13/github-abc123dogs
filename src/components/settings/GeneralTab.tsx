@@ -10,16 +10,16 @@ interface GeneralTabProps {
 }
 
 const COLOR_SCHEMES = [
-  { id: 'classic', name: 'Classic',  sidebar: '#3730a3', accent: '#4f46e5' },
-  { id: 'indigo',  name: 'Indigo',   sidebar: '#312e81', accent: '#fbbf24' },
-  { id: 'forest',  name: 'Forest',   sidebar: '#1a3a26', accent: '#c9a84c' },
-  { id: 'ocean',   name: 'Ocean',    sidebar: '#0c4a6e', accent: '#fb923c' },
-  { id: 'rose',    name: 'Rose',     sidebar: '#881337', accent: '#2dd4bf' },
-  { id: 'emerald', name: 'Emerald',  sidebar: '#064e3b', accent: '#f59e0b' },
-  { id: 'amber',   name: 'Amber',    sidebar: '#78350f', accent: '#38bdf8' },
-  { id: 'violet',  name: 'Violet',   sidebar: '#4c1d95', accent: '#fbbf24' },
-  { id: 'sky',     name: 'Sky',      sidebar: '#075985', accent: '#fb923c' },
-  { id: 'stone',   name: 'Stone',    sidebar: '#1c1917', accent: '#c8a882' },
+  { id: 'slate',   name: 'Slate',   lightAccent: 'rgb(71, 85, 105)',   darkAccent: 'rgb(100, 116, 139)' },
+  { id: 'blue',    name: 'Blue',    lightAccent: 'rgb(37, 99, 235)',    darkAccent: 'rgb(59, 130, 246)' },
+  { id: 'emerald', name: 'Emerald', lightAccent: 'rgb(5, 150, 105)',    darkAccent: 'rgb(16, 185, 129)' },
+  { id: 'violet',  name: 'Violet',  lightAccent: 'rgb(124, 58, 237)',   darkAccent: 'rgb(139, 92, 246)' },
+  { id: 'amber',   name: 'Amber',   lightAccent: 'rgb(217, 119, 6)',    darkAccent: 'rgb(245, 158, 11)' },
+  { id: 'rose',    name: 'Rose',    lightAccent: 'rgb(225, 29, 72)',    darkAccent: 'rgb(244, 63, 94)' },
+  { id: 'teal',    name: 'Teal',    lightAccent: 'rgb(13, 148, 136)',   darkAccent: 'rgb(20, 184, 166)' },
+  { id: 'indigo',  name: 'Indigo',  lightAccent: 'rgb(79, 70, 229)',    darkAccent: 'rgb(99, 102, 241)' },
+  { id: 'fuchsia', name: 'Fuchsia', lightAccent: 'rgb(192, 38, 211)',   darkAccent: 'rgb(217, 70, 239)' },
+  { id: 'cyan',    name: 'Cyan',    lightAccent: 'rgb(8, 145, 178)',    darkAccent: 'rgb(6, 182, 212)' },
 ];
 
 export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
@@ -87,10 +87,11 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
 
       <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Color Scheme</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose a color scheme for the sidebar and page backgrounds.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Choose an accent color for buttons, links, and active states.</p>
         <div className="grid grid-cols-5 gap-2">
           {COLOR_SCHEMES.map(scheme => {
             const isActive = colorScheme === scheme.id;
+            const swatchColor = darkMode ? scheme.darkAccent : scheme.lightAccent;
             return (
               <button
                 key={scheme.id}
@@ -103,16 +104,10 @@ export function GeneralTab({ settings, onToggle }: GeneralTabProps) {
                 title={scheme.name}
               >
                 <div
-                  className="w-full h-9 rounded-lg relative overflow-hidden flex items-center justify-center"
-                  style={{ backgroundColor: scheme.sidebar }}
+                  className="w-full h-9 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: swatchColor }}
                 >
-                  <div
-                    className="absolute bottom-1.5 right-1.5 w-2.5 h-2.5 rounded-full border border-white/30"
-                    style={{ backgroundColor: scheme.accent }}
-                  />
-                  {isActive && (
-                    <Check className="w-4 h-4 text-white drop-shadow" />
-                  )}
+                  {isActive && <Check className="w-4 h-4 text-white drop-shadow" />}
                 </div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 leading-none">
                   {scheme.name}
