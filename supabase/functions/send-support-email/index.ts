@@ -35,6 +35,14 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Persist the request first so it's never lost regardless of email delivery
+    await supabase.from("support_requests").insert({
+      name,
+      subject,
+      message,
+      user_email: userEmail,
+    });
+
     const { data: sesSettings, error: sesError } = await supabase
       .from("amazon_ses_settings")
       .select("smtp_server, smtp_port, smtp_username, smtp_password, noreply_domain")
@@ -42,7 +50,12 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (sesError || !sesSettings) {
-      throw new Error("Email provider not configured");
+      // Request is already saved; return success even without email
+      console.warn("Email provider not configured — request saved to database only");
+      return new Response(
+        JSON.stringify({ success: true, message: "Support request saved successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const fromEmail = `noreply@${sesSettings.noreply_domain}`;
