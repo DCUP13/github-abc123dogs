@@ -138,6 +138,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isSupportAdmin, setIsSupportAdmin] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -198,7 +199,7 @@ export default function App() {
       // Now fetch or create user settings
       const { data, error } = await supabase
         .from('user_settings')
-        .select('dark_mode, color_scheme')
+        .select('dark_mode, color_scheme, support_admin')
         .eq('user_id', user.data.user.id)
         .maybeSingle();
 
@@ -207,6 +208,7 @@ export default function App() {
       if (data) {
         setDarkMode(data.dark_mode);
         setColorScheme(data.color_scheme || 'classic');
+        setIsSupportAdmin(data.support_admin ?? false);
         localStorage.setItem('app-dark-mode', data.dark_mode ? '1' : '0');
         localStorage.setItem('app-color-scheme', data.color_scheme || 'classic');
       } else {
@@ -578,6 +580,7 @@ export default function App() {
                   onSupportClick={() => { updateView('support'); setMobileNavOpen(false); }}
                   onIntegrationsClick={() => { updateView('integrations'); setMobileNavOpen(false); }}
                   onTeamClick={() => { updateView('team-view'); setMobileNavOpen(false); }}
+                  isSupportAdmin={isSupportAdmin}
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                 />
@@ -631,7 +634,7 @@ export default function App() {
                     </div>
                   )}
                   {view === 'support' && (
-                    <Support onSignOut={handleSignOut} currentView={view} />
+                    <Support onSignOut={handleSignOut} currentView={view} isSupportAdmin={isSupportAdmin} />
                   )}
                   {view === 'integrations' && (
                     <Integrations onSignOut={handleSignOut} currentView={view} />

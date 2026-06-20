@@ -1,193 +1,401 @@
-import React, { useState } from 'react';
-import { HelpCircle, Send, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { HelpCircle, Send, Plus, ChevronLeft, MessageCircle, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { SupportAdmin } from './SupportAdmin';
+
+interface SupportRequest {
+  id: string;
+  name: string;
+  subject: string;
+  message: string;
+  user_email: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+}
+
+interface SupportMessage {
+  id: string;
+  request_id: string;
+  sender_id: string;
+  is_owner: boolean;
+  body: string;
+  created_at: string;
+}
 
 interface SupportProps {
   onSignOut: () => void;
   currentView: string;
+  isSupportAdmin?: boolean;
 }
 
-export function Support({ onSignOut, currentView }: SupportProps) {
-  const [name, setName] = useState('');
+export function Support({ onSignOut, currentView, isSupportAdmin = false }: SupportProps) {
+  if (isSupportAdmin) {
+    return <SupportAdmin />;
+  }
+  return <SupportUser />;
+}
+
+function SupportUser() {
+  const [conversations, setConversations] = useState<SupportRequest[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<SupportMessage[]>([]);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  // New conversation form state
   const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [firstMessage, setFirstMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Reply state
+  const [replyText, setReplyText] = useState('');
 
-    if (!name.trim() || !subject.trim() || !message.trim()) {
-      setSubmitStatus('error');
-      setErrorMessage('Please fill in all fields');
-      return;
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedId) {
+      loadMessages(selectedId);
+      subscribeToMessages(selectedId);
     }
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [selectedId]);
 
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-    setErrorMessage('');
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
+  async function loadConversations() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('support_requests')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    setConversations(data ?? []);
+    setLoading(false);
+    if (data && data.length === 0) setShowNewForm(true);
+  }
+
+  async function loadMessages(requestId: string) {
+    const { data } = await supabase
+      .from('support_messages')
+      .select('*')
+      .eq('request_id', requestId)
+      .order('created_at', { ascending: true });
+    setMessages(data ?? []);
+  }
+
+  function subscribeToMessages(requestId: string) {
+    if (channelRef.current) supabase.removeChannel(channelRef.current);
+    channelRef.current = supabase
+      .channel(`support-msgs-${requestId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'support_messages',
+        filter: `request_id=eq.${requestId}`,
+      }, (payload) => {
+        setMessages(prev => {
+          if (prev.find(m => m.id === payload.new.id)) return prev;
+          return [...prev, payload.new as SupportMessage];
+        });
+      })
+      .subscribe();
+  }
+
+  async function handleNewConversation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!subject.trim() || !firstMessage.trim()) return;
+    setSending(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-support-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: name.trim(),
-            subject: subject.trim(),
-            message: message.trim(),
-            userEmail: user?.email || 'unknown',
-          }),
-        }
-      );
+      const { data: req, error: reqErr } = await supabase
+        .from('support_requests')
+        .insert({
+          user_id: user.id,
+          user_email: user.email ?? '',
+          name: user.email ?? 'User',
+          subject: subject.trim(),
+          message: firstMessage.trim(),
+          status: 'open',
+        })
+        .select()
+        .single();
 
-      if (!response.ok) {
-        throw new Error('Failed to send support message');
-      }
+      if (reqErr || !req) throw reqErr;
 
-      setSubmitStatus('success');
-      setName('');
+      await supabase.from('support_messages').insert({
+        request_id: req.id,
+        sender_id: user.id,
+        is_owner: false,
+        body: firstMessage.trim(),
+      });
+
+      setConversations(prev => [req, ...prev]);
       setSubject('');
-      setMessage('');
-
-      setTimeout(() => {
-        setSubmitStatus('idle');
-      }, 5000);
-    } catch (error) {
-      console.error('Error sending support message:', error);
-      setSubmitStatus('error');
-      setErrorMessage('Failed to send message. Please try again or email us directly at support@loireply.com');
+      setFirstMessage('');
+      setShowNewForm(false);
+      setSelectedId(req.id);
+    } catch (err) {
+      console.error('Error creating conversation:', err);
     } finally {
-      setIsSubmitting(false);
+      setSending(false);
     }
-  };
+  }
 
-  return (
-    <div className="min-h-screen app-bg">
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-xl md:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Support</h1>
+  async function handleReply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!replyText.trim() || !selectedId) return;
+    setSending(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: msg, error } = await supabase
+        .from('support_messages')
+        .insert({
+          request_id: selectedId,
+          sender_id: user.id,
+          is_owner: false,
+          body: replyText.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setMessages(prev => [...prev, msg]);
+      setReplyText('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const selected = conversations.find(c => c.id === selectedId);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen app-bg flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Chat view
+  if (selectedId && selected) {
+    return (
+      <div className="min-h-screen app-bg flex flex-col">
+        {/* Header */}
+        <div className="app-card border-b border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={() => setSelectedId(null)}
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-semibold text-gray-900 dark:text-white truncate">{selected.subject}</h2>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              selected.status === 'resolved'
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+            }`}>
+              {selected.status === 'resolved' ? 'Resolved' : 'Open'}
+            </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Need help? Send us a message and we'll get back to you as soon as possible.
-          </p>
         </div>
 
-        <div className="app-card rounded-xl shadow-md p-4 md:p-8">
-          {submitStatus === 'success' && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                  Message Sent Successfully!
-                </h3>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  We've received your message and will respond to you via email within 24 hours.
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
+          {messages.length === 0 && (
+            <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-8">No messages yet.</p>
+          )}
+          {messages.map(msg => (
+            <div key={msg.id} className={`flex ${msg.is_owner ? 'justify-start' : 'justify-end'}`}>
+              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+                msg.is_owner
+                  ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-tl-sm'
+                  : 'bg-blue-600 text-white rounded-tr-sm'
+              }`}>
+                {msg.is_owner && (
+                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">Support</p>
+                )}
+                <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
+                <p className={`text-xs mt-1.5 ${msg.is_owner ? 'text-gray-400 dark:text-gray-500' : 'text-blue-200'}`}>
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </div>
-          )}
+          ))}
+          <div ref={bottomRef} />
+        </div>
 
-          {submitStatus === 'error' && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-700 dark:text-red-300">
-                {errorMessage}
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Your Name
-              </label>
+        {/* Reply input */}
+        {selected.status !== 'resolved' && (
+          <div className="app-card border-t border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4 flex-shrink-0">
+            <form onSubmit={handleReply} className="flex gap-2">
               <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="Enter your name"
-                disabled={isSubmitting}
-                required
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                disabled={sending}
               />
-            </div>
+              <button
+                type="submit"
+                disabled={sending || !replyText.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
+        {selected.status === 'resolved' && (
+          <div className="px-4 md:px-6 py-3 text-center text-sm text-gray-500 dark:text-gray-400 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-900/30">
+            This conversation has been resolved.
+          </div>
+        )}
+      </div>
+    );
+  }
 
+  // Conversation list / new form
+  return (
+    <div className="min-h-screen app-bg">
+      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <HelpCircle className="w-7 h-7 text-blue-600 dark:text-blue-400" />
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Subject
-              </label>
-              <input
-                type="text"
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                placeholder="What can we help you with?"
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Message
-              </label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={8}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
-                placeholder="Describe your issue or question in detail..."
-                disabled={isSubmitting}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Send Message
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Other Ways to Reach Us</h3>
-            <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <p>
-                <strong>Email:</strong>{' '}
-                <a href="mailto:support@loireply.com" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  support@loireply.com
-                </a>
-              </p>
-              <p>
-                <strong>Response Time:</strong> We typically respond within 24 hours during business days
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">We typically reply within 24 hours</p>
             </div>
           </div>
+          {conversations.length > 0 && (
+            <button
+              onClick={() => setShowNewForm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Conversation
+            </button>
+          )}
         </div>
+
+        {/* New conversation form */}
+        {showNewForm && (
+          <div className="app-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-gray-900 dark:text-white">New Conversation</h2>
+              {conversations.length > 0 && (
+                <button
+                  onClick={() => setShowNewForm(false)}
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+            <form onSubmit={handleNewConversation} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                <input
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  placeholder="What do you need help with?"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  required
+                  disabled={sending}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                <textarea
+                  value={firstMessage}
+                  onChange={e => setFirstMessage(e.target.value)}
+                  placeholder="Describe your issue in detail..."
+                  rows={5}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  required
+                  disabled={sending}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {sending ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {sending ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Conversation list */}
+        {conversations.length > 0 && !showNewForm && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Your Conversations</h2>
+            {conversations.map(conv => (
+              <button
+                key={conv.id}
+                onClick={() => setSelectedId(conv.id)}
+                className="w-full text-left app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="mt-0.5 p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+                      <MessageCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{conv.subject}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(conv.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${
+                    conv.status === 'resolved'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  }`}>
+                    {conv.status === 'resolved' ? 'Resolved' : 'Open'}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {conversations.length === 0 && !showNewForm && (
+          <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+            <HelpCircle className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            <p>No conversations yet.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ interface SidebarProps {
   onSupportClick: () => void;
   onIntegrationsClick: () => void;
   onTeamClick?: () => void;
+  isSupportAdmin?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -30,6 +31,7 @@ export function Sidebar({
   onSupportClick,
   onIntegrationsClick,
   onTeamClick,
+  isSupportAdmin = false,
   isOpen = false,
   onClose,
 }: SidebarProps) {
@@ -105,7 +107,7 @@ export function Sidebar({
           className="px-3 py-4 border-t space-y-1"
           style={{ borderColor }}
         >
-          {navBtn(onSupportClick, HelpCircle, 'Support')}
+          {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
           <button
             onClick={nav(onSignOut)}
             className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors text-red-300 hover:text-red-200"
