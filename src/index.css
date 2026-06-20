@@ -5,7 +5,8 @@
 /* ── Theme-aware background helpers ─────────────────────────────────── */
 /* Background and surface colors are set as inline CSS vars on root div  */
 /* via App.tsx. Classes below inherit those values.                      */
-.app-bg { background-color: var(--page-bg, #f8fafc); }
+.app-bg { background-color: inherit; }
+.dark .app-bg { background-color: inherit; }
 .app-card { background-color: var(--card-bg, #ffffff); }
 .dark .app-card { background-color: var(--card-bg-d, #1e293b); }
 .app-card-inner { background-color: var(--card-bg, #f8fafc); }
