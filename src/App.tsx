@@ -54,9 +54,9 @@ const THEME_VARS: Record<string, Record<string, string>> = {
   slate: {
     '--accent': 'rgb(71, 85, 105)',   '--accent-dark': 'rgb(100, 116, 139)',
     '--sb-bg': '#334155', '--sb-hover': '#475569', '--sb-border': 'rgba(100,116,139,0.4)',
-    '--sb-bg-d': '#1e293b', '--sb-hover-d': '#334155',
-    '--page-bg': '#f8fafc', '--page-bg-d': '#0f172a',
-    '--card-bg': '#ffffff', '--card-bg-d': '#1e293b', '--card-bg-inner-d': '#273348',
+    '--sb-bg-d': '#1f2937', '--sb-hover-d': '#374151',
+    '--page-bg': '#f9fafb', '--page-bg-d': '#111827',
+    '--card-bg': '#ffffff', '--card-bg-d': '#1f2937', '--card-bg-inner-d': '#374151',
   },
   blue: {
     '--accent': 'rgb(37, 99, 235)',   '--accent-dark': 'rgb(59, 130, 246)',
