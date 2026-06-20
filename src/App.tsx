@@ -50,46 +50,90 @@ export const ThemeContext = createContext<ThemeContextType>({
   cardBg: '#ffffff',
 });
 
-const THEME_ACCENTS: Record<string, { '--accent': string; '--accent-dark': string }> = {
-  slate:   { '--accent': 'rgb(71, 85, 105)',   '--accent-dark': 'rgb(100, 116, 139)' },
-  blue:    { '--accent': 'rgb(37, 99, 235)',    '--accent-dark': 'rgb(59, 130, 246)' },
-  emerald: { '--accent': 'rgb(5, 150, 105)',    '--accent-dark': 'rgb(16, 185, 129)' },
-  violet:  { '--accent': 'rgb(124, 58, 237)',   '--accent-dark': 'rgb(139, 92, 246)' },
-  amber:   { '--accent': 'rgb(217, 119, 6)',    '--accent-dark': 'rgb(245, 158, 11)' },
-  rose:    { '--accent': 'rgb(225, 29, 72)',    '--accent-dark': 'rgb(244, 63, 94)' },
-  teal:    { '--accent': 'rgb(13, 148, 136)',   '--accent-dark': 'rgb(20, 184, 166)' },
-  indigo:  { '--accent': 'rgb(79, 70, 229)',    '--accent-dark': 'rgb(99, 102, 241)' },
-  fuchsia: { '--accent': 'rgb(192, 38, 211)',   '--accent-dark': 'rgb(217, 70, 239)' },
-  cyan:    { '--accent': 'rgb(8, 145, 178)',    '--accent-dark': 'rgb(6, 182, 212)' },
-};
-
-const DARK_VARS: Record<string, string> = {
-  '--page-bg': '#0f172a', '--page-bg-d': '#0f172a',
-  '--card-bg': '#1e293b', '--card-bg-d': '#1e293b', '--card-bg-inner-d': '#273348',
-  '--sb-bg': '#1e293b',   '--sb-bg-d': '#1e293b',
-  '--sb-hover': 'rgba(255,255,255,0.07)', '--sb-hover-d': 'rgba(255,255,255,0.07)',
-  '--sb-border': 'rgba(255,255,255,0.1)',
-};
-
-const LIGHT_VARS: Record<string, string> = {
-  '--page-bg': '#f8fafc', '--page-bg-d': '#f8fafc',
-  '--card-bg': '#ffffff', '--card-bg-d': '#ffffff', '--card-bg-inner-d': '#f1f5f9',
-  '--sb-bg': '#ffffff',   '--sb-bg-d': '#ffffff',
-  '--sb-hover': 'rgba(0,0,0,0.05)', '--sb-hover-d': 'rgba(0,0,0,0.05)',
-  '--sb-border': 'rgba(0,0,0,0.08)',
+const THEME_VARS: Record<string, Record<string, string>> = {
+  slate: {
+    '--accent': 'rgb(71, 85, 105)',   '--accent-dark': 'rgb(100, 116, 139)',
+    '--sb-bg': '#334155', '--sb-hover': '#475569', '--sb-border': 'rgba(100,116,139,0.4)',
+    '--sb-bg-d': '#1e293b', '--sb-hover-d': '#334155',
+    '--page-bg': '#f8fafc', '--page-bg-d': '#0f172a',
+    '--card-bg': '#ffffff', '--card-bg-d': '#1e293b', '--card-bg-inner-d': '#273348',
+  },
+  blue: {
+    '--accent': 'rgb(37, 99, 235)',   '--accent-dark': 'rgb(59, 130, 246)',
+    '--sb-bg': '#1d4ed8', '--sb-hover': '#2563eb', '--sb-border': 'rgba(59,130,246,0.3)',
+    '--sb-bg-d': '#1e3a5f', '--sb-hover-d': '#1d4ed8',
+    '--page-bg': '#eff6ff', '--page-bg-d': '#0a1628',
+    '--card-bg': '#ffffff', '--card-bg-d': '#112138', '--card-bg-inner-d': '#1a2e4a',
+  },
+  emerald: {
+    '--accent': 'rgb(5, 150, 105)',   '--accent-dark': 'rgb(16, 185, 129)',
+    '--sb-bg': '#065f46', '--sb-hover': '#047857', '--sb-border': 'rgba(16,185,129,0.3)',
+    '--sb-bg-d': '#0a2e1c', '--sb-hover-d': '#065f46',
+    '--page-bg': '#ecfdf5', '--page-bg-d': '#061a10',
+    '--card-bg': '#ffffff', '--card-bg-d': '#0e2a1c', '--card-bg-inner-d': '#163622',
+  },
+  violet: {
+    '--accent': 'rgb(124, 58, 237)',  '--accent-dark': 'rgb(139, 92, 246)',
+    '--sb-bg': '#5b21b6', '--sb-hover': '#6d28d9', '--sb-border': 'rgba(139,92,246,0.3)',
+    '--sb-bg-d': '#2e1065', '--sb-hover-d': '#5b21b6',
+    '--page-bg': '#f5f3ff', '--page-bg-d': '#0d0920',
+    '--card-bg': '#ffffff', '--card-bg-d': '#1a1038', '--card-bg-inner-d': '#221845',
+  },
+  amber: {
+    '--accent': 'rgb(217, 119, 6)',   '--accent-dark': 'rgb(245, 158, 11)',
+    '--sb-bg': '#92400e', '--sb-hover': '#b45309', '--sb-border': 'rgba(245,158,11,0.3)',
+    '--sb-bg-d': '#3a1a06', '--sb-hover-d': '#92400e',
+    '--page-bg': '#fffbeb', '--page-bg-d': '#1a1205',
+    '--card-bg': '#ffffff', '--card-bg-d': '#28200c', '--card-bg-inner-d': '#342c10',
+  },
+  rose: {
+    '--accent': 'rgb(225, 29, 72)',   '--accent-dark': 'rgb(244, 63, 94)',
+    '--sb-bg': '#9f1239', '--sb-hover': '#be123c', '--sb-border': 'rgba(244,63,94,0.3)',
+    '--sb-bg-d': '#3f0e1c', '--sb-hover-d': '#9f1239',
+    '--page-bg': '#fff1f2', '--page-bg-d': '#1a0610',
+    '--card-bg': '#ffffff', '--card-bg-d': '#2a0e1a', '--card-bg-inner-d': '#361422',
+  },
+  teal: {
+    '--accent': 'rgb(13, 148, 136)',  '--accent-dark': 'rgb(20, 184, 166)',
+    '--sb-bg': '#0f766e', '--sb-hover': '#0d9488', '--sb-border': 'rgba(20,184,166,0.3)',
+    '--sb-bg-d': '#0a302a', '--sb-hover-d': '#0f766e',
+    '--page-bg': '#f0fdfa', '--page-bg-d': '#051816',
+    '--card-bg': '#ffffff', '--card-bg-d': '#0e2824', '--card-bg-inner-d': '#16342e',
+  },
+  indigo: {
+    '--accent': 'rgb(79, 70, 229)',   '--accent-dark': 'rgb(99, 102, 241)',
+    '--sb-bg': '#3730a3', '--sb-hover': '#4338ca', '--sb-border': 'rgba(99,102,241,0.3)',
+    '--sb-bg-d': '#1e1b4b', '--sb-hover-d': '#3730a3',
+    '--page-bg': '#eef2ff', '--page-bg-d': '#08091e',
+    '--card-bg': '#ffffff', '--card-bg-d': '#14152e', '--card-bg-inner-d': '#1e2040',
+  },
+  fuchsia: {
+    '--accent': 'rgb(192, 38, 211)',  '--accent-dark': 'rgb(217, 70, 239)',
+    '--sb-bg': '#86198f', '--sb-hover': '#a21caf', '--sb-border': 'rgba(217,70,239,0.3)',
+    '--sb-bg-d': '#3a0a40', '--sb-hover-d': '#86198f',
+    '--page-bg': '#fdf4ff', '--page-bg-d': '#160520',
+    '--card-bg': '#ffffff', '--card-bg-d': '#24103a', '--card-bg-inner-d': '#301548',
+  },
+  cyan: {
+    '--accent': 'rgb(8, 145, 178)',   '--accent-dark': 'rgb(6, 182, 212)',
+    '--sb-bg': '#0e7490', '--sb-hover': '#0891b2', '--sb-border': 'rgba(6,182,212,0.3)',
+    '--sb-bg-d': '#0a2e3a', '--sb-hover-d': '#0e7490',
+    '--page-bg': '#ecfeff', '--page-bg-d': '#051520',
+    '--card-bg': '#ffffff', '--card-bg-d': '#0e2430', '--card-bg-inner-d': '#163040',
+  },
 };
 
 const THEME_MIGRATION: Record<string, string> = {
-  classic: 'blue', forest: 'emerald', ocean: 'teal', sky: 'cyan', stone: 'slate',
+  classic: 'indigo', forest: 'emerald', ocean: 'teal', sky: 'cyan', stone: 'slate',
 };
 
 export default function App() {
   const [view, setView] = useState<View>('landing');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('app-dark-mode') === '1');
   const [colorScheme, setColorScheme] = useState(() => {
-    const stored = localStorage.getItem('app-color-scheme') || 'blue';
-    if (THEME_ACCENTS[stored]) return stored;
-    return THEME_MIGRATION[stored] || 'blue';
+    const stored = localStorage.getItem('app-color-scheme') || 'indigo';
+    if (THEME_VARS[stored]) return stored;
+    return THEME_MIGRATION[stored] || 'indigo';
   });
   const [isLoading, setIsLoading] = useState(true);
   const [previousView, setPreviousView] = useState<View>('landing');
@@ -496,9 +540,9 @@ export default function App() {
   };
 
   if (isLoading) {
-    const bgColor = darkMode ? '#0f172a' : '#f8fafc';
-    const accent = THEME_ACCENTS[colorScheme] ?? THEME_ACCENTS['blue'];
-    const accentColor = darkMode ? accent['--accent-dark'] : accent['--accent'];
+    const theme = THEME_VARS[colorScheme] ?? THEME_VARS['indigo'];
+    const bgColor = darkMode ? theme['--page-bg-d'] : theme['--page-bg'];
+    const accentColor = darkMode ? theme['--accent-dark'] : theme['--accent'];
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
         <div
@@ -510,18 +554,18 @@ export default function App() {
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? '#0f172a' : '#f8fafc', cardBg: darkMode ? '#1e293b' : '#ffffff' }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc'), cardBg: darkMode ? (THEME_VARS[colorScheme]?.['--card-bg-d'] ?? '#1e293b') : (THEME_VARS[colorScheme]?.['--card-bg'] ?? '#ffffff') }}>
       <EmailProvider>
         <DashboardProvider>
           <div
             className={darkMode ? 'dark' : ''}
-            style={{ ...(darkMode ? DARK_VARS : LIGHT_VARS), ...(THEME_ACCENTS[colorScheme] ?? THEME_ACCENTS['blue']) } as React.CSSProperties}
+            style={(THEME_VARS[colorScheme] ?? THEME_VARS['indigo']) as React.CSSProperties}
           >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
             {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
-              <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
+              <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
                 <Sidebar
                   onSignOut={handleSignOut}
                   onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}
@@ -537,24 +581,24 @@ export default function App() {
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                 />
-                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
+                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
                   {/* Mobile top bar */}
                   <div
-                    className={`md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 shadow border-b ${darkMode ? 'text-white border-white/10' : 'text-slate-800 border-slate-200'}`}
-                    style={{ backgroundColor: darkMode ? '#1e293b' : '#ffffff' }}
+                    className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
+                    style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--sb-bg-d'] ?? '#1e1b4b') : (THEME_VARS[colorScheme]?.['--sb-bg'] ?? '#3730a3') }}
                   >
                     <button
                       onClick={() => setMobileNavOpen(true)}
                       className="p-1.5 rounded transition-colors"
                       style={{}}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)')}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = darkMode ? (THEME_VARS[colorScheme]?.['--sb-hover-d'] ?? '#2a2568') : (THEME_VARS[colorScheme]?.['--sb-hover'] ?? '#4338ca'))}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                       aria-label="Open navigation"
                     >
                       <Menu className="w-5 h-5" />
                     </button>
                     <div className="flex items-center gap-2">
-                      <Mail className={`w-5 h-5 ${darkMode ? 'text-white/60' : 'text-slate-400'}`} />
+                      <Mail className="w-5 h-5 text-white/60" />
                       <span className="font-semibold text-sm tracking-wide">LoiReply</span>
                     </div>
                   </div>

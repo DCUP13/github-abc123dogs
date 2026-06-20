@@ -35,10 +35,9 @@ export function Sidebar({
 }: SidebarProps) {
   const { darkMode } = useContext(ThemeContext);
 
-  const sidebarBg   = darkMode ? '#1e293b' : '#ffffff';
-  const hoverBg     = darkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
-  const borderColor = darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
-  const textClass   = darkMode ? 'text-slate-100' : 'text-slate-700';
+  const sidebarBg   = darkMode ? 'var(--sb-bg-d)' : 'var(--sb-bg)';
+  const hoverBg     = darkMode ? 'var(--sb-hover-d)' : 'var(--sb-hover)';
+  const borderColor = 'var(--sb-border)';
 
   const nav = (handler: () => void) => () => {
     handler();
@@ -48,7 +47,7 @@ export function Sidebar({
   const navBtn = (onClick: () => void, Icon: React.ElementType, label: string) => (
     <button
       onClick={nav(onClick)}
-      className={`w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors ${textClass}`}
+      className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors"
       onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
@@ -68,20 +67,20 @@ export function Sidebar({
 
       <div
         className={[
-          'fixed inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-64 text-white flex flex-col transition-transform duration-300 ease-in-out',
           'md:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         ].join(' ')}
-        style={{ backgroundColor: sidebarBg, borderRight: `1px solid ${borderColor}` }}
+        style={{ backgroundColor: sidebarBg }}
       >
         <div
           className="flex items-center justify-between px-6 py-5 border-b"
           style={{ borderColor }}
         >
-          <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Dashboard</h2>
+          <h2 className="text-xl font-bold">Dashboard</h2>
           <button
             onClick={onClose}
-            className={`md:hidden p-1 rounded transition-colors ${textClass}`}
+            className="md:hidden p-1 rounded transition-colors"
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             aria-label="Close menu"
@@ -109,7 +108,7 @@ export function Sidebar({
           {navBtn(onSupportClick, HelpCircle, 'Support')}
           <button
             onClick={nav(onSignOut)}
-            className={`w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-600'}`}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors text-red-300 hover:text-red-200"
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
