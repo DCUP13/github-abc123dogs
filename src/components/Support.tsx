@@ -43,12 +43,8 @@ function SupportUser() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-
-  // New conversation form state
   const [subject, setSubject] = useState('');
   const [firstMessage, setFirstMessage] = useState('');
-
-  // Reply state
   const [replyText, setReplyText] = useState('');
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -97,11 +93,7 @@ function SupportUser() {
   function subscribeToRequestUpdates() {
     requestsChannelRef.current = supabase
       .channel('user-support-requests')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'support_requests',
-      }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_requests' }, (payload) => {
         setConversations(prev =>
           prev.map(c => c.id === payload.new.id ? { ...c, ...(payload.new as SupportRequest) } : c)
         );
@@ -211,44 +203,45 @@ function SupportUser() {
 
   if (loading) {
     return (
-      <div className="min-h-screen app-bg flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Chat view
+  // ── Chat view ─────────────────────────────────────────────────────
   if (selectedId && selected) {
     return (
-      <div className="min-h-screen app-bg flex flex-col">
+      <div className="flex flex-col app-bg" style={{ height: 'calc(100dvh - 48px)' }}>
         {/* Header */}
-        <div className="app-card border-b border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4 flex items-center gap-3 flex-shrink-0">
+        <div className="app-card border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => setSelectedId(null)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 py-1 pr-2"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <ChevronLeft className="w-4 h-4" />
+            Back
           </button>
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-gray-900 dark:text-white truncate">{selected.subject}</h2>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              selected.status === 'resolved'
-                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-            }`}>
-              {selected.status === 'resolved' ? 'Resolved' : 'Open'}
-            </span>
+            <h2 className="font-semibold text-sm text-gray-900 dark:text-white truncate">{selected.subject}</h2>
           </div>
+          <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${
+            selected.status === 'resolved'
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+          }`}>
+            {selected.status === 'resolved' ? 'Resolved' : 'Open'}
+          </span>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
           {messages.length === 0 && (
             <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-8">No messages yet.</p>
           )}
           {messages.map(msg => (
             <div key={msg.id} className={`flex ${msg.is_owner ? 'justify-start' : 'justify-end'}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
                 msg.is_owner
                   ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-tl-sm'
                   : 'bg-blue-600 text-white rounded-tr-sm'
@@ -266,69 +259,69 @@ function SupportUser() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Reply input */}
-        {selected.status !== 'resolved' && (
-          <div className="app-card border-t border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4 flex-shrink-0">
+        {/* Reply */}
+        <div className="app-card border-t border-gray-200 dark:border-gray-700 px-4 py-3 flex-shrink-0">
+          {selected.status !== 'resolved' ? (
             <form onSubmit={handleReply} className="flex gap-2">
               <input
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                style={{ fontSize: 16 }}
+                className="flex-1 px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 disabled={sending}
               />
               <button
                 type="submit"
                 disabled={sending || !replyText.trim()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="w-4 h-4" />
               </button>
             </form>
-          </div>
-        )}
-        {selected.status === 'resolved' && (
-          <div className="px-4 md:px-6 py-3 text-center text-sm text-gray-500 dark:text-gray-400 bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-900/30">
-            This conversation has been resolved.
-          </div>
-        )}
+          ) : (
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+              This conversation has been resolved.
+            </p>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Conversation list / new form
+  // ── Conversation list / new form ──────────────────────────────────
   return (
     <div className="min-h-screen app-bg">
-      <div className="max-w-2xl mx-auto px-4 md:px-6 py-8">
+      <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <HelpCircle className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+            <HelpCircle className="w-6 h-6 md:w-7 md:h-7 text-blue-600 dark:text-blue-400" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Support</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">We typically reply within 24 hours</p>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Support</h1>
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">We typically reply within 24 hours</p>
             </div>
           </div>
-          {conversations.length > 0 && (
+          {conversations.length > 0 && !showNewForm && (
             <button
               onClick={() => setShowNewForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 md:px-4 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              New Conversation
+              <span className="hidden sm:inline">New</span>
             </button>
           )}
         </div>
 
         {/* New conversation form */}
         {showNewForm && (
-          <div className="app-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+          <div className="app-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900 dark:text-white">New Conversation</h2>
               {conversations.length > 0 && (
                 <button
                   onClick={() => setShowNewForm(false)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-1 px-2"
                 >
                   Cancel
                 </button>
@@ -341,7 +334,8 @@ function SupportUser() {
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
                   placeholder="What do you need help with?"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  style={{ fontSize: 16 }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   required
                   disabled={sending}
                 />
@@ -353,7 +347,8 @@ function SupportUser() {
                   onChange={e => setFirstMessage(e.target.value)}
                   placeholder="Describe your issue in detail..."
                   rows={5}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+                  style={{ fontSize: 16 }}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                   required
                   disabled={sending}
                 />
@@ -361,7 +356,7 @@ function SupportUser() {
               <button
                 type="submit"
                 disabled={sending}
-                className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
               >
                 {sending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -377,12 +372,12 @@ function SupportUser() {
         {/* Conversation list */}
         {conversations.length > 0 && !showNewForm && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Your Conversations</h2>
+            <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Your Conversations</h2>
             {conversations.map(conv => (
               <button
                 key={conv.id}
                 onClick={() => setSelectedId(conv.id)}
-                className="w-full text-left app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                className="w-full text-left app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md active:scale-[0.99] transition-all"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -413,7 +408,7 @@ function SupportUser() {
         {conversations.length === 0 && !showNewForm && (
           <div className="text-center py-12 text-gray-400 dark:text-gray-500">
             <HelpCircle className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p>No conversations yet.</p>
+            <p className="text-sm">No conversations yet.</p>
           </div>
         )}
       </div>
