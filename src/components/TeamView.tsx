@@ -140,10 +140,16 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
     setLoading(true);
     const [{ data: memberRows }, { data: convRows }] = await Promise.all([
       supabase.from('organization_members_with_emails').select('user_id, email, name, role').eq('organization_id', orgId).neq('user_id', currentUserId),
-      supabase.from('team_conversations').select('id, participant_1, participant_2, last_message_at').or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
+      supabase.from('team_conversations').select('id, participant_1, participant_2, last_message_at, hidden_for_p1, hidden_for_p2').or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
     ]);
+    // Only show conversations the current user hasn't hidden
+    const visibleConvs = (convRows ?? []).filter(c => {
+      if (c.participant_1 === currentUserId && c.hidden_for_p1) return false;
+      if (c.participant_2 === currentUserId && c.hidden_for_p2) return false;
+      return true;
+    });
     const enriched: TeamMember[] = (memberRows ?? []).map(m => {
-      const c = (convRows ?? []).find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
+      const c = visibleConvs.find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
       return c ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : { ...m };
     });
     setMembers(sortChatMembers(enriched));
@@ -160,9 +166,16 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
         setMembers(prev => sortChatMembers(prev.map(m => m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m)));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
-        const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
-        const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
-        setMembers(prev => sortChatMembers(prev.map(m => m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m)));
+        const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string; hidden_for_p1: boolean; hidden_for_p2: boolean };
+        const isCurrentUserP1 = c.participant_1 === currentUserId;
+        const currentUserHid = isCurrentUserP1 ? c.hidden_for_p1 : c.hidden_for_p2;
+        const other = isCurrentUserP1 ? c.participant_2 : c.participant_1;
+        setMembers(prev => sortChatMembers(prev.map(m => {
+          if (m.user_id !== other) return m;
+          // If the current user has this conv hidden, keep it hidden in sidebar
+          if (currentUserHid) return { ...m, conversationId: undefined, lastMessageAt: undefined };
+          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at };
+        })));
       })
       .subscribe();
   }
@@ -203,9 +216,29 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
       if (me) throw me;
       setMessages(prev => [...prev, msg]); setText('');
       const now = new Date().toISOString();
-      await supabase.from('team_conversations').update({ last_message_at: now }).eq('id', convId);
+      // Reset hidden flags so the conversation reappears for both parties
+      await supabase.from('team_conversations').update({ last_message_at: now, hidden_for_p1: false, hidden_for_p2: false }).eq('id', convId);
       setMembers(prev => sortChatMembers(prev.map(m => m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m)));
     } catch (err) { console.error(err); } finally { setSending(false); }
+  }
+
+  async function handleDeleteChat() {
+    if (!conversationId || !selectedId) return;
+    if (!confirm('Remove this chat from your view? The conversation history is preserved and will reappear when either of you messages again.')) return;
+
+    // Determine which participant the current user is (participants are stored in sorted order)
+    const isP1 = currentUserId < selectedId;
+    const field = isP1 ? { hidden_for_p1: true } : { hidden_for_p2: true };
+
+    await supabase.from('team_conversations').update(field).eq('id', conversationId);
+
+    // Remove conv data from member in local state so it leaves the sidebar
+    setMembers(prev => sortChatMembers(prev.map(m =>
+      m.user_id === selectedId ? { ...m, conversationId: undefined, lastMessageAt: undefined } : m
+    )));
+    setSelectedId(null);
+    setConversationId(null);
+    setMessages([]);
   }
 
   const selected = members.find(m => m.user_id === selectedId);
@@ -258,6 +291,11 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selected.email}</p>
               </div>
               <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${roleStyle(selected.role)}`}>{selected.role}</span>
+              {conversationId && (
+                <button onClick={handleDeleteChat} title="Delete chat" className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto min-h-0 px-4 md:px-6 py-4 space-y-3">
               {messages.length === 0 && (
