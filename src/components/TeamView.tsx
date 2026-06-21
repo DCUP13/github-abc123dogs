@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Users, Send, Search, ChevronLeft, MessageSquare,
   Plus, Trash2, Mail, Building2, Globe, MapPin, Briefcase,
-  UserPlus, CheckCircle, AlertCircle, X, Settings, Clock,
+  UserPlus, CheckCircle, AlertCircle, X, Settings, Clock, MessageCircle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MemberDetailDialog from './MemberDetailDialog';
@@ -35,6 +35,8 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   const [currentRole, setCurrentRole] = useState('member');
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  // When user clicks chat icon on org tab, switch to chat and open this member
+  const [pendingChatId, setPendingChatId] = useState<string | null>(null);
 
   useEffect(() => { loadBase(); }, []);
 
@@ -59,6 +61,11 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     setLoading(false);
   }
 
+  function handleStartChat(memberId: string) {
+    setPendingChatId(memberId);
+    setTab('chat');
+  }
+
   if (loading) return <div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!orgId || !currentUserId) return (
@@ -80,29 +87,31 @@ export function TeamView({ onSignOut }: TeamViewProps) {
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
           </div>
         </div>
-        {/* Tab bar */}
         <div className="flex gap-0">
           {(['chat', 'organization'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
-                tab === t
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${tab === t ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
               {t === 'chat' ? 'Chat' : 'Organization'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Tab content */}
       {tab === 'chat' ? (
-        <ChatTab orgId={orgId} currentUserId={currentUserId} />
+        <ChatTab
+          orgId={orgId}
+          currentUserId={currentUserId}
+          initialSelectedId={pendingChatId}
+          onInitialSelectedConsumed={() => setPendingChatId(null)}
+        />
       ) : (
-        <OrgTab orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} />
+        <OrgTab
+          orgId={orgId}
+          currentUserId={currentUserId}
+          currentRole={currentRole}
+          onMemberCountChange={setMemberCount}
+          onStartChat={handleStartChat}
+        />
       )}
     </div>
   );
@@ -110,10 +119,18 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
 // ── Chat tab ─────────────────────────────────────────────────────────
 
-function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: string }) {
+interface ChatTabProps {
+  orgId: string;
+  currentUserId: string;
+  initialSelectedId: string | null;
+  onInitialSelectedConsumed: () => void;
+}
+
+function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedConsumed }: ChatTabProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [messageCutoff, setMessageCutoff] = useState<string | null>(null);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -125,11 +142,24 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
 
   useEffect(() => {
     loadChatData();
-    return () => { if (convChannelRef.current) supabase.removeChannel(convChannelRef.current); };
+    return () => {
+      if (convChannelRef.current) supabase.removeChannel(convChannelRef.current);
+      if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
+    };
   }, []);
 
+  // Apply pending initial selection once data is loaded
   useEffect(() => {
-    setConversationId(null); setMessages([]);
+    if (!loading && initialSelectedId) {
+      setSelectedId(initialSelectedId);
+      onInitialSelectedConsumed();
+    }
+  }, [loading, initialSelectedId]);
+
+  useEffect(() => {
+    setConversationId(null);
+    setMessages([]);
+    setMessageCutoff(null);
     if (msgChannelRef.current) { supabase.removeChannel(msgChannelRef.current); msgChannelRef.current = null; }
     if (selectedId) openConversation(selectedId);
   }, [selectedId]);
@@ -140,16 +170,18 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
     setLoading(true);
     const [{ data: memberRows }, { data: convRows }] = await Promise.all([
       supabase.from('organization_members_with_emails').select('user_id, email, name, role').eq('organization_id', orgId).neq('user_id', currentUserId),
-      supabase.from('team_conversations').select('id, participant_1, participant_2, last_message_at, hidden_for_p1, hidden_for_p2').or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
+      supabase.from('team_conversations')
+        .select('id, participant_1, participant_2, last_message_at, hidden_for_p1, hidden_for_p2')
+        .or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
     ]);
-    // Only show conversations the current user hasn't hidden
-    const visibleConvs = (convRows ?? []).filter(c => {
-      if (c.participant_1 === currentUserId && c.hidden_for_p1) return false;
-      if (c.participant_2 === currentUserId && c.hidden_for_p2) return false;
-      return true;
-    });
+
+    // Only attach conversation data for non-hidden conversations
+    const activeConvs = (convRows ?? []).filter(c =>
+      c.participant_1 === currentUserId ? !c.hidden_for_p1 : !c.hidden_for_p2
+    );
+
     const enriched: TeamMember[] = (memberRows ?? []).map(m => {
-      const c = visibleConvs.find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
+      const c = activeConvs.find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
       return c ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : { ...m };
     });
     setMembers(sortChatMembers(enriched));
@@ -163,17 +195,18 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_conversations' }, (p) => {
         const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
         const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
-        setMembers(prev => sortChatMembers(prev.map(m => m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m)));
+        setMembers(prev => sortChatMembers(prev.map(m =>
+          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m
+        )));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
         const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string; hidden_for_p1: boolean; hidden_for_p2: boolean };
-        const isCurrentUserP1 = c.participant_1 === currentUserId;
-        const currentUserHid = isCurrentUserP1 ? c.hidden_for_p1 : c.hidden_for_p2;
-        const other = isCurrentUserP1 ? c.participant_2 : c.participant_1;
+        const isP1 = c.participant_1 === currentUserId;
+        const myHidden = isP1 ? c.hidden_for_p1 : c.hidden_for_p2;
+        const other = isP1 ? c.participant_2 : c.participant_1;
         setMembers(prev => sortChatMembers(prev.map(m => {
           if (m.user_id !== other) return m;
-          // If the current user has this conv hidden, keep it hidden in sidebar
-          if (currentUserHid) return { ...m, conversationId: undefined, lastMessageAt: undefined };
+          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined };
           return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at };
         })));
       })
@@ -182,20 +215,33 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
 
   async function openConversation(memberId: string) {
     const [p1, p2] = [currentUserId, memberId].sort();
-    const { data: conv } = await supabase.from('team_conversations').select('id').eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
+    const { data: conv } = await supabase.from('team_conversations')
+      .select('id, cleared_at_p1, cleared_at_p2, participant_1')
+      .eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
+
     if (conv) {
+      const isP1 = conv.participant_1 === currentUserId;
+      const cutoff = isP1 ? conv.cleared_at_p1 : conv.cleared_at_p2;
       setConversationId(conv.id);
-      const { data } = await supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
+      setMessageCutoff(cutoff ?? null);
+
+      let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
+      if (cutoff) query = query.gt('created_at', cutoff);
+
+      const { data } = await query;
       setMessages(data ?? []);
-      subscribeMessages(conv.id);
+      subscribeMessages(conv.id, cutoff ?? null);
     }
   }
 
-  function subscribeMessages(convId: string) {
+  function subscribeMessages(convId: string, cutoff: string | null) {
     if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
     msgChannelRef.current = supabase.channel(`chat-msgs-${convId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, (p) => {
-        setMessages(prev => prev.find(m => m.id === p.new.id) ? prev : [...prev, p.new as TeamMessage]);
+        const msg = p.new as TeamMessage;
+        // Respect cutoff: ignore messages before it
+        if (cutoff && msg.created_at <= cutoff) return;
+        setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
       }).subscribe();
   }
 
@@ -208,47 +254,72 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
       let convId = conversationId;
       if (!convId) {
         const [p1, p2] = [currentUserId, selectedId].sort();
-        const { data: nc, error } = await supabase.from('team_conversations').insert({ organization_id: orgId, participant_1: p1, participant_2: p2 }).select('id').single();
+        const { data: nc, error } = await supabase.from('team_conversations')
+          .insert({ organization_id: orgId, participant_1: p1, participant_2: p2 })
+          .select('id').single();
         if (error) throw error;
-        convId = nc.id; setConversationId(convId); subscribeMessages(convId);
+        convId = nc.id;
+        setConversationId(convId);
+        subscribeMessages(convId, messageCutoff);
       }
-      const { data: msg, error: me } = await supabase.from('team_messages').insert({ conversation_id: convId, sender_id: currentUserId, body }).select().single();
+
+      const { data: msg, error: me } = await supabase.from('team_messages')
+        .insert({ conversation_id: convId, sender_id: currentUserId, body }).select().single();
       if (me) throw me;
-      setMessages(prev => [...prev, msg]); setText('');
+
+      setMessages(prev => [...prev, msg]);
+      setText('');
+
       const now = new Date().toISOString();
-      // Reset hidden flags so the conversation reappears for both parties
-      await supabase.from('team_conversations').update({ last_message_at: now, hidden_for_p1: false, hidden_for_p2: false }).eq('id', convId);
-      setMembers(prev => sortChatMembers(prev.map(m => m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m)));
+      // Un-hide only for the sender; preserve the cleared_at cutoff; leave other participant's hidden flag alone
+      const isP1 = currentUserId < selectedId;
+      const unhideField = isP1 ? { hidden_for_p1: false } : { hidden_for_p2: false };
+      await supabase.from('team_conversations').update({ last_message_at: now, ...unhideField }).eq('id', convId);
+
+      setMembers(prev => sortChatMembers(prev.map(m =>
+        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m
+      )));
     } catch (err) { console.error(err); } finally { setSending(false); }
   }
 
-  async function handleDeleteChat() {
-    if (!conversationId || !selectedId) return;
-    if (!confirm('Remove this chat from your view? The conversation history is preserved and will reappear when either of you messages again.')) return;
+  async function handleDeleteConversation(memberId: string, convId: string) {
+    if (!confirm('Delete this conversation? It will be removed from your chat list and previous messages won\'t be visible if you start chatting again.')) return;
 
-    // Determine which participant the current user is (participants are stored in sorted order)
-    const isP1 = currentUserId < selectedId;
-    const field = isP1 ? { hidden_for_p1: true } : { hidden_for_p2: true };
+    const isP1 = currentUserId < memberId;
+    const clearFields = isP1
+      ? { hidden_for_p1: true, cleared_at_p1: new Date().toISOString() }
+      : { hidden_for_p2: true, cleared_at_p2: new Date().toISOString() };
 
-    await supabase.from('team_conversations').update(field).eq('id', conversationId);
+    await supabase.from('team_conversations').update(clearFields).eq('id', convId);
 
-    // Remove conv data from member in local state so it leaves the sidebar
+    // Remove the member from the active chat list
     setMembers(prev => sortChatMembers(prev.map(m =>
-      m.user_id === selectedId ? { ...m, conversationId: undefined, lastMessageAt: undefined } : m
+      m.user_id === memberId ? { ...m, conversationId: undefined, lastMessageAt: undefined } : m
     )));
-    setSelectedId(null);
-    setConversationId(null);
-    setMessages([]);
+
+    // Close the open conversation if it's this one
+    if (selectedId === memberId) {
+      setSelectedId(null);
+      setConversationId(null);
+      setMessages([]);
+      setMessageCutoff(null);
+    }
   }
 
   const selected = members.find(m => m.user_id === selectedId);
-  const filtered = members.filter(m => { const q = search.toLowerCase(); return !q || m.email.toLowerCase().includes(q) || m.name.toLowerCase().includes(q); });
+  const q = search.toLowerCase().trim();
+  // Without search: only show members with active conversations
+  // With search: show all org members matching the query
+  const filtered = members.filter(m => {
+    if (q) return m.email.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+    return !!m.conversationId;
+  });
 
   if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      {/* Left: member list */}
+      {/* Left: chat list */}
       <div className={`flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 md:w-72 ${selectedId ? 'hidden md:flex' : 'flex w-full'}`}>
         <div className="p-3 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
           <div className="relative">
@@ -258,26 +329,42 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 && <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500"><MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-sm">{members.length === 0 ? 'No team members yet.' : 'No results.'}</p></div>}
+          {filtered.length === 0 && (
+            <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500">
+              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">{!q && members.every(m => !m.conversationId) ? 'No conversations yet.' : q ? 'No results.' : 'No conversations yet.'}</p>
+              {!q && <p className="text-xs mt-1">Search for a team member to start chatting.</p>}
+            </div>
+          )}
           {filtered.map(m => (
-            <button key={m.user_id} onClick={() => setSelectedId(m.user_id)}
-              className={`w-full text-left px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{initials(m.name, m.email)}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
-                    {m.lastMessageAt && <span className="text-xs text-gray-400 dark:text-gray-500">{relTime(m.lastMessageAt)}</span>}
+            <div key={m.user_id} className={`relative group border-b border-gray-100 dark:border-gray-800 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
+              <button onClick={() => setSelectedId(m.user_id)}
+                className={`w-full text-left px-4 py-3.5 pr-12 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{initials(m.name, m.email)}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
+                      {m.lastMessageAt && <span className="text-xs text-gray-400 dark:text-gray-500">{relTime(m.lastMessageAt)}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
+              </button>
+              {m.conversationId && (
+                <button
+                  onClick={() => handleDeleteConversation(m.user_id, m.conversationId!)}
+                  title="Delete conversation"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Right: chat */}
+      {/* Right: chat panel */}
       <div className={`flex flex-col flex-1 min-w-0 min-h-0 ${selectedId ? 'flex' : 'hidden md:flex'}`}>
         {selected ? (
           <>
@@ -292,7 +379,8 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
               </div>
               <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${roleStyle(selected.role)}`}>{selected.role}</span>
               {conversationId && (
-                <button onClick={handleDeleteChat} title="Delete chat" className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                <button onClick={() => handleDeleteConversation(selected.user_id, conversationId)} title="Delete conversation"
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
@@ -300,7 +388,9 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
             <div className="flex-1 overflow-y-auto min-h-0 px-4 md:px-6 py-4 space-y-3">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 py-16">
-                  <MessageSquare className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm font-medium">No messages yet</p><p className="text-xs mt-1">Say hello to {selected.name || selected.email}</p>
+                  <MessageSquare className="w-10 h-10 mb-3 opacity-30" />
+                  <p className="text-sm font-medium">No messages yet</p>
+                  <p className="text-xs mt-1">Say hello to {selected.name || selected.email}</p>
                 </div>
               )}
               {messages.map(msg => {
@@ -327,7 +417,11 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
-            <div className="text-center"><MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" /><p className="text-sm font-medium">Select a team member</p><p className="text-xs mt-1">to start a conversation</p></div>
+            <div className="text-center">
+              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-medium">Select a conversation</p>
+              <p className="text-xs mt-1">or search to start a new one</p>
+            </div>
           </div>
         )}
       </div>
@@ -337,9 +431,15 @@ function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: strin
 
 // ── Organization tab ──────────────────────────────────────────────────
 
-interface OrgTabProps { orgId: string; currentUserId: string; currentRole: string; onMemberCountChange: (n: number) => void; }
+interface OrgTabProps {
+  orgId: string;
+  currentUserId: string;
+  currentRole: string;
+  onMemberCountChange: (n: number) => void;
+  onStartChat: (memberId: string) => void;
+}
 
-function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgTabProps) {
+function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStartChat }: OrgTabProps) {
   const [orgDetails, setOrgDetails] = useState<OrgDetails | null>(null);
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -388,7 +488,6 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-8">
 
-        {/* Status banner */}
         {status && (
           <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${status.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'}`}>
             {status.type === 'success' ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
@@ -444,7 +543,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
               const isCurrentUser = m.user_id === currentUserId;
               const isOwner = m.role === 'owner';
               return (
-                <div key={m.user_id} className="app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all group">
+                <div key={m.user_id} className="app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all">
                   <div className="flex items-start gap-3">
                     <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>{initials(m.name, m.email)}</div>
                     <div className="flex-1 min-w-0">
@@ -460,6 +559,12 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3">
+                    {!isCurrentUser && (
+                      <button onClick={() => onStartChat(m.user_id)} title="Start chat"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                    )}
                     {isManager && (
                       <button onClick={() => setSelectedMember(m)} className="flex-1 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                         View Details
@@ -477,7 +582,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
           </div>
         </div>
 
-        {/* Pending invitations — managers only */}
+        {/* Pending invitations */}
         {isManager && invitations.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations <span className="text-sm font-normal text-gray-400 dark:text-gray-500">({invitations.length})</span></h3>
@@ -506,7 +611,6 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
 
       </div>
 
-      {/* Dialogs */}
       {selectedMember && (
         <MemberDetailDialog
           memberId={selectedMember.user_id}
@@ -516,7 +620,18 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgT
         />
       )}
       {showOrgSettings && <OrganizationSettings onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
-      {showInviteModal && <InviteModal orgId={orgId} currentUserId={currentUserId} onClose={() => setShowInviteModal(false)} onSuccess={() => { loadOrgData(); setStatus({ type: 'success', message: 'Invitation sent successfully' }); setTimeout(() => setStatus(null), 4000); }} />}
+      {showInviteModal && (
+        <InviteModal
+          orgId={orgId}
+          currentUserId={currentUserId}
+          onClose={() => setShowInviteModal(false)}
+          onSuccess={() => {
+            loadOrgData();
+            setStatus({ type: 'success', message: 'Invitation sent successfully' });
+            setTimeout(() => setStatus(null), 4000);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -580,11 +695,10 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
         </div>
 
         <div className="px-6 pt-4">
-          {/* Method tabs */}
           <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg mb-4">
-            {([['invitation', 'Send Invitation'], ['direct', 'Create Account']] as const).map(([val, label]) => (
+            {(['invitation', 'direct'] as const).map(val => (
               <button key={val} onClick={() => setInviteType(val)} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteType === val ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
-                {label}
+                {val === 'invitation' ? 'Send Invitation' : 'Create Account'}
               </button>
             ))}
           </div>
