@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Home, Settings as SettingsIcon, LogOut, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug, X } from 'lucide-react';
 import { ThemeContext } from '../App';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -17,6 +18,42 @@ interface SidebarProps {
   isSupportAdmin?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+}
+
+function useTeamUnread() {
+  const [count, setCount] = useState(0);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    let uid: string | null = null;
+    let mounted = true;
+
+    async function fetchCount() {
+      if (!uid) return;
+      const { data } = await supabase.rpc('get_team_unread_count', { uid });
+      if (mounted) setCount(data ?? 0);
+    }
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !mounted) return;
+      uid = user.id;
+      await fetchCount();
+
+      channelRef.current = supabase.channel('sidebar-team-unread')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages' }, fetchCount)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, fetchCount)
+        .subscribe();
+    }
+
+    init();
+    return () => {
+      mounted = false;
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+    };
+  }, []);
+
+  return count;
 }
 
 export function Sidebar({
@@ -36,6 +73,7 @@ export function Sidebar({
   onClose,
 }: SidebarProps) {
   const { darkMode } = useContext(ThemeContext);
+  const teamUnread = useTeamUnread();
 
   const sidebarBg   = darkMode ? 'var(--sb-bg-d)' : 'var(--sb-bg)';
   const hoverBg     = darkMode ? 'var(--sb-hover-d)' : 'var(--sb-hover)';
@@ -46,7 +84,7 @@ export function Sidebar({
     onClose?.();
   };
 
-  const navBtn = (onClick: () => void, Icon: React.ElementType, label: string) => (
+  const navBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number) => (
     <button
       onClick={nav(onClick)}
       className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors"
@@ -54,7 +92,12 @@ export function Sidebar({
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       <Icon className="w-4 h-4 flex-shrink-0" />
-      {label}
+      <span className="flex-1 text-left">{label}</span>
+      {!!badge && badge > 0 && (
+        <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1 leading-none">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </button>
   );
 
@@ -99,7 +142,7 @@ export function Sidebar({
           {navBtn(onCRMClick,          Users,         'CRM')}
           {navBtn(onCalendarClick,     CalendarIcon,  'Calendar')}
           {navBtn(onIntegrationsClick, Plug,          'Integrations')}
-          {onTeamClick && navBtn(onTeamClick, Users,  'Team')}
+          {onTeamClick && navBtn(onTeamClick, Users, 'Team', teamUnread > 0 ? teamUnread : undefined)}
           {navBtn(onSettingsClick,     SettingsIcon,  'Settings')}
         </nav>
 

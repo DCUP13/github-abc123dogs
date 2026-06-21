@@ -10,7 +10,7 @@ import OrganizationSettings from './OrganizationSettings';
 
 // ── Shared helpers ───────────────────────────────────────────────────
 
-interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string; }
+interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string; hasUnread?: boolean; }
 interface TeamMessage { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; }
 interface OrgMember { id: string; user_id: string; email: string; name: string; role: string; joined_at: string; }
 interface Invitation { id: string; email: string; role?: string; status: string; created_at: string; expires_at: string; }
@@ -22,6 +22,11 @@ function roleStyle(role: string) { return role === 'owner' ? 'bg-amber-100 dark:
 function relTime(iso: string) { const d = Date.now() - new Date(iso).getTime(), m = Math.floor(d/60000), h = Math.floor(d/3600000), dy = Math.floor(d/86400000); if (m<1) return 'now'; if (m<60) return `${m}m`; if (h<24) return `${h}h`; if (dy<7) return `${dy}d`; return new Date(iso).toLocaleDateString(); }
 function initials(name: string, email: string) { return (name || email).charAt(0).toUpperCase(); }
 function sortChatMembers(list: TeamMember[]): TeamMember[] { return [...list].sort((a,b) => { if (a.lastMessageAt && b.lastMessageAt) return new Date(b.lastMessageAt).getTime()-new Date(a.lastMessageAt).getTime(); if (a.lastMessageAt) return -1; if (b.lastMessageAt) return 1; return (a.name||a.email).localeCompare(b.name||b.email); }); }
+function computeHasUnread(lastMessageAt: string | null, lastReadAt: string | null, clearedAt: string | null): boolean {
+  if (!lastMessageAt) return false;
+  const since = lastReadAt && clearedAt ? (lastReadAt > clearedAt ? lastReadAt : clearedAt) : (lastReadAt || clearedAt);
+  return since ? lastMessageAt > since : true;
+}
 
 // ── Main export ──────────────────────────────────────────────────────
 
@@ -35,7 +40,6 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   const [currentRole, setCurrentRole] = useState('member');
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  // When user clicks chat icon on org tab, switch to chat and open this member
   const [pendingChatId, setPendingChatId] = useState<string | null>(null);
 
   useEffect(() => { loadBase(); }, []);
@@ -76,7 +80,6 @@ export function TeamView({ onSignOut }: TeamViewProps) {
 
   return (
     <div className="flex flex-col app-bg" style={{ minHeight: 'calc(100dvh - 48px)' }}>
-      {/* Page header + tabs */}
       <div className="px-4 md:px-8 pt-4 md:pt-5 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
@@ -98,20 +101,9 @@ export function TeamView({ onSignOut }: TeamViewProps) {
       </div>
 
       {tab === 'chat' ? (
-        <ChatTab
-          orgId={orgId}
-          currentUserId={currentUserId}
-          initialSelectedId={pendingChatId}
-          onInitialSelectedConsumed={() => setPendingChatId(null)}
-        />
+        <ChatTab orgId={orgId} currentUserId={currentUserId} initialSelectedId={pendingChatId} onInitialSelectedConsumed={() => setPendingChatId(null)} />
       ) : (
-        <OrgTab
-          orgId={orgId}
-          currentUserId={currentUserId}
-          currentRole={currentRole}
-          onMemberCountChange={setMemberCount}
-          onStartChat={handleStartChat}
-        />
+        <OrgTab orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} onStartChat={handleStartChat} />
       )}
     </div>
   );
@@ -148,7 +140,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
     };
   }, []);
 
-  // Apply pending initial selection once data is loaded
   useEffect(() => {
     if (!loading && initialSelectedId) {
       setSelectedId(initialSelectedId);
@@ -171,18 +162,24 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
     const [{ data: memberRows }, { data: convRows }] = await Promise.all([
       supabase.from('organization_members_with_emails').select('user_id, email, name, role').eq('organization_id', orgId).neq('user_id', currentUserId),
       supabase.from('team_conversations')
-        .select('id, participant_1, participant_2, last_message_at, hidden_for_p1, hidden_for_p2')
+        .select('id, participant_1, participant_2, last_message_at, hidden_for_p1, hidden_for_p2, last_read_at_p1, last_read_at_p2, cleared_at_p1, cleared_at_p2')
         .or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
     ]);
 
-    // Only attach conversation data for non-hidden conversations
     const activeConvs = (convRows ?? []).filter(c =>
       c.participant_1 === currentUserId ? !c.hidden_for_p1 : !c.hidden_for_p2
     );
 
     const enriched: TeamMember[] = (memberRows ?? []).map(m => {
       const c = activeConvs.find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
-      return c ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : { ...m };
+      if (!c) return { ...m };
+      const isP1 = c.participant_1 === currentUserId;
+      const hasUnread = computeHasUnread(
+        c.last_message_at,
+        isP1 ? c.last_read_at_p1 : c.last_read_at_p2,
+        isP1 ? c.cleared_at_p1 : c.cleared_at_p2,
+      );
+      return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread };
     });
     setMembers(sortChatMembers(enriched));
     setLoading(false);
@@ -196,18 +193,27 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
         const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
         setMembers(prev => sortChatMembers(prev.map(m =>
-          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m
+          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread: true } : m
         )));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
-        const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string; hidden_for_p1: boolean; hidden_for_p2: boolean };
+        const c = p.new as {
+          id: string; participant_1: string; participant_2: string; last_message_at: string;
+          hidden_for_p1: boolean; hidden_for_p2: boolean;
+          last_read_at_p1: string | null; last_read_at_p2: string | null;
+          cleared_at_p1: string | null; cleared_at_p2: string | null;
+        };
         const isP1 = c.participant_1 === currentUserId;
         const myHidden = isP1 ? c.hidden_for_p1 : c.hidden_for_p2;
+        const myLastRead = isP1 ? c.last_read_at_p1 : c.last_read_at_p2;
+        const myCleared = isP1 ? c.cleared_at_p1 : c.cleared_at_p2;
         const other = isP1 ? c.participant_2 : c.participant_1;
+
         setMembers(prev => sortChatMembers(prev.map(m => {
           if (m.user_id !== other) return m;
-          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined };
-          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at };
+          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, hasUnread: false };
+          const hasUnread = computeHasUnread(c.last_message_at, myLastRead, myCleared);
+          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread };
         })));
       })
       .subscribe();
@@ -216,7 +222,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   async function openConversation(memberId: string) {
     const [p1, p2] = [currentUserId, memberId].sort();
     const { data: conv } = await supabase.from('team_conversations')
-      .select('id, cleared_at_p1, cleared_at_p2, participant_1')
+      .select('id, participant_1, cleared_at_p1, cleared_at_p2')
       .eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
 
     if (conv) {
@@ -225,23 +231,36 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       setConversationId(conv.id);
       setMessageCutoff(cutoff ?? null);
 
+      // Mark as read immediately
+      const now = new Date().toISOString();
+      const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
+      supabase.from('team_conversations').update(readField).eq('id', conv.id);
+
+      // Clear unread dot in list
+      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
+
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       if (cutoff) query = query.gt('created_at', cutoff);
-
       const { data } = await query;
       setMessages(data ?? []);
-      subscribeMessages(conv.id, cutoff ?? null);
+      subscribeMessages(conv.id, memberId, cutoff ?? null);
     }
   }
 
-  function subscribeMessages(convId: string, cutoff: string | null) {
+  function subscribeMessages(convId: string, memberId: string, cutoff: string | null) {
     if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
     msgChannelRef.current = supabase.channel(`chat-msgs-${convId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, (p) => {
         const msg = p.new as TeamMessage;
-        // Respect cutoff: ignore messages before it
         if (cutoff && msg.created_at <= cutoff) return;
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+        // Auto-mark read since this conversation is open
+        if (msg.sender_id !== currentUserId) {
+          const now = new Date().toISOString();
+          const isP1 = currentUserId < memberId;
+          const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
+          supabase.from('team_conversations').update(readField).eq('id', convId);
+        }
       }).subscribe();
   }
 
@@ -260,7 +279,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         if (error) throw error;
         convId = nc.id;
         setConversationId(convId);
-        subscribeMessages(convId, messageCutoff);
+        subscribeMessages(convId, selectedId, null);
       }
 
       const { data: msg, error: me } = await supabase.from('team_messages')
@@ -271,19 +290,24 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       setText('');
 
       const now = new Date().toISOString();
-      // Un-hide only for the sender; preserve the cleared_at cutoff; leave other participant's hidden flag alone
+      // Un-hide BOTH parties and update last_message_at so message appears for everyone
       const isP1 = currentUserId < selectedId;
-      const unhideField = isP1 ? { hidden_for_p1: false } : { hidden_for_p2: false };
-      await supabase.from('team_conversations').update({ last_message_at: now, ...unhideField }).eq('id', convId);
+      const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
+      await supabase.from('team_conversations').update({
+        last_message_at: now,
+        hidden_for_p1: false,
+        hidden_for_p2: false,
+        ...readField,
+      }).eq('id', convId);
 
       setMembers(prev => sortChatMembers(prev.map(m =>
-        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m
+        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now, hasUnread: false } : m
       )));
     } catch (err) { console.error(err); } finally { setSending(false); }
   }
 
   async function handleDeleteConversation(memberId: string, convId: string) {
-    if (!confirm('Delete this conversation? It will be removed from your chat list and previous messages won\'t be visible if you start chatting again.')) return;
+    if (!confirm("Delete this conversation? It will be removed from your chat list and previous messages won't be visible if you start chatting again.")) return;
 
     const isP1 = currentUserId < memberId;
     const clearFields = isP1
@@ -292,12 +316,10 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
     await supabase.from('team_conversations').update(clearFields).eq('id', convId);
 
-    // Remove the member from the active chat list
     setMembers(prev => sortChatMembers(prev.map(m =>
-      m.user_id === memberId ? { ...m, conversationId: undefined, lastMessageAt: undefined } : m
+      m.user_id === memberId ? { ...m, conversationId: undefined, lastMessageAt: undefined, hasUnread: false } : m
     )));
 
-    // Close the open conversation if it's this one
     if (selectedId === memberId) {
       setSelectedId(null);
       setConversationId(null);
@@ -308,8 +330,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
   const selected = members.find(m => m.user_id === selectedId);
   const q = search.toLowerCase().trim();
-  // Without search: only show members with active conversations
-  // With search: show all org members matching the query
   const filtered = members.filter(m => {
     if (q) return m.email.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
     return !!m.conversationId;
@@ -332,21 +352,24 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
           {filtered.length === 0 && (
             <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">{!q && members.every(m => !m.conversationId) ? 'No conversations yet.' : q ? 'No results.' : 'No conversations yet.'}</p>
+              <p className="text-sm">{q ? 'No results.' : 'No conversations yet.'}</p>
               {!q && <p className="text-xs mt-1">Search for a team member to start chatting.</p>}
             </div>
           )}
           {filtered.map(m => (
             <div key={m.user_id} className={`relative group border-b border-gray-100 dark:border-gray-800 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
               <button onClick={() => setSelectedId(m.user_id)}
-                className={`w-full text-left px-4 py-3.5 pr-12 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50`}>
+                className="w-full text-left px-4 py-3.5 pr-12 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{initials(m.name, m.email)}</div>
+                  <div className="relative flex-shrink-0">
+                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold`}>{initials(m.name, m.email)}</div>
+                    {m.hasUnread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white dark:border-gray-900" />}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
+                    <p className={`text-sm truncate ${m.hasUnread ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-900 dark:text-white'}`}>{m.name || m.email}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
-                      {m.lastMessageAt && <span className="text-xs text-gray-400 dark:text-gray-500">{relTime(m.lastMessageAt)}</span>}
+                      {m.lastMessageAt && <span className={`text-xs ${m.hasUnread ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>{relTime(m.lastMessageAt)}</span>}
                     </div>
                   </div>
                 </div>
@@ -496,7 +519,6 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
           </div>
         )}
 
-        {/* Org info card */}
         {orgDetails && (
           <div className="app-card rounded-xl border border-gray-200 dark:border-gray-700 p-5 md:p-6">
             <div className="flex items-start gap-4">
@@ -528,7 +550,6 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
           </div>
         )}
 
-        {/* Members section */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Members <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-1">({orgMembers.length})</span></h3>
@@ -582,7 +603,6 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
           </div>
         </div>
 
-        {/* Pending invitations */}
         {isManager && invitations.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations <span className="text-sm font-normal text-gray-400 dark:text-gray-500">({invitations.length})</span></h3>
@@ -612,25 +632,16 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
       </div>
 
       {selectedMember && (
-        <MemberDetailDialog
-          memberId={selectedMember.user_id}
-          memberName={selectedMember.name}
-          memberEmail={selectedMember.email}
-          onClose={() => setSelectedMember(null)}
-        />
+        <MemberDetailDialog memberId={selectedMember.user_id} memberName={selectedMember.name} memberEmail={selectedMember.email} onClose={() => setSelectedMember(null)} />
       )}
       {showOrgSettings && <OrganizationSettings onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
       {showInviteModal && (
-        <InviteModal
-          orgId={orgId}
-          currentUserId={currentUserId}
-          onClose={() => setShowInviteModal(false)}
+        <InviteModal orgId={orgId} currentUserId={currentUserId} onClose={() => setShowInviteModal(false)}
           onSuccess={() => {
             loadOrgData();
             setStatus({ type: 'success', message: 'Invitation sent successfully' });
             setTimeout(() => setStatus(null), 4000);
-          }}
-        />
+          }} />
       )}
     </div>
   );
@@ -654,11 +665,9 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
     if (!email.trim()) return;
     if (inviteType === 'direct' && !password.trim()) { setError('Please enter a temporary password'); return; }
     setLoading(true); setError(''); setSuccessMsg('');
-
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
       if (inviteType === 'direct') {
         const res = await fetch(`${supabaseUrl}/functions/v1/create-team-member`, {
           method: 'POST', headers: { 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
@@ -676,14 +685,11 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
         if (!res.ok) throw new Error(data.error || 'Failed to send invitation');
         setSuccessMsg(`Invitation sent to ${email}`);
       }
-
       setEmail(''); setPassword(''); setRole('member');
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   return (
@@ -693,7 +699,6 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Member</h2>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"><X className="w-4 h-4 text-gray-500 dark:text-gray-400" /></button>
         </div>
-
         <div className="px-6 pt-4">
           <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg mb-4">
             {(['invitation', 'direct'] as const).map(val => (
@@ -702,7 +707,6 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
               </button>
             ))}
           </div>
-
           {successMsg ? (
             <div className="py-4 text-center">
               <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
