@@ -131,6 +131,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Kept in sync so event-handler closures can read the current selected member
+  const selectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     loadChatData();
@@ -146,6 +148,9 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       onInitialSelectedConsumed();
     }
   }, [loading, initialSelectedId]);
+
+  // Keep ref in sync so realtime handlers always see the current selection
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   useEffect(() => {
     setConversationId(null);
@@ -192,8 +197,9 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_conversations' }, (p) => {
         const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
         const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
+        const isCurrentlyOpen = selectedIdRef.current === other;
         setMembers(prev => sortChatMembers(prev.map(m =>
-          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread: true } : m
+          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread: !isCurrentlyOpen } : m
         )));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
@@ -208,11 +214,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         const myLastRead = isP1 ? c.last_read_at_p1 : c.last_read_at_p2;
         const myCleared = isP1 ? c.cleared_at_p1 : c.cleared_at_p2;
         const other = isP1 ? c.participant_2 : c.participant_1;
+        const isCurrentlyOpen = selectedIdRef.current === other;
 
         setMembers(prev => sortChatMembers(prev.map(m => {
           if (m.user_id !== other) return m;
           if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, hasUnread: false };
-          const hasUnread = computeHasUnread(c.last_message_at, myLastRead, myCleared);
+          // Never show unread dot when that conversation is currently open
+          const hasUnread = !isCurrentlyOpen && computeHasUnread(c.last_message_at, myLastRead, myCleared);
           return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread };
         })));
       })
@@ -256,6 +264,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
         // Auto-mark read since this conversation is open
         if (msg.sender_id !== currentUserId) {
+          // Clear the dot immediately in local state — don't wait for the DB round-trip
+          setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
           const now = new Date().toISOString();
           const isP1 = currentUserId < memberId;
           const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };

@@ -23,6 +23,7 @@ interface SidebarProps {
 function useTeamUnread() {
   const [count, setCount] = useState(0);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const fetchIdRef = useRef(0);
 
   useEffect(() => {
     let uid: string | null = null;
@@ -30,8 +31,10 @@ function useTeamUnread() {
 
     async function fetchCount() {
       if (!uid) return;
+      // "latest wins": discard results from superseded fetches
+      const id = ++fetchIdRef.current;
       const { data } = await supabase.rpc('get_team_unread_count', { uid });
-      if (mounted) setCount(data ?? 0);
+      if (mounted && id === fetchIdRef.current) setCount(data ?? 0);
     }
 
     async function init() {
