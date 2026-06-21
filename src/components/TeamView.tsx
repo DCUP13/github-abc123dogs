@@ -233,9 +233,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
       const now = new Date().toISOString();
       const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
-      supabase.from('team_conversations').update(readField).eq('id', conv.id);
-      // Store lastReadAt so hasUnread computes correctly after navigating away
       setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
+      await supabase.from('team_conversations').update(readField).eq('id', conv.id);
 
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       if (cutoff) query = query.gt('created_at', cutoff);
@@ -248,17 +247,16 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   function subscribeMessages(convId: string, memberId: string, cutoff: string | null) {
     if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
     msgChannelRef.current = supabase.channel(`chat-msgs-${convId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, (p) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, async (p) => {
         const msg = p.new as TeamMessage;
         if (cutoff && msg.created_at <= cutoff) return;
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
-        // Auto-mark read since this conversation is open
         if (msg.sender_id !== currentUserId) {
           const now = new Date().toISOString();
           const isP1 = currentUserId < memberId;
           const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
           setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
-          supabase.from('team_conversations').update(readField).eq('id', convId);
+          await supabase.from('team_conversations').update(readField).eq('id', convId);
         }
       }).subscribe();
   }
