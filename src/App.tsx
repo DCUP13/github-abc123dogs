@@ -637,7 +637,7 @@ export default function App() {
                     <Support onSignOut={handleSignOut} currentView={view} isSupportAdmin={isSupportAdmin} />
                   )}
                   {view === 'integrations' && (
-                    <Integrations onSignOut={handleSignOut} currentView={view} />
+                    <Integrations onSignOut={handleSignOut} currentView={view} isSupportAdmin={isSupportAdmin} />
                   )}
                   {view === 'team-view' && (
                     <TeamView onSignOut={handleSignOut} />

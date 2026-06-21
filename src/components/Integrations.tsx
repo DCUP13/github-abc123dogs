@@ -107,6 +107,7 @@ const INTEGRATION_TEMPLATES: IntegrationTemplate[] = [
 interface IntegrationsProps {
   onSignOut: () => void;
   currentView: string;
+  isSupportAdmin?: boolean;
 }
 
 const EVENT_TYPES = [
@@ -117,7 +118,7 @@ const EVENT_TYPES = [
   { key: 'draft_created', label: 'Draft Created', defaultMessage: 'New draft created' },
 ];
 
-export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
+export function Integrations({ onSignOut, currentView, isSupportAdmin = false }: IntegrationsProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [eventNotifications, setEventNotifications] = useState<EventNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -710,6 +711,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
           </div>
         </div>
 
+        {!isSupportAdmin && (
         <div className="mt-12">
           <div className="flex items-center gap-3 mb-2">
             <MessageSquarePlus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -795,6 +797,7 @@ export function Integrations({ onSignOut, currentView }: IntegrationsProps) {
             </form>
           </div>
         </div>
+        )}
 
         {showAddModal && selectedTemplate && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
