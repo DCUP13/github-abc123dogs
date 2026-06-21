@@ -225,6 +225,9 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   }
 
   async function openConversation(memberId: string) {
+    // Clear unread immediately — before any async work so no realtime event can re-set it
+    setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
+
     const [p1, p2] = [currentUserId, memberId].sort();
     const { data: conv } = await supabase.from('team_conversations')
       .select('id, participant_1, cleared_at_p1, cleared_at_p2')
@@ -236,13 +239,9 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       setConversationId(conv.id);
       setMessageCutoff(cutoff ?? null);
 
-      // Mark as read immediately
       const now = new Date().toISOString();
       const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
       supabase.from('team_conversations').update(readField).eq('id', conv.id);
-
-      // Clear unread dot in list
-      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
 
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       if (cutoff) query = query.gt('created_at', cutoff);
@@ -365,7 +364,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
           )}
           {filtered.map(m => (
             <div key={m.user_id} className={`relative group border-b border-gray-100 dark:border-gray-800 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
-              <button onClick={() => setSelectedId(m.user_id)}
+              <button onClick={() => { setSelectedId(m.user_id); setMembers(prev => prev.map(m2 => m2.user_id === m.user_id ? { ...m2, hasUnread: false } : m2)); }}
                 className="w-full text-left px-4 py-3.5 pr-12 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
