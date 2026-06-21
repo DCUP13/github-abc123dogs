@@ -1,80 +1,116 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Send, Search, ChevronLeft, MessageSquare } from 'lucide-react';
+import {
+  Users, Send, Search, ChevronLeft, MessageSquare,
+  Plus, Trash2, Mail, Building2, Globe, MapPin, Briefcase,
+  UserPlus, CheckCircle, AlertCircle, X, Settings, Clock,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import MemberDetailDialog from './MemberDetailDialog';
+import OrganizationSettings from './OrganizationSettings';
 
-interface TeamMember {
-  user_id: string;
-  email: string;
-  name: string;
-  role: string;
-  conversationId?: string;
-  lastMessageAt?: string;
-}
+// ── Shared helpers ───────────────────────────────────────────────────
 
-interface TeamMessage {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  body: string;
-  created_at: string;
-}
+interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string; }
+interface TeamMessage { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; }
+interface OrgMember { id: string; user_id: string; email: string; name: string; role: string; joined_at: string; }
+interface Invitation { id: string; email: string; role?: string; status: string; created_at: string; expires_at: string; }
+interface OrgDetails { id: string; name: string; description: string; logo_url: string; industry: string; company_size: string; website: string; location: string; }
 
-interface TeamViewProps {
-  onSignOut: () => void;
-}
+const AVATAR_COLORS = ['from-blue-500 to-blue-700','from-emerald-500 to-emerald-700','from-violet-500 to-violet-700','from-orange-500 to-orange-700','from-rose-500 to-rose-700','from-teal-500 to-teal-700'];
+function avatarGradient(id: string) { const n = id.charCodeAt(0) + id.charCodeAt(id.length - 1); return AVATAR_COLORS[n % AVATAR_COLORS.length]; }
+function roleStyle(role: string) { return role === 'owner' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'; }
+function relTime(iso: string) { const d = Date.now() - new Date(iso).getTime(), m = Math.floor(d/60000), h = Math.floor(d/3600000), dy = Math.floor(d/86400000); if (m<1) return 'now'; if (m<60) return `${m}m`; if (h<24) return `${h}h`; if (dy<7) return `${dy}d`; return new Date(iso).toLocaleDateString(); }
+function initials(name: string, email: string) { return (name || email).charAt(0).toUpperCase(); }
+function sortChatMembers(list: TeamMember[]): TeamMember[] { return [...list].sort((a,b) => { if (a.lastMessageAt && b.lastMessageAt) return new Date(b.lastMessageAt).getTime()-new Date(a.lastMessageAt).getTime(); if (a.lastMessageAt) return -1; if (b.lastMessageAt) return 1; return (a.name||a.email).localeCompare(b.name||b.email); }); }
 
-const AVATAR_COLORS = [
-  'from-blue-500 to-blue-700',
-  'from-emerald-500 to-emerald-700',
-  'from-violet-500 to-violet-700',
-  'from-orange-500 to-orange-700',
-  'from-rose-500 to-rose-700',
-  'from-teal-500 to-teal-700',
-];
+// ── Main export ──────────────────────────────────────────────────────
 
-function avatarGradient(userId: string) {
-  const n = userId.charCodeAt(0) + userId.charCodeAt(userId.length - 1);
-  return AVATAR_COLORS[n % AVATAR_COLORS.length];
-}
-
-function roleStyle(role: string) {
-  switch (role) {
-    case 'owner': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
-    case 'manager': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
-    default: return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
-  }
-}
-
-function relativeTime(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(diff / 3600000);
-  const d = Math.floor(diff / 86400000);
-  if (m < 1) return 'now';
-  if (m < 60) return `${m}m`;
-  if (h < 24) return `${h}h`;
-  if (d < 7) return `${d}d`;
-  return new Date(iso).toLocaleDateString();
-}
-
-function getInitial(m: TeamMember) {
-  return (m.name || m.email).charAt(0).toUpperCase();
-}
-
-function sortMembers(list: TeamMember[]): TeamMember[] {
-  return [...list].sort((a, b) => {
-    if (a.lastMessageAt && b.lastMessageAt)
-      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
-    if (a.lastMessageAt) return -1;
-    if (b.lastMessageAt) return 1;
-    return (a.name || a.email).localeCompare(b.name || b.email);
-  });
-}
+interface TeamViewProps { onSignOut: () => void; }
 
 export function TeamView({ onSignOut }: TeamViewProps) {
-  const [orgName, setOrgName] = useState('');
+  const [tab, setTab] = useState<'chat' | 'organization'>('chat');
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState('member');
+  const [memberCount, setMemberCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { loadBase(); }, []);
+
+  async function loadBase() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    setCurrentUserId(user.id);
+
+    const { data: membership } = await supabase
+      .from('organization_members').select('organization_id, role').eq('user_id', user.id).maybeSingle();
+    if (!membership) { setLoading(false); return; }
+
+    setOrgId(membership.organization_id);
+    setCurrentRole(membership.role);
+
+    const { data: org } = await supabase.from('organizations').select('name').eq('id', membership.organization_id).single();
+    if (org) setOrgName(org.name);
+
+    const { count } = await supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('organization_id', membership.organization_id);
+    setMemberCount(count ?? 0);
+    setLoading(false);
+  }
+
+  if (loading) return <div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+
+  if (!orgId || !currentUserId) return (
+    <div className="flex items-center justify-center py-24 text-gray-400 dark:text-gray-500">
+      <div className="text-center"><Users className="w-10 h-10 mx-auto mb-3 opacity-40" /><p className="text-sm">You are not part of any organization yet.</p></div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col app-bg" style={{ minHeight: 'calc(100dvh - 48px)' }}>
+      {/* Page header + tabs */}
+      <div className="px-4 md:px-8 pt-4 md:pt-5 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+            <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{orgName || 'Team'}</h1>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        {/* Tab bar */}
+        <div className="flex gap-0">
+          {(['chat', 'organization'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors capitalize ${
+                tab === t
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {t === 'chat' ? 'Chat' : 'Organization'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab content */}
+      {tab === 'chat' ? (
+        <ChatTab orgId={orgId} currentUserId={currentUserId} />
+      ) : (
+        <OrgTab orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} />
+      )}
+    </div>
+  );
+}
+
+// ── Chat tab ─────────────────────────────────────────────────────────
+
+function ChatTab({ orgId, currentUserId }: { orgId: string; currentUserId: string }) {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -83,366 +119,476 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    loadData();
-    return () => {
-      if (convChannelRef.current) supabase.removeChannel(convChannelRef.current);
-    };
+    loadChatData();
+    return () => { if (convChannelRef.current) supabase.removeChannel(convChannelRef.current); };
   }, []);
 
   useEffect(() => {
-    setConversationId(null);
-    setMessages([]);
-    if (msgChannelRef.current) {
-      supabase.removeChannel(msgChannelRef.current);
-      msgChannelRef.current = null;
-    }
-    if (selectedId && currentUserId) openConversation(selectedId);
+    setConversationId(null); setMessages([]);
+    if (msgChannelRef.current) { supabase.removeChannel(msgChannelRef.current); msgChannelRef.current = null; }
+    if (selectedId) openConversation(selectedId);
   }, [selectedId]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  async function loadData() {
+  async function loadChatData() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    setCurrentUserId(user.id);
-
-    const { data: membership } = await supabase
-      .from('organization_members')
-      .select('organization_id, role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!membership) { setLoading(false); return; }
-    setOrgId(membership.organization_id);
-
-    const [{ data: org }, { data: memberRows }, { data: convRows }] = await Promise.all([
-      supabase.from('organizations').select('name').eq('id', membership.organization_id).single(),
-      supabase
-        .from('organization_members_with_emails')
-        .select('user_id, email, name, role')
-        .eq('organization_id', membership.organization_id)
-        .neq('user_id', user.id),
-      supabase
-        .from('team_conversations')
-        .select('id, participant_1, participant_2, last_message_at')
-        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`),
+    const [{ data: memberRows }, { data: convRows }] = await Promise.all([
+      supabase.from('organization_members_with_emails').select('user_id, email, name, role').eq('organization_id', orgId).neq('user_id', currentUserId),
+      supabase.from('team_conversations').select('id, participant_1, participant_2, last_message_at').or(`participant_1.eq.${currentUserId},participant_2.eq.${currentUserId}`),
     ]);
-
-    if (org) setOrgName(org.name);
-
     const enriched: TeamMember[] = (memberRows ?? []).map(m => {
-      const conv = (convRows ?? []).find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
-      return conv
-        ? { ...m, conversationId: conv.id, lastMessageAt: conv.last_message_at }
-        : { ...m };
+      const c = (convRows ?? []).find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
+      return c ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : { ...m };
     });
-
-    setMembers(sortMembers(enriched));
+    setMembers(sortChatMembers(enriched));
     setLoading(false);
-    subscribeToConversationUpdates(user.id);
+    subscribeConvUpdates();
   }
 
-  function subscribeToConversationUpdates(userId: string) {
+  function subscribeConvUpdates() {
     if (convChannelRef.current) supabase.removeChannel(convChannelRef.current);
-    convChannelRef.current = supabase
-      .channel('team-conv-list')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_conversations' }, (payload) => {
-        const c = payload.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
-        const otherId = c.participant_1 === userId ? c.participant_2 : c.participant_1;
-        setMembers(prev => sortMembers(prev.map(m =>
-          m.user_id === otherId ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m
-        )));
+    convChannelRef.current = supabase.channel('chat-conv-list')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_conversations' }, (p) => {
+        const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
+        const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
+        setMembers(prev => sortChatMembers(prev.map(m => m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m)));
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (payload) => {
-        const c = payload.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
-        const otherId = c.participant_1 === userId ? c.participant_2 : c.participant_1;
-        setMembers(prev => sortMembers(prev.map(m =>
-          m.user_id === otherId ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m
-        )));
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
+        const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
+        const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
+        setMembers(prev => sortChatMembers(prev.map(m => m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at } : m)));
       })
       .subscribe();
   }
 
   async function openConversation(memberId: string) {
-    if (!currentUserId) return;
     const [p1, p2] = [currentUserId, memberId].sort();
-    const { data: conv } = await supabase
-      .from('team_conversations')
-      .select('id')
-      .eq('participant_1', p1)
-      .eq('participant_2', p2)
-      .maybeSingle();
-
+    const { data: conv } = await supabase.from('team_conversations').select('id').eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
     if (conv) {
       setConversationId(conv.id);
-      const { data } = await supabase
-        .from('team_messages')
-        .select('*')
-        .eq('conversation_id', conv.id)
-        .order('created_at', { ascending: true });
+      const { data } = await supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       setMessages(data ?? []);
-      subscribeToMessages(conv.id);
+      subscribeMessages(conv.id);
     }
   }
 
-  function subscribeToMessages(convId: string) {
+  function subscribeMessages(convId: string) {
     if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
-    msgChannelRef.current = supabase
-      .channel(`team-msgs-${convId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'team_messages',
-        filter: `conversation_id=eq.${convId}`,
-      }, (payload) => {
-        setMessages(prev => {
-          if (prev.find(m => m.id === payload.new.id)) return prev;
-          return [...prev, payload.new as TeamMessage];
-        });
-      })
-      .subscribe();
+    msgChannelRef.current = supabase.channel(`chat-msgs-${convId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, (p) => {
+        setMessages(prev => prev.find(m => m.id === p.new.id) ? prev : [...prev, p.new as TeamMessage]);
+      }).subscribe();
   }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const body = text.trim();
-    if (!body || !selectedId || !currentUserId || !orgId) return;
+    if (!body || !selectedId) return;
     setSending(true);
-
     try {
       let convId = conversationId;
-
       if (!convId) {
         const [p1, p2] = [currentUserId, selectedId].sort();
-        const { data: newConv, error } = await supabase
-          .from('team_conversations')
-          .insert({ organization_id: orgId, participant_1: p1, participant_2: p2 })
-          .select('id')
-          .single();
+        const { data: nc, error } = await supabase.from('team_conversations').insert({ organization_id: orgId, participant_1: p1, participant_2: p2 }).select('id').single();
         if (error) throw error;
-        convId = newConv.id;
-        setConversationId(convId);
-        subscribeToMessages(convId);
+        convId = nc.id; setConversationId(convId); subscribeMessages(convId);
       }
-
-      const { data: msg, error: msgErr } = await supabase
-        .from('team_messages')
-        .insert({ conversation_id: convId, sender_id: currentUserId, body })
-        .select()
-        .single();
-      if (msgErr) throw msgErr;
-
-      setMessages(prev => [...prev, msg]);
-      setText('');
-
+      const { data: msg, error: me } = await supabase.from('team_messages').insert({ conversation_id: convId, sender_id: currentUserId, body }).select().single();
+      if (me) throw me;
+      setMessages(prev => [...prev, msg]); setText('');
       const now = new Date().toISOString();
       await supabase.from('team_conversations').update({ last_message_at: now }).eq('id', convId);
-      setMembers(prev => sortMembers(prev.map(m =>
-        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m
-      )));
-    } catch (err) {
-      console.error('Error sending message:', err);
-    } finally {
-      setSending(false);
-    }
+      setMembers(prev => sortChatMembers(prev.map(m => m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now } : m)));
+    } catch (err) { console.error(err); } finally { setSending(false); }
   }
 
   const selected = members.find(m => m.user_id === selectedId);
-  const filtered = members.filter(m => {
-    const q = search.toLowerCase();
-    return !q || m.email.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
-  });
+  const filtered = members.filter(m => { const q = search.toLowerCase(); return !q || m.email.toLowerCase().includes(q) || m.name.toLowerCase().includes(q); });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
-  if (!orgId) {
-    return (
-      <div className="flex items-center justify-center py-24 text-gray-400 dark:text-gray-500">
-        <div className="text-center">
-          <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">You are not part of any organization yet.</p>
+  return (
+    <div className="flex flex-1 overflow-hidden">
+      {/* Left: member list */}
+      <div className={`flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 md:w-72 ${selectedId ? 'hidden md:flex' : 'flex w-full'}`}>
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search people..." style={{ fontSize: 16 }}
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {filtered.length === 0 && <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500"><MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-sm">{members.length === 0 ? 'No team members yet.' : 'No results.'}</p></div>}
+          {filtered.map(m => (
+            <button key={m.user_id} onClick={() => setSelectedId(m.user_id)}
+              className={`w-full text-left px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{initials(m.name, m.email)}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
+                    {m.lastMessageAt && <span className="text-xs text-gray-400 dark:text-gray-500">{relTime(m.lastMessageAt)}</span>}
+                  </div>
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
-    );
+
+      {/* Right: chat */}
+      <div className={`flex flex-col flex-1 min-w-0 min-h-0 ${selectedId ? 'flex' : 'hidden md:flex'}`}>
+        {selected ? (
+          <>
+            <div className="px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-700 app-card flex items-center gap-3 flex-shrink-0">
+              <button onClick={() => setSelectedId(null)} className="md:hidden flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 py-1 pr-2 flex-shrink-0">
+                <ChevronLeft className="w-4 h-4" />Back
+              </button>
+              <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{initials(selected.name, selected.email)}</div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 dark:text-white truncate">{selected.name || selected.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selected.email}</p>
+              </div>
+              <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${roleStyle(selected.role)}`}>{selected.role}</span>
+            </div>
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 md:px-6 py-4 space-y-3">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 py-16">
+                  <MessageSquare className="w-10 h-10 mb-3 opacity-30" /><p className="text-sm font-medium">No messages yet</p><p className="text-xs mt-1">Say hello to {selected.name || selected.email}</p>
+                </div>
+              )}
+              {messages.map(msg => {
+                const isMe = msg.sender_id === currentUserId;
+                return (
+                  <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    {!isMe && <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mb-0.5`}>{initials(selected.name, selected.email)}</div>}
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-bl-sm'}`}>
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                      <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'}`}>{new Date(msg.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
+              <form onSubmit={handleSend} className="flex gap-2">
+                <input value={text} onChange={e => setText(e.target.value)} placeholder={`Message ${selected.name || selected.email}...`} style={{ fontSize: 16 }} autoComplete="off" disabled={sending}
+                  className="flex-1 px-3 md:px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" />
+                <button type="submit" disabled={sending || !text.trim()} className="px-3 md:px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"><Send className="w-4 h-4" /></button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
+            <div className="text-center"><MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" /><p className="text-sm font-medium">Select a team member</p><p className="text-xs mt-1">to start a conversation</p></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Organization tab ──────────────────────────────────────────────────
+
+interface OrgTabProps { orgId: string; currentUserId: string; currentRole: string; onMemberCountChange: (n: number) => void; }
+
+function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange }: OrgTabProps) {
+  const [orgDetails, setOrgDetails] = useState<OrgDetails | null>(null);
+  const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<OrgMember | null>(null);
+  const [showOrgSettings, setShowOrgSettings] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const isManager = currentRole === 'owner' || currentRole === 'manager';
+
+  useEffect(() => { loadOrgData(); }, []);
+
+  async function loadOrgData() {
+    setLoading(true);
+    const [{ data: org }, { data: members }, { data: invs }] = await Promise.all([
+      supabase.from('organizations').select('id, name, description, logo_url, industry, company_size, website, location').eq('id', orgId).single(),
+      supabase.from('organization_members_with_emails').select('id, user_id, email, name, role, joined_at').eq('organization_id', orgId).order('joined_at', { ascending: false }),
+      isManager ? supabase.from('member_invitations').select('*').eq('organization_id', orgId).eq('status', 'pending').order('created_at', { ascending: false }) : { data: [] },
+    ]);
+    if (org) setOrgDetails(org);
+    setOrgMembers(members ?? []);
+    setInvitations(invs ?? []);
+    onMemberCountChange((members ?? []).length);
+    setLoading(false);
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    if (!confirm('Remove this team member?')) return;
+    const { error } = await supabase.from('organization_members').delete().eq('id', memberId);
+    if (error) { setStatus({ type: 'error', message: 'Failed to remove member' }); return; }
+    setStatus({ type: 'success', message: 'Member removed' });
+    loadOrgData();
+    setTimeout(() => setStatus(null), 3000);
+  }
+
+  async function handleDeleteInvitation(invId: string) {
+    if (!confirm('Revoke this invitation?')) return;
+    await supabase.from('member_invitations').delete().eq('id', invId);
+    setInvitations(prev => prev.filter(i => i.id !== invId));
+  }
+
+  if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-8">
+
+        {/* Status banner */}
+        {status && (
+          <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${status.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'}`}>
+            {status.type === 'success' ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+            {status.message}
+            <button onClick={() => setStatus(null)} className="ml-auto p-0.5 hover:opacity-70"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
+        {/* Org info card */}
+        {orgDetails && (
+          <div className="app-card rounded-xl border border-gray-200 dark:border-gray-700 p-5 md:p-6">
+            <div className="flex items-start gap-4">
+              {orgDetails.logo_url ? (
+                <img src={orgDetails.logo_url} alt="Logo" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{orgDetails.name}</h2>
+                  {isManager && (
+                    <button onClick={() => setShowOrgSettings(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
+                      <Settings className="w-3.5 h-3.5" />Edit
+                    </button>
+                  )}
+                </div>
+                {orgDetails.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{orgDetails.description}</p>}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {orgDetails.industry && <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full"><Briefcase className="w-3 h-3" />{orgDetails.industry}</span>}
+                  {orgDetails.company_size && <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full"><Users className="w-3 h-3" />{orgDetails.company_size}</span>}
+                  {orgDetails.location && <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full"><MapPin className="w-3 h-3" />{orgDetails.location}</span>}
+                  {orgDetails.website && <a href={orgDetails.website.startsWith('http') ? orgDetails.website : `https://${orgDetails.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full hover:underline"><Globe className="w-3 h-3" />{orgDetails.website}</a>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Members section */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Members <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-1">({orgMembers.length})</span></h3>
+            {isManager && (
+              <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors">
+                <UserPlus className="w-4 h-4" /><span className="hidden sm:inline">Add Member</span>
+              </button>
+            )}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {orgMembers.map(m => {
+              const isCurrentUser = m.user_id === currentUserId;
+              const isOwner = m.role === 'owner';
+              return (
+                <div key={m.user_id} className="app-card rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all group">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>{initials(m.name, m.email)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
+                        {isCurrentUser && <span className="text-xs text-gray-400 dark:text-gray-500">(you)</span>}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{m.email}</p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-0.5"><Clock className="w-3 h-3" />{new Date(m.joined_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    {isManager && (
+                      <button onClick={() => setSelectedMember(m)} className="flex-1 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                        View Details
+                      </button>
+                    )}
+                    {isManager && !isCurrentUser && !isOwner && (
+                      <button onClick={() => handleRemoveMember(m.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Remove member">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Pending invitations — managers only */}
+        {isManager && invitations.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Pending Invitations <span className="text-sm font-normal text-gray-400 dark:text-gray-500">({invitations.length})</span></h3>
+            <div className="space-y-2">
+              {invitations.map(inv => (
+                <div key={inv.id} className="app-card rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{inv.email}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      {inv.role && <span className={`inline-block mr-2 px-1.5 py-0.5 rounded-full text-xs font-medium ${roleStyle(inv.role)}`}>{inv.role}</span>}
+                      Expires {new Date(inv.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className="flex-shrink-0 text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-medium">Pending</span>
+                  <button onClick={() => handleDeleteInvitation(inv.id)} className="flex-shrink-0 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Revoke">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Dialogs */}
+      {selectedMember && (
+        <MemberDetailDialog
+          memberId={selectedMember.user_id}
+          memberName={selectedMember.name}
+          memberEmail={selectedMember.email}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
+      {showOrgSettings && <OrganizationSettings onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
+      {showInviteModal && <InviteModal orgId={orgId} currentUserId={currentUserId} onClose={() => setShowInviteModal(false)} onSuccess={() => { loadOrgData(); setStatus({ type: 'success', message: 'Invitation sent successfully' }); setTimeout(() => setStatus(null), 4000); }} />}
+    </div>
+  );
+}
+
+// ── Invite modal ──────────────────────────────────────────────────────
+
+interface InviteModalProps { orgId: string; currentUserId: string; onClose: () => void; onSuccess: () => void; }
+
+function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalProps) {
+  const [inviteType, setInviteType] = useState<'invitation' | 'direct'>('invitation');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'member' | 'manager'>('member');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    if (inviteType === 'direct' && !password.trim()) { setError('Please enter a temporary password'); return; }
+    setLoading(true); setError(''); setSuccessMsg('');
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (inviteType === 'direct') {
+        const res = await fetch(`${supabaseUrl}/functions/v1/create-team-member`, {
+          method: 'POST', headers: { 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password: password.trim(), organization_id: orgId, role }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to create account');
+        setSuccessMsg(`Account created — email: ${email}, password: ${password}`);
+      } else {
+        const res = await fetch(`${supabaseUrl}/functions/v1/invite-team-member`, {
+          method: 'POST', headers: { 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), organization_id: orgId, invited_by: currentUserId, role }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send invitation');
+        setSuccessMsg(`Invitation sent to ${email}`);
+      }
+
+      setEmail(''); setPassword(''); setRole('member');
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="flex flex-col app-bg" style={{ minHeight: 'calc(100dvh - 48px)' }}>
-
-      {/* Page header */}
-      <div className="px-4 md:px-8 py-4 md:py-5 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-            <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{orgName || 'Team'}</h1>
-            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-              {members.length} member{members.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="app-card rounded-xl shadow-2xl w-full max-w-md">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Member</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"><X className="w-4 h-4 text-gray-500 dark:text-gray-400" /></button>
         </div>
-      </div>
 
-      {/* Two-panel body */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* Left: member list — hidden on mobile when chat is open */}
-        <div className={`flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 md:w-72 ${selectedId ? 'hidden md:flex' : 'flex w-full'}`}>
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search people..."
-                style={{ fontSize: 16 }}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 && (
-              <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500">
-                <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">{members.length === 0 ? 'No team members yet.' : 'No results.'}</p>
-              </div>
-            )}
-            {filtered.map(m => (
-              <button
-                key={m.user_id}
-                onClick={() => setSelectedId(m.user_id)}
-                className={`w-full text-left px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-800 ${
-                  selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-                    {getInitial(m)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.name || m.email}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
-                      {m.lastMessageAt && (
-                        <span className="text-xs text-gray-400 dark:text-gray-500">{relativeTime(m.lastMessageAt)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+        <div className="px-6 pt-4">
+          {/* Method tabs */}
+          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg mb-4">
+            {([['invitation', 'Send Invitation'], ['direct', 'Create Account']] as const).map(([val, label]) => (
+              <button key={val} onClick={() => setInviteType(val)} className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteType === val ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+                {label}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Right: chat panel — visible on mobile only when a member is selected */}
-        <div className={`flex flex-col flex-1 min-w-0 min-h-0 ${selectedId ? 'flex' : 'hidden md:flex'}`}>
-          {selected ? (
-            <>
-              {/* Chat header */}
-              <div className="px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-700 app-card flex items-center gap-3 flex-shrink-0">
-                <button
-                  onClick={() => setSelectedId(null)}
-                  className="md:hidden flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 py-1 pr-2 flex-shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Back
-                </button>
-                <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-                  {getInitial(selected)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white truncate">{selected.name || selected.email}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selected.email}</p>
-                </div>
-                <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium ${roleStyle(selected.role)}`}>
-                  {selected.role}
-                </span>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto min-h-0 px-4 md:px-6 py-4 space-y-3">
-                {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 py-16">
-                    <MessageSquare className="w-10 h-10 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">No messages yet</p>
-                    <p className="text-xs mt-1">Say hello to {selected.name || selected.email}</p>
-                  </div>
-                )}
-                {messages.map(msg => {
-                  const isMe = msg.sender_id === currentUserId;
-                  return (
-                    <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      {!isMe && (
-                        <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mb-0.5`}>
-                          {getInitial(selected)}
-                        </div>
-                      )}
-                      <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
-                        isMe
-                          ? 'bg-blue-600 text-white rounded-br-sm'
-                          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-bl-sm'
-                      }`}>
-                        <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
-                        <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'}`}>
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={bottomRef} />
-              </div>
-
-              {/* Message input */}
-              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
-                <form onSubmit={handleSend} className="flex gap-2">
-                  <input
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    placeholder={`Message ${selected.name || selected.email}...`}
-                    style={{ fontSize: 16 }}
-                    className="flex-1 px-3 md:px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                    disabled={sending}
-                    autoComplete="off"
-                  />
-                  <button
-                    type="submit"
-                    disabled={sending || !text.trim()}
-                    className="px-3 md:px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">Select a team member</p>
-                <p className="text-xs mt-1">to start a conversation</p>
-              </div>
+          {successMsg ? (
+            <div className="py-4 text-center">
+              <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2" />
+              <p className="text-sm text-gray-700 dark:text-gray-300">{successMsg}</p>
+              <button onClick={onClose} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">Done</button>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 pb-4">
+              {error && <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span className="text-red-500">*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@example.com" style={{ fontSize: 16 }} required disabled={loading}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" />
+              </div>
+              {inviteType === 'direct' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temporary Password <span className="text-red-500">*</span></label>
+                  <input type="text" value={password} onChange={e => setPassword(e.target.value)} placeholder="Temporary password" style={{ fontSize: 16 }} disabled={loading}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                <div className="flex gap-2">
+                  {(['member', 'manager'] as const).map(r => (
+                    <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors capitalize ${role === r ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{r}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">Cancel</button>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                  {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <>{inviteType === 'direct' ? <Plus className="w-4 h-4" /> : <Mail className="w-4 h-4" />}{inviteType === 'direct' ? 'Create Account' : 'Send Invitation'}</>}
+                </button>
+              </div>
+            </form>
           )}
         </div>
-
       </div>
     </div>
   );
