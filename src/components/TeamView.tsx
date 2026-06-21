@@ -10,7 +10,7 @@ import OrganizationSettings from './OrganizationSettings';
 
 // ── Shared helpers ───────────────────────────────────────────────────
 
-interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string; hasUnread?: boolean; }
+interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string | null; lastReadAt?: string | null; clearedAt?: string | null; }
 interface TeamMessage { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; }
 interface OrgMember { id: string; user_id: string; email: string; name: string; role: string; joined_at: string; }
 interface Invitation { id: string; email: string; role?: string; status: string; created_at: string; expires_at: string; }
@@ -120,8 +120,7 @@ interface ChatTabProps {
 
 function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedConsumed }: ChatTabProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [selectedId, setSelectedId_] = useState<string | null>(null);
-  function setSelectedId(id: string | null) { selectedIdRef.current = id; setSelectedId_(id); }
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messageCutoff, setMessageCutoff] = useState<string | null>(null);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
@@ -132,7 +131,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const selectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     loadChatData();
@@ -176,12 +174,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       const c = activeConvs.find(c => c.participant_1 === m.user_id || c.participant_2 === m.user_id);
       if (!c) return { ...m };
       const isP1 = c.participant_1 === currentUserId;
-      const hasUnread = computeHasUnread(
-        c.last_message_at,
-        isP1 ? c.last_read_at_p1 : c.last_read_at_p2,
-        isP1 ? c.cleared_at_p1 : c.cleared_at_p2,
-      );
-      return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread };
+      return {
+        ...m,
+        conversationId: c.id,
+        lastMessageAt: c.last_message_at,
+        lastReadAt: isP1 ? c.last_read_at_p1 : c.last_read_at_p2,
+        clearedAt: isP1 ? c.cleared_at_p1 : c.cleared_at_p2,
+      };
     });
     setMembers(sortChatMembers(enriched));
     setLoading(false);
@@ -194,9 +193,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_conversations' }, (p) => {
         const c = p.new as { id: string; participant_1: string; participant_2: string; last_message_at: string };
         const other = c.participant_1 === currentUserId ? c.participant_2 : c.participant_1;
-        const isCurrentlyOpen = selectedIdRef.current === other;
         setMembers(prev => sortChatMembers(prev.map(m =>
-          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread: !isCurrentlyOpen } : m
+          m.user_id === other ? { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, lastReadAt: null } : m
         )));
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'team_conversations' }, (p) => {
@@ -211,23 +209,17 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         const myLastRead = isP1 ? c.last_read_at_p1 : c.last_read_at_p2;
         const myCleared = isP1 ? c.cleared_at_p1 : c.cleared_at_p2;
         const other = isP1 ? c.participant_2 : c.participant_1;
-        const isCurrentlyOpen = selectedIdRef.current === other;
 
         setMembers(prev => sortChatMembers(prev.map(m => {
           if (m.user_id !== other) return m;
-          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, hasUnread: false };
-          // Never show unread dot when that conversation is currently open
-          const hasUnread = !isCurrentlyOpen && computeHasUnread(c.last_message_at, myLastRead, myCleared);
-          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, hasUnread };
+          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, lastReadAt: undefined, clearedAt: undefined };
+          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, lastReadAt: myLastRead, clearedAt: myCleared };
         })));
       })
       .subscribe();
   }
 
   async function openConversation(memberId: string) {
-    // Clear unread immediately — before any async work so no realtime event can re-set it
-    setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
-
     const [p1, p2] = [currentUserId, memberId].sort();
     const { data: conv } = await supabase.from('team_conversations')
       .select('id, participant_1, cleared_at_p1, cleared_at_p2')
@@ -242,6 +234,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       const now = new Date().toISOString();
       const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
       supabase.from('team_conversations').update(readField).eq('id', conv.id);
+      // Store lastReadAt so hasUnread computes correctly after navigating away
+      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
 
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       if (cutoff) query = query.gt('created_at', cutoff);
@@ -260,11 +254,10 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
         // Auto-mark read since this conversation is open
         if (msg.sender_id !== currentUserId) {
-          // Clear the dot immediately in local state — don't wait for the DB round-trip
-          setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, hasUnread: false } : m));
           const now = new Date().toISOString();
           const isP1 = currentUserId < memberId;
           const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
+          setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
           supabase.from('team_conversations').update(readField).eq('id', convId);
         }
       }).subscribe();
@@ -307,7 +300,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       }).eq('id', convId);
 
       setMembers(prev => sortChatMembers(prev.map(m =>
-        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now, hasUnread: false } : m
+        m.user_id === selectedId ? { ...m, conversationId: convId!, lastMessageAt: now, lastReadAt: now } : m
       )));
     } catch (err) { console.error(err); } finally { setSending(false); }
   }
@@ -323,7 +316,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
     await supabase.from('team_conversations').update(clearFields).eq('id', convId);
 
     setMembers(prev => sortChatMembers(prev.map(m =>
-      m.user_id === memberId ? { ...m, conversationId: undefined, lastMessageAt: undefined, hasUnread: false } : m
+      m.user_id === memberId ? { ...m, conversationId: undefined, lastMessageAt: undefined, lastReadAt: undefined, clearedAt: undefined } : m
     )));
 
     if (selectedId === memberId) {
@@ -362,20 +355,23 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
               {!q && <p className="text-xs mt-1">Search for a team member to start chatting.</p>}
             </div>
           )}
-          {filtered.map(m => (
-            <div key={m.user_id} className={`relative group border-b border-gray-100 dark:border-gray-800 ${selectedId === m.user_id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
-              <button onClick={() => { setSelectedId(m.user_id); setMembers(prev => prev.map(m2 => m2.user_id === m.user_id ? { ...m2, hasUnread: false } : m2)); }}
+          {filtered.map(m => {
+            const isOpen = selectedId === m.user_id;
+            const hasUnread = !isOpen && computeHasUnread(m.lastMessageAt ?? null, m.lastReadAt ?? null, m.clearedAt ?? null);
+            return (
+            <div key={m.user_id} className={`relative group border-b border-gray-100 dark:border-gray-800 ${isOpen ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-l-blue-600' : ''}`}>
+              <button onClick={() => setSelectedId(m.user_id)}
                 className="w-full text-left px-4 py-3.5 pr-12 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-shrink-0">
                     <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarGradient(m.user_id)} flex items-center justify-center text-white text-sm font-bold`}>{initials(m.name, m.email)}</div>
-                    {m.hasUnread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white dark:border-gray-900" />}
+                    {hasUnread && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white dark:border-gray-900" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm truncate ${m.hasUnread ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-900 dark:text-white'}`}>{m.name || m.email}</p>
+                    <p className={`text-sm truncate ${hasUnread ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-900 dark:text-white'}`}>{m.name || m.email}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${roleStyle(m.role)}`}>{m.role}</span>
-                      {m.lastMessageAt && <span className={`text-xs ${m.hasUnread ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>{relTime(m.lastMessageAt)}</span>}
+                      {m.lastMessageAt && <span className={`text-xs ${hasUnread ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>{relTime(m.lastMessageAt)}</span>}
                     </div>
                   </div>
                 </div>
@@ -389,7 +385,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
