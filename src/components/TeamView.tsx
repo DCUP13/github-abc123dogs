@@ -120,7 +120,8 @@ interface ChatTabProps {
 
 function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedConsumed }: ChatTabProps) {
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId_] = useState<string | null>(null);
+  function setSelectedId(id: string | null) { selectedIdRef.current = id; setSelectedId_(id); }
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messageCutoff, setMessageCutoff] = useState<string | null>(null);
   const [messages, setMessages] = useState<TeamMessage[]>([]);
@@ -131,7 +132,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  // Kept in sync so event-handler closures can read the current selected member
   const selectedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -148,9 +148,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       onInitialSelectedConsumed();
     }
   }, [loading, initialSelectedId]);
-
-  // Keep ref in sync so realtime handlers always see the current selection
-  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   useEffect(() => {
     setConversationId(null);
