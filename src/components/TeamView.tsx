@@ -250,26 +250,28 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   async function openConversation(memberId: string) {
     const [p1, p2] = [currentUserId, memberId].sort();
     const { data: conv } = await supabase.from('team_conversations')
-      .select('id, participant_1, cleared_at_p1, cleared_at_p2, last_read_at_p1, last_read_at_p2')
+      .select('id, participant_1, cleared_at_p1, cleared_at_p2, last_read_at_p1, last_read_at_p2, hidden_for_p1, hidden_for_p2')
       .eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
 
-    if (conv) {
-      const isP1 = conv.participant_1 === currentUserId;
-      const cutoff = isP1 ? conv.cleared_at_p1 : conv.cleared_at_p2;
-      const otherLastReadAt = isP1 ? conv.last_read_at_p2 : conv.last_read_at_p1;
-      setConversationId(conv.id);
-      setMessageCutoff(cutoff ?? null);
+    if (!conv) return;
 
-      const now = new Date().toISOString();
-      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now, otherLastReadAt } : m));
-      await supabase.rpc('mark_conversation_read', { conv_id: conv.id });
+    const isP1 = conv.participant_1 === currentUserId;
+    if (isP1 ? conv.hidden_for_p1 : conv.hidden_for_p2) return;
 
-      let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
-      if (cutoff) query = query.gt('created_at', cutoff);
-      const { data } = await query;
-      setMessages(data ?? []);
-      subscribeMessages(conv.id, memberId, cutoff ?? null);
-    }
+    const cutoff = isP1 ? conv.cleared_at_p1 : conv.cleared_at_p2;
+    const otherLastReadAt = isP1 ? conv.last_read_at_p2 : conv.last_read_at_p1;
+    setConversationId(conv.id);
+    setMessageCutoff(cutoff ?? null);
+
+    const now = new Date().toISOString();
+    setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now, otherLastReadAt } : m));
+    await supabase.rpc('mark_conversation_read', { conv_id: conv.id });
+
+    let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
+    if (cutoff) query = query.gt('created_at', cutoff);
+    const { data } = await query;
+    setMessages(data ?? []);
+    subscribeMessages(conv.id, memberId, cutoff ?? null);
   }
 
   function subscribeMessages(convId: string, memberId: string, cutoff: string | null) {
@@ -294,11 +296,18 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       let convId = conversationId;
       if (!convId) {
         const [p1, p2] = [currentUserId, selectedId].sort();
-        const { data: nc, error } = await supabase.from('team_conversations')
-          .insert({ organization_id: orgId, participant_1: p1, participant_2: p2 })
-          .select('id').single();
-        if (error) throw error;
-        convId = nc.id;
+        // Reuse a hidden conversation if one exists, otherwise create new
+        const { data: existing } = await supabase.from('team_conversations')
+          .select('id').eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
+        if (existing) {
+          convId = existing.id;
+        } else {
+          const { data: nc, error } = await supabase.from('team_conversations')
+            .insert({ organization_id: orgId, participant_1: p1, participant_2: p2 })
+            .select('id').single();
+          if (error) throw error;
+          convId = nc.id;
+        }
         setConversationId(convId);
         subscribeMessages(convId, selectedId, null);
       }
