@@ -169,9 +169,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
     const now = new Date().toISOString();
     const isP1 = currentUserId < memberId;
     setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
-    await supabase.from('team_conversations')
-      .update(isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now })
-      .eq('id', convId);
+    await supabase.rpc('mark_conversation_read', { conv_id: convId });
   }
 
   async function loadChatData() {
@@ -252,9 +250,8 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
       setMessageCutoff(cutoff ?? null);
 
       const now = new Date().toISOString();
-      const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
       setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now, otherLastReadAt } : m));
-      await supabase.from('team_conversations').update(readField).eq('id', conv.id);
+      await supabase.rpc('mark_conversation_read', { conv_id: conv.id });
 
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
       if (cutoff) query = query.gt('created_at', cutoff);
