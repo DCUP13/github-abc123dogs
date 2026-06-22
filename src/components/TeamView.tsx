@@ -10,7 +10,7 @@ import OrganizationSettings from './OrganizationSettings';
 
 // ── Shared helpers ───────────────────────────────────────────────────
 
-interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string | null; lastReadAt?: string | null; clearedAt?: string | null; }
+interface TeamMember { user_id: string; email: string; name: string; role: string; conversationId?: string; lastMessageAt?: string | null; lastReadAt?: string | null; clearedAt?: string | null; otherLastReadAt?: string | null; }
 interface TeamMessage { id: string; conversation_id: string; sender_id: string; body: string; created_at: string; }
 interface OrgMember { id: string; user_id: string; email: string; name: string; role: string; joined_at: string; }
 interface Invitation { id: string; email: string; role?: string; status: string; created_at: string; expires_at: string; }
@@ -180,6 +180,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         lastMessageAt: c.last_message_at,
         lastReadAt: isP1 ? c.last_read_at_p1 : c.last_read_at_p2,
         clearedAt: isP1 ? c.cleared_at_p1 : c.cleared_at_p2,
+        otherLastReadAt: isP1 ? c.last_read_at_p2 : c.last_read_at_p1,
       };
     });
     setMembers(sortChatMembers(enriched));
@@ -208,12 +209,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
         const myHidden = isP1 ? c.hidden_for_p1 : c.hidden_for_p2;
         const myLastRead = isP1 ? c.last_read_at_p1 : c.last_read_at_p2;
         const myCleared = isP1 ? c.cleared_at_p1 : c.cleared_at_p2;
+        const otherLastRead = isP1 ? c.last_read_at_p2 : c.last_read_at_p1;
         const other = isP1 ? c.participant_2 : c.participant_1;
 
         setMembers(prev => sortChatMembers(prev.map(m => {
           if (m.user_id !== other) return m;
-          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, lastReadAt: undefined, clearedAt: undefined };
-          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, lastReadAt: myLastRead, clearedAt: myCleared };
+          if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, lastReadAt: undefined, clearedAt: undefined, otherLastReadAt: undefined };
+          return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, lastReadAt: myLastRead, clearedAt: myCleared, otherLastReadAt: otherLastRead };
         })));
       })
       .subscribe();
@@ -222,18 +224,19 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   async function openConversation(memberId: string) {
     const [p1, p2] = [currentUserId, memberId].sort();
     const { data: conv } = await supabase.from('team_conversations')
-      .select('id, participant_1, cleared_at_p1, cleared_at_p2')
+      .select('id, participant_1, cleared_at_p1, cleared_at_p2, last_read_at_p1, last_read_at_p2')
       .eq('participant_1', p1).eq('participant_2', p2).maybeSingle();
 
     if (conv) {
       const isP1 = conv.participant_1 === currentUserId;
       const cutoff = isP1 ? conv.cleared_at_p1 : conv.cleared_at_p2;
+      const otherLastReadAt = isP1 ? conv.last_read_at_p2 : conv.last_read_at_p1;
       setConversationId(conv.id);
       setMessageCutoff(cutoff ?? null);
 
       const now = new Date().toISOString();
       const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
-      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
+      setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now, otherLastReadAt } : m));
       await supabase.from('team_conversations').update(readField).eq('id', conv.id);
 
       let query = supabase.from('team_messages').select('*').eq('conversation_id', conv.id).order('created_at', { ascending: true });
@@ -417,15 +420,27 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
                   <p className="text-xs mt-1">Say hello to {selected.name || selected.email}</p>
                 </div>
               )}
-              {messages.map(msg => {
+              {messages.map((msg, idx) => {
                 const isMe = msg.sender_id === currentUserId;
+                const otherRead = selected.otherLastReadAt;
+                // Show "Read" only under the last sent message the other person has read
+                const isLastReadByOther = isMe && otherRead && msg.created_at <= otherRead &&
+                  !messages.slice(idx + 1).some(m => m.sender_id === currentUserId && m.created_at <= otherRead);
                 return (
-                  <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    {!isMe && <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mb-0.5`}>{initials(selected.name, selected.email)}</div>}
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-bl-sm'}`}>
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
-                      <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'}`}>{new Date(msg.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</p>
+                  <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                    <div className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'} w-full`}>
+                      {!isMe && <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mb-0.5`}>{initials(selected.name, selected.email)}</div>}
+                      <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-bl-sm'}`}>
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+                        <p className={`text-xs mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'}`}>{new Date(msg.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</p>
+                      </div>
                     </div>
+                    {isLastReadByOther && (
+                      <div className="flex items-center gap-1 mt-0.5 mr-0.5">
+                        <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${avatarGradient(selected.user_id)} flex items-center justify-center text-white flex-shrink-0`} style={{fontSize: '8px', fontWeight: 700}}>{initials(selected.name, selected.email)}</div>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Read</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
