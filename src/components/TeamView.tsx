@@ -157,6 +157,20 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Mark conversation as read whenever a new message from the other person arrives while viewing it
+  useEffect(() => {
+    if (!conversationId || !selectedId || messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.sender_id === currentUserId) return;
+    const now = new Date().toISOString();
+    const isP1 = currentUserId < selectedId;
+    setMembers(prev => prev.map(m => m.user_id === selectedId ? { ...m, lastReadAt: now } : m));
+    supabase.from('team_conversations')
+      .update(isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now })
+      .eq('id', conversationId)
+      .then(() => {});
+  }, [messages.length, conversationId]);
+
   async function loadChatData() {
     setLoading(true);
     const [{ data: memberRows }, { data: convRows }] = await Promise.all([
@@ -247,20 +261,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
     }
   }
 
-  function subscribeMessages(convId: string, memberId: string, cutoff: string | null) {
+  function subscribeMessages(convId: string, _memberId: string, cutoff: string | null) {
     if (msgChannelRef.current) supabase.removeChannel(msgChannelRef.current);
     msgChannelRef.current = supabase.channel(`chat-msgs-${convId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, async (p) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'team_messages', filter: `conversation_id=eq.${convId}` }, (p) => {
         const msg = p.new as TeamMessage;
         if (cutoff && msg.created_at <= cutoff) return;
         setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
-        if (msg.sender_id !== currentUserId) {
-          const now = new Date().toISOString();
-          const isP1 = currentUserId < memberId;
-          const readField = isP1 ? { last_read_at_p1: now } : { last_read_at_p2: now };
-          setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
-          await supabase.from('team_conversations').update(readField).eq('id', convId);
-        }
       }).subscribe();
   }
 
