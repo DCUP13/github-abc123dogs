@@ -128,6 +128,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ memberId: string; convId: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -317,8 +318,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   }
 
   async function handleDeleteConversation(memberId: string, convId: string) {
-    if (!confirm("Delete this conversation? It will be removed from your chat list and previous messages won't be visible if you start chatting again.")) return;
+    setDeleteTarget({ memberId, convId });
+  }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { memberId, convId } = deleteTarget;
+    setDeleteTarget(null);
     const isP1 = currentUserId < memberId;
     const clearFields = isP1
       ? { hidden_for_p1: true, cleared_at_p1: new Date().toISOString() }
@@ -349,6 +355,19 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
   return (
     <div className="flex flex-1 overflow-hidden">
+      {/* Delete conversation confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Delete conversation?</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">This will be removed from your chat list. Previous messages won't be visible if you start chatting again.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors">Cancel</button>
+              <button onClick={confirmDelete} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Left: chat list */}
       <div className={`flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 md:w-72 ${selectedId ? 'hidden md:flex' : 'flex w-full'}`}>
         <div className="p-3 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
