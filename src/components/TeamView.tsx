@@ -132,6 +132,9 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   const bottomRef = useRef<HTMLDivElement>(null);
   const msgChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const convChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+
+  useEffect(() => { conversationIdRef.current = conversationId; }, [conversationId]);
 
   useEffect(() => {
     loadChatData();
@@ -233,6 +236,13 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
           if (myHidden) return { ...m, conversationId: undefined, lastMessageAt: undefined, lastReadAt: undefined, clearedAt: undefined, otherLastReadAt: undefined };
           return { ...m, conversationId: c.id, lastMessageAt: c.last_message_at, lastReadAt: myLastRead, clearedAt: myCleared, otherLastReadAt: otherLastRead };
         })));
+
+        if (myHidden && conversationIdRef.current === c.id) {
+          setSelectedId(null);
+          setConversationId(null);
+          setMessages([]);
+          setMessageCutoff(null);
+        }
       })
       .subscribe();
   }
