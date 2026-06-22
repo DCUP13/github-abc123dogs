@@ -79,7 +79,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
   );
 
   return (
-    <div className="flex flex-col app-bg" style={{ minHeight: 'calc(100dvh - 48px)' }}>
+    <div className="flex flex-col app-bg overflow-hidden h-[calc(100dvh-48px)] md:h-screen">
       <div className="px-4 md:px-8 pt-4 md:pt-5 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
@@ -354,7 +354,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
   if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden min-h-0">
       {/* Delete conversation confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteTarget(null)}>
@@ -377,7 +377,7 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white" />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {filtered.length === 0 && (
             <div className="text-center py-12 px-4 text-gray-400 dark:text-gray-500">
               <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
