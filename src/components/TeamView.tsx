@@ -122,6 +122,16 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     setShowCreateOrg(false);
   }
 
+  function handleOrgDeleted() {
+    const deletedId = orgId;
+    setOrgs(prev => {
+      const updated = prev.filter(o => o.id !== deletedId);
+      setSelectedOrgIdx(0);
+      return updated;
+    });
+    setTab('chat');
+  }
+
   function switchOrg(idx: number) {
     setSelectedOrgIdx(idx);
     setShowSwitcher(false);
@@ -247,7 +257,7 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         tab === 'chat' ? (
           <ChatTab key={orgId} orgId={orgId} currentUserId={currentUserId} initialSelectedId={pendingChatId} onInitialSelectedConsumed={() => setPendingChatId(null)} />
         ) : (
-          <OrgTab key={orgId} orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} onStartChat={handleStartChat} />
+          <OrgTab key={orgId} orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} onStartChat={handleStartChat} onOrgDeleted={handleOrgDeleted} />
         )
       ) : null}
 
@@ -672,9 +682,10 @@ interface OrgTabProps {
   currentRole: string;
   onMemberCountChange: (n: number) => void;
   onStartChat: (memberId: string) => void;
+  onOrgDeleted: () => void;
 }
 
-function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStartChat }: OrgTabProps) {
+function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStartChat, onOrgDeleted }: OrgTabProps) {
   const [orgDetails, setOrgDetails] = useState<OrgDetails | null>(null);
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -715,6 +726,20 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
     if (!confirm('Revoke this invitation?')) return;
     await supabase.from('member_invitations').delete().eq('id', invId);
     setInvitations(prev => prev.filter(i => i.id !== invId));
+  }
+
+  async function handleDeleteOrg() {
+    if (!orgDetails) return;
+    const confirmed = confirm(
+      `Delete "${orgDetails.name}"?\n\nThis will permanently remove the organization, all its members, and all chat history. This cannot be undone.`
+    );
+    if (!confirmed) return;
+    const { error } = await supabase.from('organizations').delete().eq('id', orgId);
+    if (error) {
+      setStatus({ type: 'error', message: 'Failed to delete organization: ' + error.message });
+      return;
+    }
+    onOrgDeleted();
   }
 
   if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
@@ -803,7 +828,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
                         View Details
                       </button>
                     )}
-                    {isManager && !isCurrentUser && !isOwner && (
+                    {isManager && !isCurrentUser && !isOwner && (currentRole === 'owner' || m.role === 'member') && (
                       <button onClick={() => handleRemoveMember(m.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Remove member">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -837,6 +862,27 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {currentRole === 'owner' && (
+          <div className="border border-red-200 dark:border-red-900/50 rounded-xl overflow-hidden">
+            <div className="px-5 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-900/50">
+              <h3 className="text-sm font-semibold text-red-700 dark:text-red-400">Danger Zone</h3>
+            </div>
+            <div className="px-5 py-4 app-card flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Delete this organization</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Permanently removes all members, invitations, and chat history. Cannot be undone.</p>
+              </div>
+              <button
+                onClick={handleDeleteOrg}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Organization
+              </button>
             </div>
           </div>
         )}
