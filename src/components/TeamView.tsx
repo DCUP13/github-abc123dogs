@@ -3,6 +3,7 @@ import {
   Users, Send, Search, ChevronLeft, MessageSquare,
   Plus, Trash2, Mail, Building2, Globe, MapPin, Briefcase,
   UserPlus, CheckCircle, AlertCircle, X, Settings, Clock, MessageCircle,
+  ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MemberDetailDialog from './MemberDetailDialog';
@@ -15,6 +16,7 @@ interface TeamMessage { id: string; conversation_id: string; sender_id: string; 
 interface OrgMember { id: string; user_id: string; email: string; name: string; role: string; joined_at: string; }
 interface Invitation { id: string; email: string; role?: string; status: string; created_at: string; expires_at: string; }
 interface OrgDetails { id: string; name: string; description: string; logo_url: string; industry: string; company_size: string; website: string; location: string; }
+interface OrgInfo { id: string; name: string; role: string; }
 
 const AVATAR_COLORS = ['from-blue-500 to-blue-700','from-emerald-500 to-emerald-700','from-violet-500 to-violet-700','from-orange-500 to-orange-700','from-rose-500 to-rose-700','from-teal-500 to-teal-700'];
 function avatarGradient(id: string) { const n = id.charCodeAt(0) + id.charCodeAt(id.length - 1); return AVATAR_COLORS[n % AVATAR_COLORS.length]; }
@@ -34,13 +36,36 @@ interface TeamViewProps { onSignOut: () => void; }
 
 export function TeamView({ onSignOut }: TeamViewProps) {
   const [tab, setTab] = useState<'chat' | 'organization'>('chat');
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [orgName, setOrgName] = useState('');
+  const [orgs, setOrgs] = useState<OrgInfo[]>([]);
+  const [selectedOrgIdx, setSelectedOrgIdx] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState('member');
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [pendingChatId, setPendingChatId] = useState<string | null>(null);
+  const [showSwitcher, setShowSwitcher] = useState(false);
+  const [showCreateOrg, setShowCreateOrg] = useState(false);
+  const switcherRef = useRef<HTMLDivElement>(null);
+
+  const selectedOrg = orgs[selectedOrgIdx] ?? null;
+  const orgId = selectedOrg?.id ?? null;
+  const currentRole = selectedOrg?.role ?? 'member';
+  const orgName = selectedOrg?.name ?? '';
+  const isOwner = orgs.some(o => o.role === 'owner');
+
+  // Reset member count when org changes
+  useEffect(() => { setMemberCount(0); }, [selectedOrgIdx]);
+
+  // Close switcher on outside click
+  useEffect(() => {
+    if (!showSwitcher) return;
+    function handle(e: MouseEvent) {
+      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) {
+        setShowSwitcher(false);
+      }
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [showSwitcher]);
 
   useEffect(() => { loadBase(); }, []);
 
@@ -50,18 +75,30 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     if (!user) { setLoading(false); return; }
     setCurrentUserId(user.id);
 
-    const { data: membership } = await supabase
-      .from('organization_members').select('organization_id, role').eq('user_id', user.id).maybeSingle();
-    if (!membership) { setLoading(false); return; }
+    const { data: memberships } = await supabase
+      .from('organization_members')
+      .select('organization_id, role')
+      .eq('user_id', user.id);
 
-    setOrgId(membership.organization_id);
-    setCurrentRole(membership.role);
+    if (!memberships || memberships.length === 0) { setLoading(false); return; }
 
-    const { data: org } = await supabase.from('organizations').select('name').eq('id', membership.organization_id).single();
-    if (org) setOrgName(org.name);
+    const orgIds = memberships.map(m => m.organization_id);
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .in('id', orgIds);
 
-    const { count } = await supabase.from('organization_members').select('*', { count: 'exact', head: true }).eq('organization_id', membership.organization_id);
-    setMemberCount(count ?? 0);
+    const merged: OrgInfo[] = (orgData ?? []).map(org => ({
+      id: org.id,
+      name: org.name,
+      role: memberships.find(m => m.organization_id === org.id)?.role ?? 'member',
+    })).sort((a, b) => {
+      if (a.role === 'owner' && b.role !== 'owner') return -1;
+      if (b.role === 'owner' && a.role !== 'owner') return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    setOrgs(merged);
     setLoading(false);
   }
 
@@ -70,26 +107,132 @@ export function TeamView({ onSignOut }: TeamViewProps) {
     setTab('chat');
   }
 
-  if (loading) return <div className="flex items-center justify-center py-24"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+  function handleOrgCreated(newOrg: OrgInfo) {
+    setOrgs(prev => {
+      const updated = [...prev, newOrg].sort((a, b) => {
+        if (a.role === 'owner' && b.role !== 'owner') return -1;
+        if (b.role === 'owner' && a.role !== 'owner') return 1;
+        return a.name.localeCompare(b.name);
+      });
+      // Switch to the new org
+      const newIdx = updated.findIndex(o => o.id === newOrg.id);
+      setSelectedOrgIdx(newIdx >= 0 ? newIdx : 0);
+      return updated;
+    });
+    setShowCreateOrg(false);
+  }
 
-  if (!orgId || !currentUserId) return (
-    <div className="flex items-center justify-center py-24 text-gray-400 dark:text-gray-500">
-      <div className="text-center"><Users className="w-10 h-10 mx-auto mb-3 opacity-40" /><p className="text-sm">You are not part of any organization yet.</p></div>
+  function switchOrg(idx: number) {
+    setSelectedOrgIdx(idx);
+    setShowSwitcher(false);
+    setTab('chat');
+    setPendingChatId(null);
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-24">
+      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (orgs.length === 0) return (
+    <div className="flex items-center justify-center py-24 px-4">
+      <div className="text-center">
+        <Building2 className="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">You are not part of any organization yet.</p>
+        {currentUserId && (
+          <>
+            <button
+              onClick={() => setShowCreateOrg(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Organization
+            </button>
+            {showCreateOrg && (
+              <CreateOrgModal userId={currentUserId} onClose={() => setShowCreateOrg(false)} onCreated={handleOrgCreated} />
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 
   return (
     <div className="flex flex-col app-bg overflow-hidden h-[calc(100dvh-48px)] md:h-screen">
+      {/* Header */}
       <div className="px-4 md:px-8 pt-4 md:pt-5 border-b border-gray-200 dark:border-gray-700 app-card flex-shrink-0">
         <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex-shrink-0">
             <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{orgName || 'Team'}</h1>
-            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          <div className="flex-1 min-w-0">
+            {orgs.length <= 1 ? (
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">{orgName}</h1>
+            ) : (
+              <div className="relative" ref={switcherRef}>
+                <button
+                  onClick={() => setShowSwitcher(v => !v)}
+                  className="flex items-center gap-1.5 text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors max-w-full"
+                >
+                  <span className="truncate max-w-[200px] md:max-w-xs">{orgName}</span>
+                  <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${showSwitcher ? 'rotate-180' : ''}`} />
+                </button>
+                {showSwitcher && (
+                  <div className="absolute left-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                    <div className="py-1">
+                      {orgs.map((org, idx) => (
+                        <button
+                          key={org.id}
+                          onClick={() => switchOrg(idx)}
+                          className={`w-full text-left px-4 py-3 transition-colors flex items-center gap-3 ${idx === selectedOrgIdx ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${idx === selectedOrgIdx ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                            <Building2 className={`w-4 h-4 ${idx === selectedOrgIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium truncate ${idx === selectedOrgIdx ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-200'}`}>{org.name}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 capitalize mt-0.5">{org.role}</p>
+                          </div>
+                          {idx === selectedOrgIdx && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                    {isOwner && (
+                      <>
+                        <div className="border-t border-gray-200 dark:border-gray-700" />
+                        <button
+                          onClick={() => { setShowSwitcher(false); setShowCreateOrg(true); }}
+                          className="w-full text-left px-4 py-3 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-3 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg border-2 border-dashed border-blue-300 dark:border-blue-700 flex items-center justify-center flex-shrink-0">
+                            <Plus className="w-4 h-4" />
+                          </div>
+                          <span className="font-medium">New Organization</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
           </div>
+
+          {/* Create org button when only 1 (or 0) orgs */}
+          {isOwner && orgs.length <= 1 && (
+            <button
+              onClick={() => setShowCreateOrg(true)}
+              title="Create new organization"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Org</span>
+            </button>
+          )}
         </div>
+
+        {/* Tabs */}
         <div className="flex gap-0">
           {(['chat', 'organization'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -100,10 +243,16 @@ export function TeamView({ onSignOut }: TeamViewProps) {
         </div>
       </div>
 
-      {tab === 'chat' ? (
-        <ChatTab orgId={orgId} currentUserId={currentUserId} initialSelectedId={pendingChatId} onInitialSelectedConsumed={() => setPendingChatId(null)} />
-      ) : (
-        <OrgTab orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} onStartChat={handleStartChat} />
+      {orgId && currentUserId ? (
+        tab === 'chat' ? (
+          <ChatTab key={orgId} orgId={orgId} currentUserId={currentUserId} initialSelectedId={pendingChatId} onInitialSelectedConsumed={() => setPendingChatId(null)} />
+        ) : (
+          <OrgTab key={orgId} orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onMemberCountChange={setMemberCount} onStartChat={handleStartChat} />
+        )
+      ) : null}
+
+      {showCreateOrg && currentUserId && (
+        <CreateOrgModal userId={currentUserId} onClose={() => setShowCreateOrg(false)} onCreated={handleOrgCreated} />
       )}
     </div>
   );
@@ -171,7 +320,6 @@ function ChatTab({ orgId, currentUserId, initialSelectedId, onInitialSelectedCon
 
   async function markRead(convId: string, memberId: string) {
     const now = new Date().toISOString();
-    const isP1 = currentUserId < memberId;
     setMembers(prev => prev.map(m => m.user_id === memberId ? { ...m, lastReadAt: now } : m));
     await supabase.rpc('mark_conversation_read', { conv_id: convId });
   }
@@ -799,6 +947,9 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
                     <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors capitalize ${role === r ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{r}</button>
                   ))}
                 </div>
+                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                  {role === 'manager' ? 'Managers can add members and view all org emails.' : 'Members can message and view the organization.'}
+                </p>
               </div>
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={onClose} disabled={loading} className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">Cancel</button>
@@ -809,6 +960,128 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
             </form>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Create organization modal ────────────────────────────────────────
+
+interface CreateOrgModalProps {
+  userId: string;
+  onClose: () => void;
+  onCreated: (org: OrgInfo) => void;
+}
+
+function CreateOrgModal({ userId, onClose, onCreated }: CreateOrgModalProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { data: org, error: orgErr } = await supabase
+        .from('organizations')
+        .insert({ name: trimmedName, description: description.trim() || null, owner_id: userId })
+        .select('id, name')
+        .single();
+      if (orgErr) throw orgErr;
+
+      const { error: memberErr } = await supabase
+        .from('organization_members')
+        .insert({ organization_id: org.id, user_id: userId, role: 'owner', invited_by: userId });
+      if (memberErr) throw memberErr;
+
+      onCreated({ id: org.id, name: org.name, role: 'owner' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create organization');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="app-card rounded-xl shadow-2xl w-full max-w-md">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Create Organization</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Organization Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Acme Corp, North Team, or John Smith"
+              style={{ fontSize: 16 }}
+              required
+              autoFocus
+              disabled={loading}
+              className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Use any name — a company, a team, or a single client's name for one-off clients.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Description <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Brief description"
+              style={{ fontSize: 16 }}
+              disabled={loading}
+              className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Create Organization
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
