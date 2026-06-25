@@ -846,7 +846,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
       {selectedMember && (
         <MemberDetailDialog memberId={selectedMember.user_id} memberName={selectedMember.name} memberEmail={selectedMember.email} onClose={() => setSelectedMember(null)} />
       )}
-      {showOrgSettings && <OrganizationSettings onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
+      {showOrgSettings && <OrganizationSettings orgId={orgId} onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
       {showInviteModal && (
         <InviteModal orgId={orgId} currentUserId={currentUserId} onClose={() => setShowInviteModal(false)}
           onSuccess={() => {

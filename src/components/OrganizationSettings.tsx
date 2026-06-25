@@ -15,6 +15,7 @@ interface Organization {
 }
 
 interface OrganizationSettingsProps {
+  orgId: string;
   onClose: () => void;
 }
 
@@ -24,7 +25,7 @@ const inputClass =
 const labelClass =
   'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2';
 
-export default function OrganizationSettings({ onClose }: OrganizationSettingsProps) {
+export default function OrganizationSettings({ orgId, onClose }: OrganizationSettingsProps) {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,18 +56,15 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
         return;
       }
 
+      // Verify this user has manager/owner access to this specific org
       const { data: memberData } = await supabase
         .from('organization_members')
-        .select('role, organization_id')
+        .select('role')
         .eq('user_id', user.id)
-        .single();
+        .eq('organization_id', orgId)
+        .maybeSingle();
 
-      if (!memberData) {
-        setError('Not a member of any organization');
-        return;
-      }
-
-      if (!['owner', 'manager'].includes(memberData.role)) {
+      if (!memberData || !['owner', 'manager'].includes(memberData.role)) {
         setError('Only owners and managers can edit organization settings');
         return;
       }
@@ -74,7 +72,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select('*')
-        .eq('id', memberData.organization_id)
+        .eq('id', orgId)
         .single();
 
       if (orgError) throw orgError;
