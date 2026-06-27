@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (!['member', 'manager', 'owner'].includes(role)) {
+    if (!['member', 'manager'].includes(role)) {
       return new Response(JSON.stringify({
         error: 'Invalid role specified'
       }), {
@@ -64,6 +64,19 @@ Deno.serve(async (req: Request) => {
     if (!inviterMember || !['owner', 'manager'].includes(inviterMember.role)) {
       return new Response(JSON.stringify({
         error: 'You do not have permission to invite members'
+      }), {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        },
+        status: 403
+      });
+    }
+
+    // Managers can only invite regular members, not other managers
+    if (inviterMember.role === 'manager' && role !== 'member') {
+      return new Response(JSON.stringify({
+        error: 'Managers can only invite members'
       }), {
         headers: {
           ...corsHeaders,

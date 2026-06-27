@@ -894,7 +894,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
       )}
       {showOrgSettings && <OrganizationSettings orgId={orgId} onClose={() => { setShowOrgSettings(false); loadOrgData(); }} />}
       {showInviteModal && (
-        <InviteModal orgId={orgId} currentUserId={currentUserId} onClose={() => setShowInviteModal(false)}
+        <InviteModal orgId={orgId} currentUserId={currentUserId} currentRole={currentRole} onClose={() => setShowInviteModal(false)}
           onSuccess={() => {
             loadOrgData();
             setStatus({ type: 'success', message: 'Invitation sent successfully' });
@@ -907,9 +907,9 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
 
 // ── Invite modal ──────────────────────────────────────────────────────
 
-interface InviteModalProps { orgId: string; currentUserId: string; onClose: () => void; onSuccess: () => void; }
+interface InviteModalProps { orgId: string; currentUserId: string; currentRole: string; onClose: () => void; onSuccess: () => void; }
 
-function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalProps) {
+function InviteModal({ orgId, currentUserId, currentRole, onClose, onSuccess }: InviteModalProps) {
   const [inviteType, setInviteType] = useState<'invitation' | 'direct'>('invitation');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'member' | 'manager'>('member');
@@ -989,8 +989,8 @@ function InviteModal({ orgId, currentUserId, onClose, onSuccess }: InviteModalPr
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
                 <div className="flex gap-2">
-                  {(['member', 'manager'] as const).map(r => (
-                    <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors capitalize ${role === r ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{r}</button>
+                  {(['member', ...(currentRole === 'owner' ? ['manager'] : [])] as const).map(r => (
+                    <button key={r} type="button" onClick={() => setRole(r as 'member' | 'manager')} className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors capitalize ${role === r ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>{r}</button>
                   ))}
                 </div>
                 <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
