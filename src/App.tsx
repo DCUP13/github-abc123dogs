@@ -356,11 +356,13 @@ export default function App() {
           console.log('Session found, checking organization membership...');
           const loginType = localStorage.getItem('loginType');
 
-          const { data: memberData } = await supabase
+          const { data: memberRows } = await supabase
             .from('organization_members')
             .select('role')
             .eq('user_id', session.user.id)
-            .maybeSingle();
+            .order('joined_at', { ascending: true });
+
+          const memberData = (memberRows as any[])?.find((r: any) => r.role === 'owner') ?? (memberRows as any[])?.[0] ?? null;
 
           if (memberData) {
             setUserRole(memberData.role);
@@ -415,7 +417,7 @@ export default function App() {
                 .from('organization_members')
                 .select('role')
                 .eq('user_id', session.user.id)
-                .maybeSingle();
+                .order('joined_at', { ascending: true });
 
               const timeout = new Promise<{ data: null }>((resolve) => {
                 setTimeout(() => resolve({ data: null }), 2000);
@@ -423,9 +425,11 @@ export default function App() {
 
               const result = await Promise.race([memberQuery, timeout]);
 
-              if (result.data) {
-                setUserRole(result.data.role);
-                localStorage.setItem('userRole', result.data.role);
+              const rows = result.data as any[] | null;
+              const row = rows?.find((r: any) => r.role === 'owner') ?? rows?.[0] ?? null;
+              if (row) {
+                setUserRole(row.role);
+                localStorage.setItem('userRole', row.role);
               } else {
                 setUserRole(null);
                 localStorage.removeItem('userRole');
@@ -448,7 +452,7 @@ export default function App() {
               .from('organization_members')
               .select('role')
               .eq('user_id', session.user.id)
-              .maybeSingle();
+              .order('joined_at', { ascending: true });
 
             const timeout = new Promise<{ data: null }>((resolve) => {
               setTimeout(() => resolve({ data: null }), 2000);
@@ -456,9 +460,11 @@ export default function App() {
 
             const result = await Promise.race([memberQuery, timeout]);
 
-            if (result.data) {
-              setUserRole(result.data.role);
-              localStorage.setItem('userRole', result.data.role);
+            const rows = result.data as any[] | null;
+            const row = rows?.find((r: any) => r.role === 'owner') ?? rows?.[0] ?? null;
+            if (row) {
+              setUserRole(row.role);
+              localStorage.setItem('userRole', row.role);
             } else {
               setUserRole(null);
               localStorage.removeItem('userRole');
@@ -532,10 +538,12 @@ export default function App() {
   const handleLogin = () => {
     const userRole = localStorage.getItem('userRole');
     const loginType = localStorage.getItem('loginType');
-    if (loginType === 'member') {
-      updateView('team-management');
+    if (userRole === 'owner') {
+      updateView('dashboard');
     } else if (userRole === 'manager') {
       updateView('team-view');
+    } else if (loginType === 'member') {
+      updateView('team-management');
     } else {
       updateView('dashboard');
     }
