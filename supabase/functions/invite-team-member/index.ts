@@ -145,33 +145,22 @@ Deno.serve(async (req: Request) => {
     const noreplyDomain = sesSettings?.noreply_domain;
     const fromEmail = noreplyDomain ? `noreply@${noreplyDomain}` : 'noreply@example.com';
 
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Team Invitation</h2>
-        <p>You've been invited to join <strong>${organizationName}</strong> as a <strong>${role}</strong>!</p>
+    const emailBody = `Team Invitation
 
-        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0 0 10px 0;"><strong>Login Details:</strong></p>
-          <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-          <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <code style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px;">${temporaryPassword}</code></p>
-          <p style="margin: 5px 0;"><strong>Role:</strong> ${role.charAt(0).toUpperCase() + role.slice(1)}</p>
-        </div>
+You've been invited to join ${organizationName} as a ${role}.
 
-        <p>To get started:</p>
-        <ol>
-          <li>Go to the login page</li>
-          <li>Select "<strong>${role === 'manager' ? 'Manager' : 'Member'}</strong>" as your login type</li>
-          <li>Use the email and temporary password above</li>
-          <li>You'll be prompted to change your password after first login</li>
-        </ol>
+Login Details:
+Email: ${email}
+Temporary Password: ${temporaryPassword}
+Role: ${role.charAt(0).toUpperCase() + role.slice(1)}
 
-        ${role === 'manager' ? '<p style="background-color: #dbeafe; padding: 12px; border-radius: 6px; border-left: 4px solid #2563eb;"><strong>Note:</strong> As a manager, you can log in to both the Manager view and Member view.</p>' : ''}
+To get started:
+1. Go to the login page
+2. Select "${role === 'manager' ? 'Manager' : 'Member'}" as your login type
+3. Use the email and temporary password above
+4. You'll be prompted to change your password after first login
 
-        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-          This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.
-        </p>
-      </div>
-    `;
+This invitation will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.`;
 
     await supabase
       .from('email_outbox')

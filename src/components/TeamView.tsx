@@ -3,7 +3,7 @@ import {
   Users, Send, Search, ChevronLeft, MessageSquare,
   Plus, Trash2, Mail, Building2, Globe, MapPin, Briefcase,
   UserPlus, CheckCircle, AlertCircle, X, Settings, Clock, MessageCircle,
-  ChevronDown,
+  ChevronDown, RefreshCw, ArrowUpDown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import MemberDetailDialog from './MemberDetailDialog';
@@ -742,6 +742,34 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
     onOrgDeleted();
   }
 
+  async function handleResendInvitation(inv: Invitation) {
+    if (!confirm(`Resend invitation to ${inv.email}?`)) return;
+    await supabase.from('member_invitations').delete().eq('id', inv.id);
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const res = await fetch(`${supabaseUrl}/functions/v1/invite-team-member`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: inv.email, organization_id: orgId, invited_by: currentUserId, role: inv.role || 'member' }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setStatus({ type: 'error', message: data.error || 'Failed to resend invitation' });
+      return;
+    }
+    setStatus({ type: 'success', message: `Invitation resent to ${inv.email}` });
+    loadOrgData();
+    setTimeout(() => setStatus(null), 4000);
+  }
+
+  async function handleChangeRole(memberId: string, newRole: 'member' | 'manager') {
+    const { error } = await supabase.from('organization_members').update({ role: newRole }).eq('id', memberId);
+    if (error) { setStatus({ type: 'error', message: 'Failed to change role' }); return; }
+    setStatus({ type: 'success', message: `Role changed to ${newRole}` });
+    loadOrgData();
+    setTimeout(() => setStatus(null), 3000);
+  }
+
   if (loading) return <div className="flex items-center justify-center py-16"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -828,6 +856,15 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
                         View Details
                       </button>
                     )}
+                    {currentRole === 'owner' && !isCurrentUser && !isOwner && (
+                      <button
+                        onClick={() => handleChangeRole(m.id, m.role === 'manager' ? 'member' : 'manager')}
+                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title={m.role === 'manager' ? 'Demote to member' : 'Promote to manager'}
+                      >
+                        <ArrowUpDown className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     {isManager && !isCurrentUser && !isOwner && (currentRole === 'owner' || m.role === 'member') && (
                       <button onClick={() => handleRemoveMember(m.id)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Remove member">
                         <Trash2 className="w-3.5 h-3.5" />
@@ -857,6 +894,9 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
                     </p>
                   </div>
                   <span className="flex-shrink-0 text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-medium">Pending</span>
+                  <button onClick={() => handleResendInvitation(inv)} className="flex-shrink-0 p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Resend invitation">
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                   <button onClick={() => handleDeleteInvitation(inv.id)} className="flex-shrink-0 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Revoke">
                     <X className="w-4 h-4" />
                   </button>
