@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, FileText, Send, Users, Globe, UserPlus, ChevronDown, ChevronUp, Megaphone } from 'lucide-react';
+import { Mail, FileText, Send, Users, Globe, UserPlus, ChevronDown, ChevronUp, Building2 } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { supabase } from '../lib/supabase';
 
@@ -28,18 +28,12 @@ const MAX_ITEMS = 5;
 export function Dashboard({ onSignOut, currentView }: DashboardProps) {
   const { stats } = useDashboard();
 
-  const [teamData, setTeamData] = useState<{
-    memberCount: number;
-    pendingInvites: number;
-    isManagerOrOwner: boolean;
-    members: { email: string; name?: string; role: string }[];
-    invitations: { email: string }[];
-  }>({ memberCount: 0, pendingInvites: 0, isManagerOrOwner: false, members: [], invitations: [] });
-
   const [sesEmails, setSesEmails] = useState<{ address: string; sent_emails: number; daily_limit: number }[]>([]);
   const [googleEmails, setGoogleEmails] = useState<{ address: string; sent_emails: number; daily_limit: number }[]>([]);
   const [domains, setDomains] = useState<{ domain: string }[]>([]);
   const [prompts, setPrompts] = useState<{ title: string; category: string }[]>([]);
+  const [orgs, setOrgs] = useState<{ id: string; name: string; role: string }[]>([]);
+  const [invitations, setInvitations] = useState<{ email: string }[]>([]);
 
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -49,12 +43,12 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [sesRes, googleRes, domainsRes, promptsRes, memberRes] = await Promise.all([
+      const [sesRes, googleRes, domainsRes, promptsRes, membershipsRes] = await Promise.all([
         supabase.from('amazon_ses_emails').select('address, sent_emails, daily_limit').eq('user_id', user.id),
         supabase.from('google_smtp_emails').select('address, sent_emails, daily_limit').eq('user_id', user.id),
         supabase.from('amazon_ses_domains').select('domain').eq('user_id', user.id),
         supabase.from('prompts').select('title, category').eq('user_id', user.id).order('updated_at', { ascending: false }),
-        supabase.from('organization_members').select('organization_id, role').eq('user_id', user.id).maybeSingle(),
+        supabase.from('organization_members').select('organization_id, role').eq('user_id', user.id),
       ]);
 
       setSesEmails(sesRes.data || []);
@@ -62,31 +56,23 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       setDomains(domainsRes.data || []);
       setPrompts(promptsRes.data || []);
 
-      const member = memberRes.data;
-      if (!member) return;
+      const memberships = membershipsRes.data || [];
+      if (memberships.length === 0) return;
 
-      const isManagerOrOwner = member.role === 'owner' || member.role === 'manager';
+      const orgIds = memberships.map(m => m.organization_id);
 
-      const [membersRes, invitesRes] = await Promise.all([
-        supabase
-          .from('organization_members_with_emails')
-          .select('email, name, role')
-          .eq('organization_id', member.organization_id)
-          .order('joined_at', { ascending: false }),
+      const [orgsRes, invitesRes] = await Promise.all([
+        supabase.from('organizations').select('id, name').in('id', orgIds),
         supabase
           .from('member_invitations')
           .select('email')
-          .eq('organization_id', member.organization_id)
+          .in('organization_id', orgIds)
           .eq('status', 'pending'),
       ]);
 
-      setTeamData({
-        memberCount: membersRes.data?.length || 0,
-        pendingInvites: invitesRes.data?.length || 0,
-        isManagerOrOwner,
-        members: membersRes.data || [],
-        invitations: invitesRes.data || [],
-      });
+      const orgMap = Object.fromEntries((orgsRes.data || []).map(o => [o.id, o.name]));
+      setOrgs(memberships.map(m => ({ id: m.organization_id, name: orgMap[m.organization_id] || m.organization_id, role: m.role })));
+      setInvitations(invitesRes.data || []);
     };
 
     load();
@@ -101,11 +87,6 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
     return { shown: items.slice(0, MAX_ITEMS), overflow: Math.max(0, total - MAX_ITEMS) };
   }
 
-  const accountDetails = buildDetails(
-    allAccounts.map(a => ({ primary: a.address, secondary: a.type })),
-    allAccounts.length
-  );
-
   const remainingDetails = buildDetails(
     allAccounts.map(a => {
       const remaining = Math.max(0, (a.limit || 0) - (a.sent || 0));
@@ -114,14 +95,14 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
     allAccounts.length
   );
 
-  const sentTodayDetails = buildDetails(
-    allAccounts.map(a => ({ primary: a.address, secondary: `${(a.sent || 0).toLocaleString()} sent` })),
+  const accountDetails = buildDetails(
+    allAccounts.map(a => ({ primary: a.address, secondary: a.type })),
     allAccounts.length
   );
 
-  const domainDetails = buildDetails(
-    domains.map(d => ({ primary: d.domain })),
-    domains.length
+  const sentTodayDetails = buildDetails(
+    allAccounts.map(a => ({ primary: a.address, secondary: `${(a.sent || 0).toLocaleString()} sent` })),
+    allAccounts.length
   );
 
   const promptDetails = buildDetails(
@@ -129,14 +110,19 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
     prompts.length
   );
 
-  const memberDetails = buildDetails(
-    teamData.members.map(m => ({ primary: m.name || m.email || 'Unknown', secondary: m.role })),
-    teamData.members.length
+  const domainDetails = buildDetails(
+    domains.map(d => ({ primary: d.domain })),
+    domains.length
+  );
+
+  const orgDetails = buildDetails(
+    orgs.map(o => ({ primary: o.name, secondary: o.role })),
+    orgs.length
   );
 
   const inviteDetails = buildDetails(
-    teamData.invitations.map(i => ({ primary: i.email })),
-    teamData.invitations.length
+    invitations.map(i => ({ primary: i.email })),
+    invitations.length
   );
 
   const stats_cards: StatCard[] = [
@@ -186,34 +172,23 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       overflow: domainDetails.overflow,
     },
     {
-      title: 'Total Campaigns',
-      value: stats.totalCampaigns.toLocaleString(),
-      icon: Megaphone,
-      color: 'text-pink-500',
-      bgColor: 'bg-pink-100 dark:bg-pink-900/20',
-      details: [],
-      overflow: 0,
+      title: 'Organizations',
+      value: orgs.length.toLocaleString(),
+      icon: Building2,
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
+      details: orgDetails.shown,
+      overflow: orgDetails.overflow,
     },
-    ...(teamData.isManagerOrOwner ? [
-      {
-        title: 'Team Members',
-        value: teamData.memberCount.toLocaleString(),
-        icon: Users,
-        color: 'text-indigo-500',
-        bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
-        details: memberDetails.shown,
-        overflow: memberDetails.overflow,
-      },
-      {
-        title: 'Pending Invites',
-        value: teamData.pendingInvites.toLocaleString(),
-        icon: UserPlus,
-        color: 'text-yellow-500',
-        bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
-        details: inviteDetails.shown,
-        overflow: inviteDetails.overflow,
-      },
-    ] : []),
+    {
+      title: 'Invites',
+      value: invitations.length.toLocaleString(),
+      icon: UserPlus,
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
+      details: inviteDetails.shown,
+      overflow: inviteDetails.overflow,
+    },
   ];
 
   const toggleExpanded = (index: number) => {
