@@ -119,6 +119,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       let user;
+      let accessToken: string;
 
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -157,14 +158,14 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           throw new Error('Invalid response from authentication service');
         }
 
-        const { error: sessionError } = await supabase.auth.setSession({
+        accessToken = data.access_token;
+
+        // Fire-and-forget — setSession makes an extra /auth/v1/user network call
+        // internally; we don't need to wait for it before querying the DB.
+        supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token
-        });
-
-        if (sessionError) {
-          throw new Error(sessionError.message || 'Failed to establish session');
-        }
+        }).catch(err => console.error('Session setup error (non-blocking):', err));
 
         user = data.user;
       } catch (fetchError: any) {
@@ -182,21 +183,20 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         let memberData: { role: string; organization_id: string } | null = null;
         try {
-          const memberQuery = supabase
-            .from('organization_members')
-            .select('role, organization_id')
-            .eq('user_id', user.id)
-            .order('joined_at', { ascending: true });
-
-          const { data } = await Promise.race([
-            memberQuery,
-            new Promise<any>((_, reject) =>
-              setTimeout(() => reject(new Error('Organization check timeout')), 5000)
-            )
-          ]);
-
-          // Pick owner row first, otherwise first membership
-          memberData = (data as any[])?.find((r: any) => r.role === 'owner') ?? (data as any[])?.[0] ?? null;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const memberResponse = await fetch(
+            `${supabaseUrl}/rest/v1/organization_members?user_id=eq.${user.id}&select=role,organization_id&order=joined_at.asc`,
+            {
+              headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${accessToken!}`,
+                'Accept': 'application/json'
+              }
+            }
+          );
+          const rows = memberResponse.ok ? await memberResponse.json() : [];
+          memberData = rows?.find((r: any) => r.role === 'owner') ?? rows?.[0] ?? null;
         } catch (e) {
           console.log('Could not fetch member data:', e);
         }
