@@ -41,19 +41,19 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
     setIsFetching(true);
     try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
 
       const [{ data, error }, { count: promptCount }] = await Promise.all([
         supabase
           .from('dashboard_statistics')
           .select('*')
-          .eq('user_id', user.data.user.id)
+          .eq('user_id', session.user.id)
           .maybeSingle(),
         supabase
           .from('prompts')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.data.user.id),
+          .eq('user_id', session.user.id),
       ]);
 
       if (error) throw error;

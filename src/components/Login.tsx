@@ -160,21 +160,29 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         accessToken = data.access_token;
 
-        // Write the session to localStorage immediately so the supabase client
-        // can read it for authenticated queries without needing to wait for
-        // setSession (which makes a slow /auth/v1/user network call internally
-        // and holds the auth lock during that time).
+        const sessionObj = {
+          access_token: data.access_token,
+          token_type: 'bearer',
+          expires_in: data.expires_in || 3600,
+          expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+          refresh_token: data.refresh_token,
+          user: data.user
+        };
+
+        // Write to localStorage so getSession() reads find the session immediately.
         try {
           const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
-          const expiresAt = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
-          localStorage.setItem(`sb-${projectRef}-auth-token`, JSON.stringify({
-            access_token: data.access_token,
-            token_type: 'bearer',
-            expires_in: data.expires_in || 3600,
-            expires_at: expiresAt,
-            refresh_token: data.refresh_token,
-            user: data.user
-          }));
+          localStorage.setItem(`sb-${projectRef}-auth-token`, JSON.stringify(sessionObj));
+        } catch (_) {
+          // non-fatal
+        }
+
+        // Set currentSession in-memory so getUser() calls work immediately.
+        // getUser() reads currentSession for the access token; without this it
+        // returns null and every component that calls getUser() on mount fails.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase.auth as any).currentSession = sessionObj;
         } catch (_) {
           // non-fatal
         }
