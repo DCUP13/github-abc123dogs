@@ -763,10 +763,21 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
   }
 
   async function handleChangeRole(memberId: string, newRole: 'member' | 'manager') {
-    const { error } = await supabase.from('organization_members').update({ role: newRole }).eq('id', memberId);
-    if (error) { setStatus({ type: 'error', message: 'Failed to change role' }); return; }
+    // Optimistic update so the tag changes immediately
+    setOrgMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+
+    const { error, count } = await supabase
+      .from('organization_members')
+      .update({ role: newRole }, { count: 'exact' })
+      .eq('id', memberId);
+
+    if (error || count === 0) {
+      // Revert optimistic update on failure
+      loadOrgData();
+      setStatus({ type: 'error', message: error?.message || 'Failed to change role — check permissions' });
+      return;
+    }
     setStatus({ type: 'success', message: `Role changed to ${newRole}` });
-    loadOrgData();
     setTimeout(() => setStatus(null), 3000);
   }
 
