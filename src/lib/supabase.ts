@@ -20,7 +20,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storage: window.localStorage,
-    storageKey: 'supabase.auth.token'
+    storageKey: 'supabase.auth.token',
+    // Disable the navigator lock so auth operations never queue behind each other.
+    // Without this, every getUser()/getSession() call in every component serializes,
+    // causing a multi-second lockup on page load in production.
+    lock: (_name, _acquireTimeout, fn) => fn(),
   }
 });
 

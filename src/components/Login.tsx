@@ -160,42 +160,29 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         accessToken = data.access_token;
 
-        const sessionObj = {
-          access_token: data.access_token,
-          token_type: 'bearer',
-          expires_in: data.expires_in || 3600,
-          expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
-          refresh_token: data.refresh_token,
-          user: data.user
-        };
-
-        // Write to localStorage so getSession() reads find the session immediately.
+        // Write the session to localStorage under the key the supabase client
+        // uses (storageKey: 'supabase.auth.token'). This lets getSession() /
+        // getUser() work immediately without waiting for setSession to complete.
         try {
-          const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
-          localStorage.setItem(`sb-${projectRef}-auth-token`, JSON.stringify(sessionObj));
-        } catch (_) {
-          // non-fatal
-        }
-
-        // Set currentSession in-memory so getUser() calls work immediately.
-        // getUser() reads currentSession for the access token; without this it
-        // returns null and every component that calls getUser() on mount fails.
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase.auth as any).currentSession = sessionObj;
-        } catch (_) {
-          // non-fatal
-        }
-
-        // Delay setSession so dashboard queries get the auth lock first.
-        // setSession holds the lock while making a /auth/v1/user call which
-        // would otherwise block all supabase queries during the initial load.
-        setTimeout(() => {
-          supabase.auth.setSession({
+          const sessionObj = {
             access_token: data.access_token,
-            refresh_token: data.refresh_token
-          }).catch(err => console.error('Session setup error (non-blocking):', err));
-        }, 3000);
+            token_type: 'bearer',
+            expires_in: data.expires_in || 3600,
+            expires_at: Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+            refresh_token: data.refresh_token,
+            user: data.user
+          };
+          localStorage.setItem('supabase.auth.token', JSON.stringify(sessionObj));
+        } catch (_) {
+          // non-fatal
+        }
+
+        // Fire-and-forget setSession. With locking disabled this no longer
+        // blocks other auth operations, so no delay is needed.
+        supabase.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        }).catch(err => console.error('Session setup error (non-blocking):', err));
 
         user = data.user;
       } catch (fetchError: any) {
