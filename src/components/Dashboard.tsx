@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, FileText, Send, Users, Globe, UserPlus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Mail, FileText, Send, Users, Globe, UserPlus, ChevronDown, ChevronUp, Megaphone } from 'lucide-react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { supabase } from '../lib/supabase';
 
@@ -184,6 +184,15 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
       bgColor: 'bg-teal-100 dark:bg-teal-900/20',
       details: domainDetails.shown,
       overflow: domainDetails.overflow,
+    },
+    {
+      title: 'Total Campaigns',
+      value: stats.totalCampaigns.toLocaleString(),
+      icon: Megaphone,
+      color: 'text-pink-500',
+      bgColor: 'bg-pink-100 dark:bg-pink-900/20',
+      details: [],
+      overflow: 0,
     },
     ...(teamData.isManagerOrOwner ? [
       {
