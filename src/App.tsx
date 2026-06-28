@@ -411,7 +411,6 @@ export default function App() {
         try {
           if (event === 'TOKEN_REFRESHED') {
             console.log('Token refreshed successfully');
-            // Don't change the view on token refresh, just update the role if needed
             if (session) {
               const memberQuery = supabase
                 .from('organization_members')
@@ -430,9 +429,6 @@ export default function App() {
               if (row) {
                 setUserRole(row.role);
                 localStorage.setItem('userRole', row.role);
-              } else {
-                setUserRole(null);
-                localStorage.removeItem('userRole');
               }
             }
             return;
@@ -465,9 +461,6 @@ export default function App() {
             if (row) {
               setUserRole(row.role);
               localStorage.setItem('userRole', row.role);
-            } else {
-              setUserRole(null);
-              localStorage.removeItem('userRole');
             }
 
             fetchUserSettings();

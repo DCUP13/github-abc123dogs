@@ -115,82 +115,32 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
       console.log('No invitation found, attempting regular login...');
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log('Aborting login after 10 seconds');
-        controller.abort();
-      }, 10000);
-
       let user;
 
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-        console.log('Making direct fetch to auth endpoint...');
-        const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseAnonKey,
-            'Authorization': `Bearer ${supabaseAnonKey}`
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password
-          }),
-          signal: controller.signal
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
         });
 
-        clearTimeout(timeoutId);
-        console.log('Direct fetch completed:', { status: response.status });
-
-        const data = await response.json();
-        console.log('Response data:', { hasAccessToken: !!data.access_token, hasError: !!data.error });
-
-        if (!response.ok) {
-          const errorMsg = data.error_description || data.msg || data.error || 'Invalid login credentials';
-          if (errorMsg.includes('Invalid login')) {
+        if (authError) {
+          const msg = authError.message || '';
+          if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
             throw new Error('The email or password you entered is incorrect. Please try again.');
           }
-          if (errorMsg.includes('Email not confirmed')) {
+          if (msg.includes('Email not confirmed')) {
             throw new Error('Please check your email to confirm your account before logging in.');
           }
-          throw new Error(errorMsg);
+          throw new Error(msg || 'Failed to sign in');
         }
 
-        if (!data.access_token || !data.user) {
+        if (!authData.user) {
           throw new Error('Invalid response from authentication service');
         }
 
-        console.log('Setting session in Supabase client...');
-
-        const setSessionPromise = supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        });
-
-        const timeoutPromise = new Promise<{ error: Error }>((resolve) => {
-          setTimeout(() => {
-            resolve({ error: new Error('Session setup timed out') });
-          }, 3000);
-        });
-
-        const sessionResult = await Promise.race([setSessionPromise, timeoutPromise]);
-
-        if (sessionResult.error) {
-          console.error('Session setup error:', sessionResult.error);
-          throw new Error('Failed to establish session - timeout');
-        }
-
-        console.log('Session established successfully');
-        user = data.user;
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId);
-        if (fetchError.name === 'AbortError') {
-          throw new Error('Login request timed out. The authentication service may be temporarily unavailable.');
-        }
-        throw fetchError;
+        user = authData.user;
+      } catch (authError: any) {
+        throw authError;
       }
 
       console.log('Login successful, user retrieved:', { userId: user?.id });
