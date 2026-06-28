@@ -530,7 +530,15 @@ export default function App() {
   };
 
   const handleLogin = () => {
-    updateView('dashboard');
+    const userRole = localStorage.getItem('userRole');
+    const loginType = localStorage.getItem('loginType');
+    if (loginType === 'member') {
+      updateView('team-management');
+    } else if (userRole === 'manager') {
+      updateView('team-view');
+    } else {
+      updateView('dashboard');
+    }
   };
 
   const handleSignOut = async () => {

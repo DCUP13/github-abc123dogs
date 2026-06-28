@@ -198,13 +198,13 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
       if (user) {
         console.log('Checking organization membership...');
 
-        let memberData = null;
+        let memberData: { role: string; organization_id: string } | null = null;
         try {
           const memberQuery = supabase
             .from('organization_members')
             .select('role, organization_id')
             .eq('user_id', user.id)
-            .maybeSingle();
+            .order('joined_at', { ascending: true });
 
           const { data } = await Promise.race([
             memberQuery,
@@ -213,21 +213,23 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
             )
           ]);
 
-          memberData = data;
+          // Pick owner row first, otherwise first membership
+          memberData = (data as any[])?.find((r: any) => r.role === 'owner') ?? (data as any[])?.[0] ?? null;
         } catch (e) {
-          console.log('Could not fetch member data, continuing as owner:', e);
+          console.log('Could not fetch member data:', e);
         }
 
         console.log('Member data:', memberData);
 
-        const userRole = memberData?.role || 'owner';
+        const userRole = memberData?.role ?? null;
 
         if (loginType === 'manager' && memberData && userRole === 'member') {
           localStorage.clear();
           throw new Error('You do not have manager permissions. Please login as a member.');
         }
 
-        localStorage.setItem('userRole', userRole);
+        if (userRole) localStorage.setItem('userRole', userRole);
+        else localStorage.removeItem('userRole');
         localStorage.setItem('loginType', loginType);
         if (memberData?.organization_id) {
           localStorage.setItem('organizationId', memberData.organization_id);
