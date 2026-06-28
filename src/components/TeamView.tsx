@@ -766,15 +766,14 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
     // Optimistic update so the tag changes immediately
     setOrgMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
 
-    const { error, count } = await supabase
-      .from('organization_members')
-      .update({ role: newRole }, { count: 'exact' })
-      .eq('id', memberId);
+    const { error } = await supabase.rpc('change_member_role', {
+      p_member_id: memberId,
+      p_new_role: newRole,
+    });
 
-    if (error || count === 0) {
-      // Revert optimistic update on failure
+    if (error) {
       loadOrgData();
-      setStatus({ type: 'error', message: error?.message || 'Failed to change role — check permissions' });
+      setStatus({ type: 'error', message: error.message || 'Failed to change role' });
       return;
     }
     setStatus({ type: 'success', message: `Role changed to ${newRole}` });
