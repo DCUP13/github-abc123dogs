@@ -531,6 +531,9 @@ export default function App() {
   const handleLogin = () => {
     const userRole = localStorage.getItem('userRole');
     const loginType = localStorage.getItem('loginType');
+    // Sync React state immediately from localStorage so components that
+    // depend on userRole render correctly without waiting for SIGNED_IN.
+    if (userRole) setUserRole(userRole);
     if (userRole === 'owner') {
       updateView('dashboard');
     } else if (userRole === 'manager') {

@@ -160,12 +160,34 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         accessToken = data.access_token;
 
-        // Fire-and-forget — setSession makes an extra /auth/v1/user network call
-        // internally; we don't need to wait for it before querying the DB.
-        supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        }).catch(err => console.error('Session setup error (non-blocking):', err));
+        // Write the session to localStorage immediately so the supabase client
+        // can read it for authenticated queries without needing to wait for
+        // setSession (which makes a slow /auth/v1/user network call internally
+        // and holds the auth lock during that time).
+        try {
+          const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
+          const expiresAt = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+          localStorage.setItem(`sb-${projectRef}-auth-token`, JSON.stringify({
+            access_token: data.access_token,
+            token_type: 'bearer',
+            expires_in: data.expires_in || 3600,
+            expires_at: expiresAt,
+            refresh_token: data.refresh_token,
+            user: data.user
+          }));
+        } catch (_) {
+          // non-fatal
+        }
+
+        // Delay setSession so dashboard queries get the auth lock first.
+        // setSession holds the lock while making a /auth/v1/user call which
+        // would otherwise block all supabase queries during the initial load.
+        setTimeout(() => {
+          supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token
+          }).catch(err => console.error('Session setup error (non-blocking):', err));
+        }, 3000);
 
         user = data.user;
       } catch (fetchError: any) {
