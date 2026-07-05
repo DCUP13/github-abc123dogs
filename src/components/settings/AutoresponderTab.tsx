@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Toggle } from './Toggle';
 import { Mail } from 'lucide-react';
+import { toast } from '../../lib/toast';
 
 export function AutoresponderTab() {
   const [emailSettings, setEmailSettings] = useState<Record<string, { autoresponderEnabled: boolean; draftsEnabled: boolean }>>({});
@@ -89,7 +90,7 @@ export function AutoresponderTab() {
       }));
     } catch (error) {
       console.error('Error updating autoresponder setting:', error);
-      alert('Failed to update autoresponder setting. Please try again.');
+      toast.error('Failed to update autoresponder setting. Please try again.');
     }
   };
 
@@ -117,7 +118,7 @@ export function AutoresponderTab() {
       }));
     } catch (error) {
       console.error('Error updating drafts setting:', error);
-      alert('Failed to update drafts setting. Please try again.');
+      toast.error('Failed to update drafts setting. Please try again.');
     }
   };
 
@@ -141,7 +142,7 @@ export function AutoresponderTab() {
       setClientGradingEnabled(enabled);
     } catch (error) {
       console.error('Error updating client grading setting:', error);
-      alert('Failed to update client grading setting. Please try again.');
+      toast.error('Failed to update client grading setting. Please try again.');
     }
   };
 

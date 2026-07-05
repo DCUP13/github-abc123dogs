@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe } from 'lucide-react';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 import { Toggle } from './Toggle';
 
 interface MemberDetailDialogProps {
@@ -130,7 +132,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   };
 
   const handleRemoveEmail = async (emailId: string, type: 'ses' | 'google') => {
-    if (!confirm('Are you sure you want to remove this email address?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to remove this email address?', variant: 'danger', confirmText: 'Remove' })) return;
     try {
       setSaving(true); setError('');
       const table = type === 'ses' ? 'amazon_ses_emails' : 'google_smtp_emails';
@@ -170,7 +172,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   };
 
   const handleRemoveDomain = async (domainId: string) => {
-    if (!confirm('Are you sure you want to remove this domain?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to remove this domain?', variant: 'danger', confirmText: 'Remove' })) return;
     try {
       setSaving(true); setError('');
       const { error: deleteError } = await supabase.from('amazon_ses_domains').delete().eq('id', domainId);

@@ -27,6 +27,9 @@ import { TeamManagement } from './components/TeamManagement';
 import { TeamView } from './components/TeamView';
 import { EmailProvider } from './contexts/EmailContext';
 import { supabase } from './lib/supabase';
+import { toast } from './lib/toast';
+import { ToastProvider } from './components/ui/ToastProvider';
+import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
@@ -509,7 +512,7 @@ export default function App() {
       localStorage.setItem('app-dark-mode', newDarkMode ? '1' : '0');
     } catch (error) {
       console.error('Error updating dark mode:', error);
-      alert('Failed to update dark mode setting. Please try again.');
+      toast.error('Failed to update dark mode setting. Please try again.');
     }
   };
 
@@ -568,6 +571,8 @@ export default function App() {
   }
 
   return (
+    <ToastProvider>
+    <ConfirmProvider>
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc'), cardBg: darkMode ? (THEME_VARS[colorScheme]?.['--card-bg-d'] ?? '#1e293b') : (THEME_VARS[colorScheme]?.['--card-bg'] ?? '#ffffff') }}>
       <EmailProvider>
         <DashboardProvider>
@@ -724,5 +729,7 @@ export default function App() {
         </DashboardProvider>
       </EmailProvider>
     </ThemeContext.Provider>
+    </ConfirmProvider>
+    </ToastProvider>
   );
 }

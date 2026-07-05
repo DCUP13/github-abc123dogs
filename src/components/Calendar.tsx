@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, ChevronRight, Plus, X, RefreshCw } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 type ViewMode = 'day' | 'week' | 'month' | 'year';
 
@@ -180,7 +181,7 @@ export function Calendar() {
     if (!isGoogleConnected) {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
       if (!clientId) {
-        alert('Google Calendar integration is not configured. Please add VITE_GOOGLE_CLIENT_ID to your environment variables.');
+        toast.error('Google Calendar integration is not configured. Please add VITE_GOOGLE_CLIENT_ID to your environment variables.');
         return;
       }
 
@@ -202,7 +203,7 @@ export function Calendar() {
       window.addEventListener('message', async (event) => {
         if (event.data.type === 'google-auth-success') {
           await checkGoogleConnection();
-          alert('Successfully connected to Google Calendar!');
+          toast.success('Successfully connected to Google Calendar!');
         }
       }, { once: true });
     } else {
@@ -237,10 +238,10 @@ export function Calendar() {
 
         const result = await response.json();
         await fetchEvents();
-        alert(`Successfully synced ${result.count || 0} events from Google Calendar!`);
+        toast.success(`Successfully synced ${result.count || 0} events from Google Calendar!`);
       } catch (error) {
         console.error('Error syncing with Google Calendar:', error);
-        alert('Failed to sync with Google Calendar. Please try again.');
+        toast.error('Failed to sync with Google Calendar. Please try again.');
       } finally {
         setIsSyncing(false);
       }
@@ -698,7 +699,7 @@ function EventDialog({ selectedDate, onClose, onSave }: { selectedDate: Date; on
       onSave();
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event. Please try again.');
+      toast.error('Failed to create event. Please try again.');
     } finally {
       setIsSaving(false);
     }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Search, Filter, Phone, Mail, MapPin, DollarSign, Calendar, Building, User, CreditCard as Edit, Trash2, X, Save, MessageSquare, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 
 export interface Client {
   id: string;
@@ -274,7 +276,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       resetClientForm();
     } catch (error) {
       console.error('Error saving client:', error);
-      alert('Failed to save client. Please try again.');
+      toast.error('Failed to save client. Please try again.');
     }
   };
 
@@ -306,12 +308,12 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       resetInteractionForm();
     } catch (error) {
       console.error('Error saving interaction:', error);
-      alert('Failed to save interaction. Please try again.');
+      toast.error('Failed to save interaction. Please try again.');
     }
   };
 
   const handleDeleteClient = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this client? This will also delete all associated interactions.')) {
+    if (!await showConfirm({ message: 'Are you sure you want to delete this client? This will also delete all associated interactions.', variant: 'danger', confirmText: 'Delete' })) {
       return;
     }
 
@@ -329,12 +331,12 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       }
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert('Failed to delete client. Please try again.');
+      toast.error('Failed to delete client. Please try again.');
     }
   };
 
   const handleDeleteInteraction = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this interaction?')) {
+    if (!await showConfirm({ message: 'Are you sure you want to delete this interaction?', variant: 'danger', confirmText: 'Delete' })) {
       return;
     }
 
@@ -351,7 +353,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       }
     } catch (error) {
       console.error('Error deleting interaction:', error);
-      alert('Failed to delete interaction. Please try again.');
+      toast.error('Failed to delete interaction. Please try again.');
     }
   };
 

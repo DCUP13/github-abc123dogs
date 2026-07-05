@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Server, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { toast } from '../../lib/toast';
 
 interface RapidAPISettings {
   maxPages: number;
@@ -80,7 +81,7 @@ export function RapidAPITab() {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving Rapid API settings:', error);
-      alert('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setIsSaving(false);
     }

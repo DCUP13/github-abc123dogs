@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { File, Download, X, ArrowUpDown, ArrowDown, ArrowUp, FileText, FileType2, Lock, Eye } from 'lucide-react';
 import type { Template } from '../types';
 import { PreviewDialog } from './PreviewDialog';
+import { showConfirm } from '../../../lib/confirm';
 
 interface TemplateListProps {
   templates: Template[];
@@ -48,12 +49,15 @@ export function TemplateList({ templates, onEdit, onDelete, onExport }: Template
 
   const handleDelete = (e: React.MouseEvent, template: Template) => {
     e.stopPropagation();
-    const message = template.imported 
-      ? 'Are you sure you want to delete this imported template?' 
+    const message = template.imported
+      ? 'Are you sure you want to delete this imported template?'
       : 'Are you sure you want to delete this template?';
-    if (window.confirm(message)) {
-      onDelete(template.id);
-    }
+    const handleConfirm = async () => {
+      if (await showConfirm({ message, variant: 'danger', confirmText: 'Delete' })) {
+        onDelete(template.id);
+      }
+    };
+    handleConfirm();
   };
 
   const sortedTemplates = [...templates].sort((a, b) => {

@@ -4,6 +4,7 @@ import { useEmails } from '../../contexts/EmailContext';
 import { Toggle } from './Toggle';
 import type { EmailSettings, SESEmail } from './types';
 import { supabase } from '../../lib/supabase';
+import { toast } from '../../lib/toast';
 
 interface AmazonTabProps {
   emailSettings: EmailSettings;
@@ -148,7 +149,7 @@ export function AmazonTab({
       setTimeout(() => setLocalSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving SES settings:', error);
-      alert('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     }
   };
 
@@ -196,7 +197,7 @@ export function AmazonTab({
       setDomainError('');
     } catch (error) {
       console.error('Error adding SES domain:', error);
-      alert('Failed to add domain. Please try again.');
+      toast.error('Failed to add domain. Please try again.');
     }
   };
 
@@ -218,7 +219,7 @@ export function AmazonTab({
       setDomains(domains.filter(d => d !== domain));
     } catch (error) {
       console.error('Error removing SES domain:', error);
-      alert('Failed to remove domain. Please try again.');
+      toast.error('Failed to remove domain. Please try again.');
     }
   };
 
@@ -267,7 +268,7 @@ export function AmazonTab({
       setDailyLimit(1440); // Reset to default
     } catch (error) {
       console.error('Error adding SES email:', error);
-      alert('Failed to add email. Please try again.');
+      toast.error('Failed to add email. Please try again.');
     }
   };
 
@@ -289,7 +290,7 @@ export function AmazonTab({
       setSesEmails(sesEmails.filter(email => email.address !== address));
     } catch (error) {
       console.error('Error removing SES email:', error);
-      alert('Failed to remove email. Please try again.');
+      toast.error('Failed to remove email. Please try again.');
     }
   };
 
@@ -318,7 +319,7 @@ export function AmazonTab({
       ));
     } catch (error) {
       console.error('Error updating daily limit:', error);
-      alert('Failed to update daily limit. Please try again.');
+      toast.error('Failed to update daily limit. Please try again.');
     }
   };
 
@@ -331,19 +332,19 @@ export function AmazonTab({
 
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
-      setSesEmails(prev => prev.map(e => 
-        e.address === email.address 
+      setSesEmails(prev => prev.map(e =>
+        e.address === email.address
           ? { ...e, testing: false }
           : e
       ));
-      alert('Test email sent successfully!');
+      toast.success('Test email sent successfully!');
     } catch (error) {
-      setSesEmails(prev => prev.map(e => 
-        e.address === email.address 
+      setSesEmails(prev => prev.map(e =>
+        e.address === email.address
           ? { ...e, testing: false }
           : e
       ));
-      alert('Failed to send test email. Please try again.');
+      toast.error('Failed to send test email. Please try again.');
     }
   };
 
@@ -525,7 +526,7 @@ export function AmazonTab({
                 if (error) throw error;
               } catch (error) {
                 console.error('Error saving noreply domain:', error);
-                alert('Failed to save noreply domain. Please try again.');
+                toast.error('Failed to save noreply domain. Please try again.');
               }
             }}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import { ReplyDialog } from './ReplyDialog';
 import { ComposeEmailDialog } from './ComposeEmailDialog';
 import { EditDraftDialog } from './EditDraftDialog';
@@ -364,7 +365,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       setInboxMode(newMode);
     } catch (error) {
       console.error('Error toggling inbox mode:', error);
-      alert('Failed to update inbox mode. Please try again.');
+      toast.error('Failed to update inbox mode. Please try again.');
     } finally {
       setIsTogglingMode(false);
     }
@@ -491,14 +492,14 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       if (error) throw error;
 
       setShowReplyDialog(false);
-      alert('Reply added to outbox and will be sent shortly.');
-      
+      toast.info('Reply added to outbox and will be sent shortly.');
+
       if (activeTab === 'outbox') {
         fetchAllEmails();
       }
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert('Failed to send reply. Please try again.');
+      toast.error('Failed to send reply. Please try again.');
     }
   };
 
@@ -507,7 +508,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('You must be logged in to process emails');
+        toast.error('You must be logged in to process emails');
         return;
       }
 
@@ -531,16 +532,16 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       console.log('Email processing result:', result);
       
       await fetchAllEmails();
-      
+
       if (result.processed > 0) {
-        alert(`Processed ${result.processed} emails. Check the Sent tab for successful sends.`);
+        toast.success(`Processed ${result.processed} emails. Check the Sent tab for successful sends.`);
       } else {
-        alert('No pending emails to process.');
+        toast.info('No pending emails to process.');
       }
-      
+
     } catch (error) {
       console.error('Error processing emails:', error);
-      alert(`Failed to process emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to process emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessingEmails(false);
     }
@@ -598,10 +599,10 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
         setSelectedEmail(null);
       }
 
-      alert('Email deleted successfully');
+      toast.success('Email deleted successfully');
     } catch (error) {
       console.error('Error deleting email replacethis:', error);
-      alert('Failed to delete email. Please try again.');
+      toast.error('Failed to delete email. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -700,7 +701,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('You must be logged in to download attachments');
+        toast.error('You must be logged in to download attachments');
         return;
       }
 
@@ -729,10 +730,10 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
     } catch (error) {
       console.error('Error downloading attachment:', error);
-      alert(`Failed to download attachment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to download attachment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

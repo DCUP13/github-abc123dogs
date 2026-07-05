@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Mail, Trash2, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 
 interface TeamManagementProps {
   onSignOut: () => void;
@@ -190,7 +192,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this team member?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to remove this team member?', variant: 'danger', confirmText: 'Remove' })) return;
 
     try {
       const { error } = await supabase
@@ -210,7 +212,7 @@ export function TeamManagement({ onSignOut }: TeamManagementProps) {
   };
 
   const handleDeleteInvitation = async (invitationId: string) => {
-    if (!confirm('Are you sure you want to delete this invitation?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to delete this invitation?', variant: 'danger', confirmText: 'Delete' })) return;
 
     try {
       const { error } = await supabase

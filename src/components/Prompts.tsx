@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Plus, CreditCard as Edit, Trash2, Search, Copy, Check, X, Globe, GitBranch, ArrowRight, Home, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import { useEmails } from '../contexts/EmailContext';
 
 interface PromptsProps {
@@ -227,7 +228,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       resetForm();
     } catch (error) {
       console.error('Error saving prompt:', error);
-      alert('Failed to save prompt. Please try again.');
+      toast.error('Failed to save prompt. Please try again.');
     }
   };
 
@@ -264,7 +265,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       await fetchPrompts();
     } catch (error) {
       console.error('Error deleting prompt:', error);
-      alert('Failed to delete prompt. Please try again.');
+      toast.error('Failed to delete prompt. Please try again.');
     }
   };
 
@@ -311,7 +312,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       await fetchPrompts();
     } catch (error) {
       console.error('Error duplicating prompt:', error);
-      alert('Failed to duplicate prompt. Please try again.');
+      toast.error('Failed to duplicate prompt. Please try again.');
     } finally {
       setDuplicatingId(null);
     }

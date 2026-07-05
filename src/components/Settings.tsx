@@ -8,6 +8,7 @@ import { RapidAPITab } from './settings/RapidAPITab';
 import { AutoresponderTab } from './settings/AutoresponderTab';
 import type { EmailSettings, GeneralSettings } from './settings/types';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 
 interface SettingsProps {
   onSignOut: () => void;
@@ -165,7 +166,7 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
       setSettings(newSettings);
     } catch (error) {
       console.error('Error updating settings:', error);
-      alert('Failed to update settings. Please try again.');
+      toast.error('Failed to update settings. Please try again.');
     }
   };
 
@@ -185,7 +186,7 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
-      alert('Failed to save email settings. Please try again.');
+      toast.error('Failed to save email settings. Please try again.');
     } finally {
       setIsSaving(false);
     }

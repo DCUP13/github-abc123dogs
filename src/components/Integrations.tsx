@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plug, Save, Trash2, Eye, EyeOff, Plus, Check, AlertCircle, Bell, Settings, CreditCard as Edit2, Send, CheckCircle, MessageSquarePlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 import { Toggle } from './Toggle';
 
 interface Integration {
@@ -288,7 +290,7 @@ export function Integrations({ onSignOut, currentView, isSupportAdmin = false }:
   };
 
   const handleDeleteIntegration = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this integration?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to delete this integration?', variant: 'danger', confirmText: 'Delete' })) return;
 
     try {
       const { error } = await supabase
@@ -438,7 +440,7 @@ export function Integrations({ onSignOut, currentView, isSupportAdmin = false }:
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+    if (!await showConfirm({ message: 'Are you sure you want to delete this event?', variant: 'danger', confirmText: 'Delete' })) return;
 
     try {
       const { error } = await supabase

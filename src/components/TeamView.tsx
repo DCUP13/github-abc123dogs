@@ -6,6 +6,8 @@ import {
   ChevronDown, RefreshCw, ArrowUpDown,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 import MemberDetailDialog from './MemberDetailDialog';
 import OrganizationSettings from './OrganizationSettings';
 
@@ -714,7 +716,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
   }
 
   async function handleRemoveMember(memberId: string) {
-    if (!confirm('Remove this team member?')) return;
+    if (!await showConfirm({ message: 'Remove this team member?', variant: 'danger', confirmText: 'Remove' })) return;
     const { error } = await supabase.from('organization_members').delete().eq('id', memberId);
     if (error) { setStatus({ type: 'error', message: 'Failed to remove member' }); return; }
     setStatus({ type: 'success', message: 'Member removed' });
@@ -723,16 +725,14 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
   }
 
   async function handleDeleteInvitation(invId: string) {
-    if (!confirm('Revoke this invitation?')) return;
+    if (!await showConfirm({ message: 'Revoke this invitation?', variant: 'danger', confirmText: 'Revoke' })) return;
     await supabase.from('member_invitations').delete().eq('id', invId);
     setInvitations(prev => prev.filter(i => i.id !== invId));
   }
 
   async function handleDeleteOrg() {
     if (!orgDetails) return;
-    const confirmed = confirm(
-      `Delete "${orgDetails.name}"?\n\nThis will permanently remove the organization, all its members, and all chat history. This cannot be undone.`
-    );
+    const confirmed = await showConfirm({ message: `Delete "${orgDetails.name}"?\n\nThis will permanently remove the organization, all its members, and all chat history. This cannot be undone.`, variant: 'danger', confirmText: 'Delete' });
     if (!confirmed) return;
     const { error } = await supabase.from('organizations').delete().eq('id', orgId);
     if (error) {
@@ -743,7 +743,7 @@ function OrgTab({ orgId, currentUserId, currentRole, onMemberCountChange, onStar
   }
 
   async function handleResendInvitation(inv: Invitation) {
-    if (!confirm(`Resend invitation to ${inv.email}?`)) return;
+    if (!await showConfirm({ message: `Resend invitation to ${inv.email}?`, confirmText: 'Resend' })) return;
     await supabase.from('member_invitations').delete().eq('id', inv.id);
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

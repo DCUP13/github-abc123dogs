@@ -5,6 +5,8 @@ import type { EmailEntry } from './Emails';
 import { TemplatesContext } from '../App';
 import { useEmails } from '../contexts/EmailContext';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { showConfirm } from '../lib/confirm';
 
 interface EmailWithProvider extends EmailEntry {
   smtpProvider: 'amazon' | 'gmail';
@@ -206,7 +208,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       setCampaigns(transformedCampaigns);
     } catch (error) {
       console.error('Error fetching campaigns:', error);
-      alert('Failed to load campaigns. Please try again.');
+      toast.error('Failed to load campaigns. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -339,7 +341,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       setSelectedCity('');
     } catch (error) {
       console.error('Error saving campaign:', error);
-      alert('Failed to save campaign. Please try again.');
+      toast.error('Failed to save campaign. Please try again.');
     }
   };
 
@@ -359,7 +361,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
     if (!template) return;
 
     if (currentCampaign.templates.some(t => t.template.id === template.id)) {
-      alert('This template has already been added to the campaign.');
+      toast.warning('This template has already been added to the campaign.');
       return;
     }
 
@@ -407,7 +409,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       handleUpdateCampaign({ templates: updatedTemplates });
     } catch (error) {
       console.error('Error removing template:', error);
-      alert('Failed to remove template. Please try again.');
+      toast.error('Failed to remove template. Please try again.');
     }
   };
 
@@ -434,7 +436,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       handleUpdateCampaign({ emails: updatedEmails });
     } catch (error) {
       console.error('Error removing email:', error);
-      alert('Failed to remove email. Please try again.');
+      toast.error('Failed to remove email. Please try again.');
     }
   };
 
@@ -449,7 +451,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       setCampaigns(prev => prev.filter(c => c.id !== id));
     } catch (error) {
       console.error('Error deleting campaign:', error);
-      alert('Failed to delete campaign. Please try again.');
+      toast.error('Failed to delete campaign. Please try again.');
     }
   };
 
@@ -459,7 +461,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
 
     const validation = validateCampaign(campaign);
     if (isActive && !validation.valid) {
-      alert(validation.reason);
+      toast.warning(validation.reason);
       return;
     }
 
@@ -483,7 +485,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
       );
     } catch (error) {
       console.error('Error updating campaign status:', error);
-      alert('Failed to update campaign status. Please try again.');
+      toast.error('Failed to update campaign status. Please try again.');
     }
   };
 
@@ -494,7 +496,7 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
     }
 
     if (campaign.isActive) {
-      alert('Cannot edit an active campaign. Please deactivate it first.');
+      toast.warning('Cannot edit an active campaign. Please deactivate it first.');
       return;
     }
     
@@ -619,9 +621,9 @@ export function AppPage({ onSignOut, currentView }: AppPageProps) {
                             </div>
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              if (window.confirm('Are you sure you want to delete this campaign?')) {
+                              if (await showConfirm({ message: 'Are you sure you want to delete this campaign?', variant: 'danger', confirmText: 'Delete' })) {
                                 handleDeleteCampaign(campaign.id);
                               }
                             }}

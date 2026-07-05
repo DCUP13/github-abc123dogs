@@ -1,4 +1,5 @@
 import html2pdf from 'html2pdf.js';
+import { toast } from '../../../lib/toast';
 
 export const generateHTML = (content: string, title: string): string => {
   // Create a temporary container to parse and modify the HTML
@@ -110,7 +111,7 @@ export const exportAsDOCX = async (content: string, title: string) => {
     URL.revokeObjectURL(url);
   } catch {
     // If we don't have the original file, export as HTML
-    alert('Original DOCX file not available. Downloading as HTML instead.');
+    toast.info('Original DOCX file not available. Downloading as HTML instead.');
     exportAsHTML(content, title);
   }
 };

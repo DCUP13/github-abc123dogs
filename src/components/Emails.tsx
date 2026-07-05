@@ -1,7 +1,8 @@
 import React from 'react';
 import { Mail, AlertCircle, Server, Lock, RotateCcw } from 'lucide-react';
-import { useEmails } from '../contexts/EmailContext';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
+import { useEmails } from '../contexts/EmailContext';
 
 interface EmailsProps {
   onSignOut: () => void;
@@ -56,7 +57,7 @@ export function Addresses({ onSignOut, currentView }: EmailsProps) {
       await refreshEmails();
     } catch (error) {
       console.error('Error resetting sent emails:', error);
-      alert('Failed to reset sent emails count. Please try again.');
+      toast.error('Failed to reset sent emails count. Please try again.');
     }
   };
 

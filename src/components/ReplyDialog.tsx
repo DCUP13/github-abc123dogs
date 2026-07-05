@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import { useEmails } from '../contexts/EmailContext';
 import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
 
@@ -181,14 +182,14 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
     
     const body = editorRef.current?.getContent() || '';
     const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
-    
+
     if (!finalFromEmail || !body.trim() || toEmails.length === 0) {
-      alert('Please select a sender email, add at least one recipient, and enter a message.');
+      toast.warning('Please select a sender email, add at least one recipient, and enter a message.');
       return;
     }
 
     if (showCustomFrom && !customFromEmail.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.warning('Please enter a valid email address.');
       return;
     }
 
@@ -239,19 +240,19 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
         );
 
         if (response.ok) {
-          alert(`Reply sent successfully to ${toEmails.length} recipient${toEmails.length > 1 ? 's' : ''}!`);
+          toast.success(`Reply sent successfully to ${toEmails.length} recipient${toEmails.length > 1 ? 's' : ''}!`);
         } else {
-          alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+          toast.info('Email added to outbox but failed to send immediately. Check the outbox for details.');
         }
       } catch {
-        alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+        toast.info('Email added to outbox but failed to send immediately. Check the outbox for details.');
       }
-      
+
       onClose();
-      
+
     } catch (error) {
       console.error('Error sending reply:', error);
-      alert(`Failed to send reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to send reply: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSending(false);
     }

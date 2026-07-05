@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { File, Plus, Upload as UploadIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Image, Link, Type, X, Save } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 interface TemplatesProps {
   onSignOut: () => void;
@@ -10,6 +11,8 @@ export function Templates({ onSignOut, currentView }: TemplatesProps) {
   const [templates, setTemplates] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [templateName, setTemplateName] = useState('');
+  const [urlDialogState, setUrlDialogState] = useState<{ element: HTMLElement; currentUrl: string } | null>(null);
+  const [urlInput, setUrlInput] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,10 +88,8 @@ export function Templates({ onSignOut, currentView }: TemplatesProps) {
     button.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       const currentUrl = button.getAttribute('data-url') || '#';
-      const newUrl = prompt('Enter button URL:', currentUrl);
-      if (newUrl !== null) {
-        button.setAttribute('data-url', newUrl);
-      }
+      setUrlDialogState({ element: button, currentUrl });
+      setUrlInput(currentUrl);
     });
 
     editorRef.current.appendChild(button);
@@ -336,6 +337,42 @@ export function Templates({ onSignOut, currentView }: TemplatesProps) {
         accept="image/*"
         className="hidden"
       />
+
+      {urlDialogState && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Enter Button URL</h3>
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setUrlDialogState(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (urlDialogState?.element) {
+                    urlDialogState.element.setAttribute('data-url', urlInput);
+                  }
+                  setUrlDialogState(null);
+                  setUrlInput('');
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

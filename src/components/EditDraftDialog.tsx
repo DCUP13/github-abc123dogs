@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import { useEmails } from '../contexts/EmailContext';
 import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
 
@@ -128,12 +129,12 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
     const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
 
     if (!finalFromEmail) {
-      alert('Please select a sender email.');
+      toast.warning('Please select a sender email.');
       return;
     }
 
     if (showCustomFrom && !customFromEmail.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.warning('Please enter a valid email address.');
       return;
     }
 
@@ -153,13 +154,13 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
 
       if (error) throw error;
 
-      alert('Draft updated successfully!');
+      toast.success('Draft updated successfully!');
       onDraftUpdated?.();
       onClose();
 
     } catch (error) {
       console.error('Error updating draft:', error);
-      alert(`Failed to update draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to update draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSavingDraft(false);
     }
@@ -172,12 +173,12 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
     const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
 
     if (!finalFromEmail || !body.trim() || toEmails.length === 0) {
-      alert('Please select a sender email, add at least one recipient, and enter a message.');
+      toast.warning('Please select a sender email, add at least one recipient, and enter a message.');
       return;
     }
 
     if (showCustomFrom && !customFromEmail.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.warning('Please enter a valid email address.');
       return;
     }
 
@@ -237,9 +238,9 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
       if (deleteError) throw deleteError;
 
       if (result.results?.[0]?.status === 'sent') {
-        alert('Email sent successfully!');
+        toast.success('Email sent successfully!');
       } else {
-        alert(`Email sending failed. Check the outbox for details.`);
+        toast.info(`Email sending failed. Check the outbox for details.`);
       }
 
       onDraftSent?.();
@@ -247,7 +248,7 @@ export function EditDraftDialog({ draft, onClose, onDraftUpdated, onDraftSent }:
 
     } catch (error) {
       console.error('Error sending draft:', error);
-      alert(`Failed to send draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to send draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSending(false);
     }

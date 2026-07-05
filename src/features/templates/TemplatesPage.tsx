@@ -6,6 +6,7 @@ import type { Template } from './types';
 import { exportAsHTML, exportAsPDF, exportAsDOCX } from './utils/exportUtils';
 import { createTemplateFromFile } from './utils/importUtils';
 import { supabase } from '../../lib/supabase';
+import { toast } from '../../lib/toast';
 
 interface TemplatesPageProps {
   onSignOut: () => void;
@@ -38,7 +39,7 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
       })));
     } catch (error) {
       console.error('Error fetching templates:', error);
-      alert('Failed to load templates. Please try again.');
+      toast.error('Failed to load templates. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +96,7 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
       setCurrentTemplate(null);
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Failed to save template. Please try again.');
+      toast.error('Failed to save template. Please try again.');
     }
   };
 
@@ -120,7 +121,7 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
       await fetchTemplates();
     } catch (error) {
       console.error('Error deleting template:', error);
-      alert('Failed to delete template. Please try again.');
+      toast.error('Failed to delete template. Please try again.');
     }
   };
 
@@ -159,7 +160,7 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
               throw new Error('Invalid template format');
             }
           } catch (error) {
-            alert('Failed to import template. Please check the file format.');
+            toast.error('Failed to import template. Please check the file format.');
           }
         };
         reader.readAsText(file);
@@ -183,7 +184,7 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
       }
     } catch (error) {
       console.error('Import error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to import template');
+      toast.error(error instanceof Error ? error.message : 'Failed to import template');
     } finally {
       e.target.value = ''; // Reset input
     }
@@ -204,13 +205,13 @@ export function TemplatesPage({ onSignOut, currentView }: TemplatesPageProps) {
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Failed to export template. Please try again.');
+      toast.error('Failed to export template. Please try again.');
     }
   };
 
   const handleEditTemplate = (template: Template) => {
     if (template.imported) {
-      alert('Imported templates cannot be edited. You can create a copy instead.');
+      toast.info('Imported templates cannot be edited. You can create a copy instead.');
       return;
     }
     setCurrentTemplate(template);

@@ -3,6 +3,7 @@ import { Mail, Send, X, Key } from 'lucide-react';
 import { useEmails } from '../../contexts/EmailContext';
 import type { GoogleEmail } from './types';
 import { supabase } from '../../lib/supabase';
+import { toast } from '../../lib/toast';
 
 interface GoogleTabProps {
   userRole: string | null;
@@ -111,7 +112,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
       setDailyLimit(500); // Reset to default
     } catch (error) {
       console.error('Error adding Google SMTP email:', error);
-      alert('Failed to add email. Please try again.');
+      toast.error('Failed to add email. Please try again.');
     }
   };
 
@@ -133,7 +134,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
       setGoogleEmails(googleEmails.filter(email => email.address !== address));
     } catch (error) {
       console.error('Error removing Google SMTP email:', error);
-      alert('Failed to remove email. Please try again.');
+      toast.error('Failed to remove email. Please try again.');
     }
   };
 
@@ -162,7 +163,7 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
       ));
     } catch (error) {
       console.error('Error updating daily limit:', error);
-      alert('Failed to update daily limit. Please try again.');
+      toast.error('Failed to update daily limit. Please try again.');
     }
   };
 
@@ -176,19 +177,19 @@ export function GoogleTab({ userRole }: GoogleTabProps) {
     try {
       // Simulate sending a test email
       await new Promise(resolve => setTimeout(resolve, 2000));
-      setGoogleEmails(prev => prev.map(e => 
-        e.address === email.address 
+      setGoogleEmails(prev => prev.map(e =>
+        e.address === email.address
           ? { ...e, testing: false }
           : e
       ));
-      alert('Test email sent successfully!');
+      toast.success('Test email sent successfully!');
     } catch (error) {
-      setGoogleEmails(prev => prev.map(e => 
-        e.address === email.address 
+      setGoogleEmails(prev => prev.map(e =>
+        e.address === email.address
           ? { ...e, testing: false }
           : e
       ));
-      alert('Failed to send test email. Please try again.');
+      toast.error('Failed to send test email. Please try again.');
     }
   };
 

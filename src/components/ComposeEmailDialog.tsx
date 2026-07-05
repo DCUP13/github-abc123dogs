@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Send, Plus, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { toast } from '../lib/toast';
 import { useEmails } from '../contexts/EmailContext';
 import { RichTextEditor, type RichTextEditorRef } from '../features/templates/components/RichTextEditor';
 
@@ -108,17 +109,17 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
   // Handle form submission
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const body = editorRef.current?.getContent() || '';
     const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
-    
+
     if (!finalFromEmail || !body.trim() || toEmails.length === 0) {
-      alert('Please select a sender email, add at least one recipient, and enter a message.');
+      toast.warning('Please select a sender email, add at least one recipient, and enter a message.');
       return;
     }
 
     if (showCustomFrom && !customFromEmail.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.warning('Please enter a valid email address.');
       return;
     }
 
@@ -168,20 +169,20 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
         );
 
         if (response.ok) {
-          alert(`Email sent successfully to ${toEmails.length} recipient${toEmails.length > 1 ? 's' : ''}!`);
+          toast.success(`Email sent successfully to ${toEmails.length} recipient${toEmails.length > 1 ? 's' : ''}!`);
         } else {
-          alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+          toast.info('Email added to outbox but failed to send immediately. Check the outbox for details.');
         }
       } catch {
-        alert('Email added to outbox but failed to send immediately. Check the outbox for details.');
+        toast.info('Email added to outbox but failed to send immediately. Check the outbox for details.');
       }
-      
+
       onSend?.();
       onClose();
-      
+
     } catch (error) {
       console.error('Error sending email:', error);
-      alert(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSending(false);
     }
@@ -192,12 +193,12 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
     const finalFromEmail = showCustomFrom ? customFromEmail : fromEmail;
 
     if (!finalFromEmail) {
-      alert('Please select a sender email.');
+      toast.warning('Please select a sender email.');
       return;
     }
 
     if (showCustomFrom && !customFromEmail.includes('@')) {
-      alert('Please enter a valid email address.');
+      toast.warning('Please enter a valid email address.');
       return;
     }
 
@@ -222,13 +223,13 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
 
       if (error) throw error;
 
-      alert('Draft saved successfully!');
+      toast.success('Draft saved successfully!');
       onDraftSaved?.();
       onClose();
 
     } catch (error) {
       console.error('Error saving draft:', error);
-      alert(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSavingDraft(false);
     }
