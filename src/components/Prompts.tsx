@@ -770,12 +770,16 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         </button>
                       </div>
 
+                      <div className="px-4 py-2 border-b border-teal-100 dark:border-teal-800/40 bg-teal-50/50 dark:bg-teal-900/10">
+                        <p className="text-xs text-teal-700 dark:text-teal-400">
+                          Use <code className="bg-teal-100 dark:bg-teal-800/50 px-1 rounded">{'{{property_info}}'}</code> in your prompt to inject the listing data. Each property's details will be formatted and substituted automatically.
+                        </p>
+                      </div>
+
                       {formData.properties.length === 0 ? (
                         <div className="px-4 py-5 text-center">
                           <p className="text-sm text-gray-500 dark:text-gray-400">No properties added yet.</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            Click "Add Property" to enter listing details. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{property_info}}'}</code> in your prompt to inject the data.
-                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click "Add Property" above to enter listing details.</p>
                         </div>
                       ) : (
                         <div className="divide-y divide-teal-100 dark:divide-teal-800/40">
