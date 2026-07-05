@@ -55,13 +55,14 @@ export function Settings({ onSignOut, currentView, onPrivacyClick, onTermsClick 
       const { data, error } = await supabase
         .from('organization_members')
         .select('role')
-        .eq('user_id', user.data.user.id)
-        .maybeSingle();
+        .eq('user_id', user.data.user.id);
 
       if (error) throw error;
 
-      if (data) {
-        setUserRole(data.role);
+      if (data && data.length > 0) {
+        const priority = ['owner', 'manager', 'member'];
+        const highestRole = priority.find(r => data.some(d => d.role === r)) ?? data[0].role;
+        setUserRole(highestRole);
       }
     } catch (error) {
       console.error('Error fetching user role:', error);

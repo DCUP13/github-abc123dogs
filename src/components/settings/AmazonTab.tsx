@@ -565,7 +565,7 @@ export function AmazonTab({
           </div>
         </div>
 
-        {userRole === 'owner' || userRole === 'manager' ? (
+        {userRole !== 'member' ? (
           <form onSubmit={handleAddDomain} className="mb-6">
             <div className="flex gap-2">
               <input
@@ -634,7 +634,7 @@ export function AmazonTab({
           </h3>
         </div>
 
-        {userRole === 'owner' || userRole === 'manager' ? (
+        {userRole !== 'member' ? (
           <form onSubmit={handleAddSESEmail} className="mb-6">
             <div className="space-y-4">
               <div>
