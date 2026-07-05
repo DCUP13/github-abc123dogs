@@ -13,7 +13,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     email: '',
     password: '',
   });
-  const [loginType, setLoginType] = useState<'manager' | 'member'>('member');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -26,7 +25,7 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
     console.log('Clearing existing auth state before login...');
     localStorage.removeItem('supabase.auth.token');
 
-    console.log('Login attempt started:', { email: formData.email, loginType });
+    console.log('Login attempt started:', { email: formData.email });
 
     try {
       console.log('Checking for invitation with temporary password...');
@@ -99,7 +98,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
         });
 
         localStorage.setItem('userRole', invitation.role || 'member');
-        localStorage.setItem('loginType', loginType);
         localStorage.setItem('organizationId', invitation.organization_id);
         localStorage.setItem('needsPasswordChange', 'true');
 
@@ -222,14 +220,8 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
 
         const userRole = memberData?.role ?? null;
 
-        if (loginType === 'manager' && memberData && userRole === 'member') {
-          localStorage.clear();
-          throw new Error('You do not have manager permissions. Please login as a member.');
-        }
-
         if (userRole) localStorage.setItem('userRole', userRole);
         else localStorage.removeItem('userRole');
-        localStorage.setItem('loginType', loginType);
         if (memberData?.organization_id) {
           localStorage.setItem('organizationId', memberData.organization_id);
         }
@@ -270,36 +262,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
             <p>{errorMessage}</p>
           </div>
         )}
-
-        <div>
-          <label className="block text-sm font-medium text-om-brown uppercase tracking-widest mb-2">
-            Login As
-          </label>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setLoginType('member')}
-              className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-all border ${
-                loginType === 'member'
-                  ? 'bg-om-forest border-om-forest text-om-cream'
-                  : 'bg-transparent border-om-tan text-om-mahogany hover:border-om-brown'
-              }`}
-            >
-              Member
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginType('manager')}
-              className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-all border ${
-                loginType === 'manager'
-                  ? 'bg-om-forest border-om-forest text-om-cream'
-                  : 'bg-transparent border-om-tan text-om-mahogany hover:border-om-brown'
-              }`}
-            >
-              Manager
-            </button>
-          </div>
-        </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-om-brown uppercase tracking-widest mb-2">
