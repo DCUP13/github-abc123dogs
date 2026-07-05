@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe } from 'lucide-react';
+import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe, Server } from 'lucide-react';
 import { toast } from '../lib/toast';
 import { showConfirm } from '../lib/confirm';
 import { Toggle } from './Toggle';
@@ -9,6 +9,7 @@ interface MemberDetailDialogProps {
   memberId: string;
   memberName: string;
   memberEmail: string;
+  organizationId?: string;
   onClose: () => void;
 }
 
@@ -44,7 +45,7 @@ interface DashboardStats {
 const inputClass =
   'w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
-export default function MemberDetailDialog({ memberId, memberName, memberEmail, onClose }: MemberDetailDialogProps) {
+export default function MemberDetailDialog({ memberId, memberName, memberEmail, organizationId, onClose }: MemberDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<'emails' | 'domains' | 'settings' | 'stats'>('emails');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,7 +61,8 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   const [newEmailType, setNewEmailType] = useState<'ses' | 'google'>('ses');
   const [newEmailDailyLimit, setNewEmailDailyLimit] = useState(1440);
 
-  const [newDomain, setNewDomain] = useState('');
+  const [orgDomains, setOrgDomains] = useState<Array<{ id: string; domain: string }>>([]);
+  const [selectedDomain, setSelectedDomain] = useState('');
 
   useEffect(() => {
     loadMemberData();
@@ -71,12 +73,15 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
       setLoading(true);
       setError('');
 
-      const [sesEmailsRes, googleEmailsRes, domainsRes, settingsRes, statsRes] = await Promise.all([
+      const [sesEmailsRes, googleEmailsRes, domainsRes, settingsRes, statsRes, orgDomainsRes] = await Promise.all([
         supabase.from('amazon_ses_emails').select('*').eq('user_id', memberId),
         supabase.from('google_smtp_emails').select('*').eq('user_id', memberId),
         supabase.from('amazon_ses_domains').select('*').eq('user_id', memberId),
         supabase.from('user_settings').select('*').eq('user_id', memberId).maybeSingle(),
-        supabase.from('dashboard_statistics').select('*').eq('user_id', memberId).maybeSingle()
+        supabase.from('dashboard_statistics').select('*').eq('user_id', memberId).maybeSingle(),
+        organizationId
+          ? supabase.from('organization_domains').select('id, domain').eq('organization_id', organizationId).order('domain', { ascending: true })
+          : Promise.resolve({ data: [] as Array<{ id: string; domain: string }> }),
       ]);
 
       const sesEmails: EmailAccount[] = (sesEmailsRes.data || []).map(e => ({
@@ -90,6 +95,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
 
       setEmailAccounts([...sesEmails, ...googleEmails]);
       setDomains(domainsRes.data || []);
+      setOrgDomains((orgDomainsRes as any).data || []);
 
       if (settingsRes.data) {
         setUserSettings(settingsRes.data);
@@ -163,21 +169,21 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   };
 
   const handleAddDomain = async () => {
-    if (!newDomain.trim()) { setError('Please enter a domain name'); return; }
+    if (!selectedDomain) { setError('Please select a domain'); return; }
     try {
       setSaving(true); setError('');
       const { error: insertError } = await supabase.from('amazon_ses_domains').insert({
-        user_id: memberId, domain: newDomain, autoresponder_enabled: false, drafts_enabled: false
+        user_id: memberId, domain: selectedDomain, autoresponder_enabled: false, drafts_enabled: false
       });
       if (insertError) {
         if (insertError.code === '23505') {
-          setError('This domain is already assigned to another user.');
+          setError('This domain is already assigned to this member.');
           return;
         }
         throw insertError;
       }
-      setSuccess('Domain added successfully!');
-      setNewDomain('');
+      setSuccess('Domain assigned successfully!');
+      setSelectedDomain('');
       await loadMemberData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) { setError(err.message); } finally { setSaving(false); }
@@ -387,25 +393,52 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
 
           {activeTab === 'domains' && (
             <div className="space-y-6">
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-4">Add Domain</h3>
-                <div className="flex gap-3">
-                  <input type="text" value={newDomain} onChange={(e) => setNewDomain(e.target.value)}
-                    className={inputClass} placeholder="example.com" />
-                  <button onClick={handleAddDomain} disabled={saving}
-                    className="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-medium">
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add</span>
-                  </button>
-                </div>
-              </div>
+              {(() => {
+                const assignedDomains = new Set(domains.map(d => d.domain));
+                const availableDomains = orgDomains.filter(od => !assignedDomains.has(od.domain));
+                return (
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-1">Assign Domain</h3>
+                    {!organizationId ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Organization context unavailable.</p>
+                    ) : orgDomains.length === 0 ? (
+                      <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mt-2">
+                        <Server className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                          No domains registered for this organization yet. Add domains in <strong>Organization Settings</strong> first.
+                        </p>
+                      </div>
+                    ) : availableDomains.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">All organization domains are already assigned to this member.</p>
+                    ) : (
+                      <div className="flex gap-3 mt-3">
+                        <select
+                          value={selectedDomain}
+                          onChange={(e) => setSelectedDomain(e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">Select a domain...</option>
+                          {availableDomains.map(od => (
+                            <option key={od.id} value={od.domain}>{od.domain}</option>
+                          ))}
+                        </select>
+                        <button onClick={handleAddDomain} disabled={saving || !selectedDomain}
+                          className="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-medium">
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline">Assign</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-3">Verified Domains</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mb-3">Assigned Domains</h3>
                 {domains.length === 0 ? (
                   <div className="text-center py-10 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <Globe className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">No domains configured</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No domains assigned</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
