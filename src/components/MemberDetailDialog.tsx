@@ -122,7 +122,13 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
         user_id: memberId, address: newEmailAddress,
         daily_limit: newEmailDailyLimit, sent_emails: 0, is_locked: false
       });
-      if (insertError) throw insertError;
+      if (insertError) {
+        if (insertError.code === '23505') {
+          setError('This email address is already assigned to another user.');
+          return;
+        }
+        throw insertError;
+      }
       setSuccess('Email address added successfully!');
       setNewEmailAddress('');
       setNewEmailDailyLimit(newEmailType === 'ses' ? 1440 : 500);
@@ -163,7 +169,13 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
       const { error: insertError } = await supabase.from('amazon_ses_domains').insert({
         user_id: memberId, domain: newDomain, autoresponder_enabled: false, drafts_enabled: false
       });
-      if (insertError) throw insertError;
+      if (insertError) {
+        if (insertError.code === '23505') {
+          setError('This domain is already assigned to another user.');
+          return;
+        }
+        throw insertError;
+      }
       setSuccess('Domain added successfully!');
       setNewDomain('');
       await loadMemberData();
