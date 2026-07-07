@@ -148,6 +148,18 @@ export default function App() {
     document.documentElement.setAttribute('data-scheme', colorScheme);
   }, [colorScheme]);
 
+  useEffect(() => {
+    const theme = THEME_VARS[colorScheme] ?? THEME_VARS['indigo'];
+    document.documentElement.style.setProperty(
+      '--scrollbar-thumb',
+      darkMode ? theme['--sb-bg-d'] : theme['--sb-bg']
+    );
+    document.documentElement.style.setProperty(
+      '--scrollbar-thumb-hover',
+      darkMode ? theme['--sb-hover-d'] : theme['--sb-hover']
+    );
+  }, [colorScheme, darkMode]);
+
   const updateView = (newView: View) => {
     setPreviousView(view);
     setView(newView);
