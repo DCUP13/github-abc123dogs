@@ -192,16 +192,16 @@ export function AmazonTab({
         throw error;
       }
 
-      // Register as an org domain so it appears in the member dropdown
+      // Register as an org domain so it appears in org settings and the member dropdown
       if (userRole && userRole !== 'member') {
-        const { data: membership } = await supabase
+        const { data: memberships } = await supabase
           .from('organization_members')
           .select('organization_id')
           .eq('user_id', user.data.user.id)
-          .maybeSingle();
-        if (membership?.organization_id) {
+          .in('role', ['owner', 'manager']);
+        if (memberships && memberships.length > 0) {
           await supabase.from('organization_domains').upsert(
-            { organization_id: membership.organization_id, domain: newDomain },
+            memberships.map(m => ({ organization_id: m.organization_id, domain: newDomain })),
             { onConflict: 'domain', ignoreDuplicates: true }
           );
         }
@@ -230,6 +230,11 @@ export function AmazonTab({
         .eq('domain', domain);
 
       if (error) throw error;
+
+      // Remove from org domains pool if this user is the owner/manager
+      if (userRole && userRole !== 'member') {
+        await supabase.from('organization_domains').delete().eq('domain', domain);
+      }
 
       setDomains(domains.filter(d => d !== domain));
     } catch (error) {

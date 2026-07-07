@@ -112,6 +112,8 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
     if (!organization) return;
     try {
       setDomainSaving(true); setDomainError('');
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { error } = await supabase.from('organization_domains')
         .insert({ organization_id: organization.id, domain });
       if (error) {
@@ -121,6 +123,15 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
         }
         throw error;
       }
+
+      // Mirror into the current user's amazon_ses_domains so it shows in SES settings
+      if (user) {
+        await supabase.from('amazon_ses_domains').upsert(
+          { user_id: user.id, domain, autoresponder_enabled: false },
+          { onConflict: 'user_id,domain', ignoreDuplicates: true }
+        );
+      }
+
       setNewOrgDomain('');
       setDomainSuccess('Domain added!');
       loadOrgDomains(organization.id);
