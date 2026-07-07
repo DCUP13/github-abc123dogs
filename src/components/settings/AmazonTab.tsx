@@ -192,6 +192,21 @@ export function AmazonTab({
         throw error;
       }
 
+      // Register as an org domain so it appears in the member dropdown
+      if (userRole && userRole !== 'member') {
+        const { data: membership } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.data.user.id)
+          .maybeSingle();
+        if (membership?.organization_id) {
+          await supabase.from('organization_domains').upsert(
+            { organization_id: membership.organization_id, domain: newDomain },
+            { onConflict: 'domain', ignoreDuplicates: true }
+          );
+        }
+      }
+
       setDomains([...domains, newDomain].sort());
       setNewDomain('');
       setDomainError('');
