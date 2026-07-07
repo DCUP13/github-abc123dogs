@@ -20,6 +20,33 @@
 .app-card-inner { background-color: var(--card-bg, #f8fafc); }
 .dark .app-card-inner { background-color: var(--card-bg-inner-d, #273348); }
 
+/* ── Theme-aware scrollbars ──────────────────────────────────────────── */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent, #4f46e5) transparent;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--accent, #4f46e5);
+  border-radius: 9999px;
+  opacity: 0.7;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-dark, #6366f1);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;
