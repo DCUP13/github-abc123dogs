@@ -152,7 +152,7 @@ export function Sidebar({
       {/* ── DESKTOP SIDEBAR ─────────────────────────────────── */}
       {/* Hidden below sm. Icon-only sm→lg. Full labels at lg+  */}
       <div
-        className="hidden sm:flex fixed inset-y-0 left-0 z-50 flex-col transition-all duration-200 ease-in-out
+        className="hidden sm:flex fixed inset-y-0 left-0 z-50 flex-col transition-all duration-200 ease-in-out text-white
                    w-14 lg:w-56 xl:w-64"
         style={{ backgroundColor: sidebarBg }}
       >
