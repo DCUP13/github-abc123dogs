@@ -15,10 +15,11 @@ interface Organization {
 }
 
 interface OrganizationSettingsProps {
+  orgId: string;
   onClose: () => void;
 }
 
-export default function OrganizationSettings({ onClose }: OrganizationSettingsProps) {
+export default function OrganizationSettings({ orgId, onClose }: OrganizationSettingsProps) {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,32 +57,22 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
         return;
       }
 
-      const { data: memberData } = await supabase
-        .from('organization_members')
-        .select('role, organization_id')
-        .eq('user_id', user.id)
-        .single();
+      const [orgRes, memberRes] = await Promise.all([
+        supabase.from('organizations').select('*').eq('id', orgId).single(),
+        supabase.from('organization_members').select('role').eq('organization_id', orgId).eq('user_id', user.id).maybeSingle(),
+      ]);
 
-      if (!memberData) {
-        setError('Not a member of any organization');
-        return;
-      }
+      if (orgRes.error) throw orgRes.error;
 
-      setUserRole(memberData.role);
+      const role = memberRes.data?.role ?? null;
+      setUserRole(role);
 
-      if (!['owner', 'manager'].includes(memberData.role)) {
+      if (!role || !['owner', 'manager'].includes(role)) {
         setError('Only owners and managers can edit organization settings');
         return;
       }
 
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('id', memberData.organization_id)
-        .single();
-
-      if (orgError) throw orgError;
-
+      const orgData = orgRes.data;
       setOrganization(orgData);
       setFormData({
         name: orgData.name || '',
@@ -93,7 +84,7 @@ export default function OrganizationSettings({ onClose }: OrganizationSettingsPr
         location: orgData.location || ''
       });
 
-      loadOrgDomains(memberData.organization_id);
+      loadOrgDomains(orgId);
     } catch (err: any) {
       console.error('Error loading organization:', err);
       setError(err.message);
