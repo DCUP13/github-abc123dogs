@@ -7,6 +7,7 @@ interface MemberDetailDialogProps {
   memberId: string;
   memberName: string;
   memberEmail: string;
+  organizationId?: string;
   onClose: () => void;
 }
 
@@ -39,7 +40,7 @@ interface DashboardStats {
   total_campaigns: number;
 }
 
-export default function MemberDetailDialog({ memberId, memberName, memberEmail, onClose }: MemberDetailDialogProps) {
+export default function MemberDetailDialog({ memberId, memberName, memberEmail, organizationId, onClose }: MemberDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<'emails' | 'domains' | 'settings' | 'stats'>('emails');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,12 +68,20 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
       setLoading(true);
       setError('');
 
-      // Detect current user's org to populate domain dropdown
-      const { data: { user } } = await supabase.auth.getUser();
-      const orgMemberRes = user
-        ? await supabase.from('organization_members').select('organization_id').eq('user_id', user.id).maybeSingle()
-        : { data: null };
-      const orgId = orgMemberRes.data?.organization_id ?? null;
+      // Use passed organizationId, falling back to auto-detect for single-org users
+      let orgId: string | null = organizationId ?? null;
+      if (!orgId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: membership } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .limit(1)
+            .maybeSingle();
+          orgId = membership?.organization_id ?? null;
+        }
+      }
 
       const [sesEmailsRes, googleEmailsRes, domainsRes, settingsRes, statsRes, orgDomainsRes] = await Promise.all([
         supabase
