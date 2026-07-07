@@ -31,7 +31,6 @@ function useTeamUnread() {
 
     async function fetchCount() {
       if (!uid) return;
-      // "latest wins": discard results from superseded fetches
       const id = ++fetchIdRef.current;
       const { data } = await supabase.rpc('get_team_unread_count', { uid });
       if (mounted && id === fetchIdRef.current) setCount(data ?? 0);
@@ -88,15 +87,18 @@ export function Sidebar({
     onClose?.();
   };
 
+  // Full nav button — shows icon + label. Used at lg+
   const navBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number) => (
     <button
+      key={label}
       onClick={nav(onClick)}
       className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors"
       onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+      title={label}
     >
       <Icon className="w-4 h-4 flex-shrink-0" />
-      <span className="flex-1 text-left">{label}</span>
+      <span className="flex-1 text-left truncate">{label}</span>
       {!!badge && badge > 0 && (
         <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1 leading-none">
           {badge > 99 ? '99+' : badge}
@@ -105,31 +107,116 @@ export function Sidebar({
     </button>
   );
 
+  // Icon-only nav button — used at sm–lg
+  const iconBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number) => (
+    <button
+      key={label}
+      onClick={nav(onClick)}
+      className="relative w-full flex items-center justify-center py-2.5 rounded-lg transition-colors"
+      onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+      title={label}
+      aria-label={label}
+    >
+      <Icon className="w-5 h-5 flex-shrink-0" />
+      {!!badge && badge > 0 && (
+        <span className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </button>
+  );
+
+  const navItems = [
+    { onClick: onHomeClick,         Icon: Home,          label: 'Home' },
+    { onClick: onEmailsClick,       Icon: Inbox,         label: 'Emails' },
+    { onClick: onAddressesClick,    Icon: Mail,          label: 'Addresses' },
+    { onClick: onPromptsClick,      Icon: MessageSquare, label: 'Prompts' },
+    { onClick: onCRMClick,          Icon: Users,         label: 'CRM' },
+    { onClick: onCalendarClick,     Icon: CalendarIcon,  label: 'Calendar' },
+    { onClick: onIntegrationsClick, Icon: Plug,          label: 'Integrations' },
+    ...(onTeamClick ? [{ onClick: onTeamClick, Icon: Users, label: 'Team', badge: teamUnread > 0 ? teamUnread : undefined }] : []),
+    { onClick: onSettingsClick,     Icon: SettingsIcon,  label: 'Settings' },
+  ] as const;
+
   return (
     <>
+      {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 sm:hidden"
           onClick={onClose}
         />
       )}
 
+      {/* ── DESKTOP SIDEBAR ─────────────────────────────────── */}
+      {/* Hidden below sm. Icon-only sm→lg. Full labels at lg+  */}
+      <div
+        className="hidden sm:flex fixed inset-y-0 left-0 z-50 flex-col transition-all duration-200 ease-in-out
+                   w-14 lg:w-56 xl:w-64"
+        style={{ backgroundColor: sidebarBg }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-center lg:justify-start px-0 lg:px-5 py-5 border-b overflow-hidden"
+          style={{ borderColor }}
+        >
+          <span className="hidden lg:block text-lg xl:text-xl font-bold text-white truncate">Dashboard</span>
+          {/* Icon-only header: show a small logo-ish dot */}
+          <span className="lg:hidden w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold text-white select-none">D</span>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden px-1 lg:px-3 py-4 space-y-1">
+          {navItems.map(({ onClick, Icon, label, badge }) => (
+            <React.Fragment key={label}>
+              <span className="hidden lg:block">
+                {navBtn(onClick as () => void, Icon, label, (badge as number | undefined))}
+              </span>
+              <span className="lg:hidden">
+                {iconBtn(onClick as () => void, Icon, label, (badge as number | undefined))}
+              </span>
+            </React.Fragment>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-1 lg:px-3 py-4 border-t space-y-1" style={{ borderColor }}>
+          <span className="hidden lg:block">
+            {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
+          </span>
+          <span className="lg:hidden">
+            {iconBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
+          </span>
+
+          <button
+            onClick={nav(onSignOut)}
+            className="w-full flex items-center justify-center lg:justify-start gap-3 px-0 lg:px-4 py-2 text-sm rounded-lg transition-colors text-red-300 hover:text-red-200"
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut className="w-4 h-4 lg:w-4 lg:h-4 flex-shrink-0" />
+            <span className="hidden lg:inline">Sign out</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── MOBILE DRAWER ────────────────────────────────────── */}
+      {/* Full sidebar that slides in below sm breakpoint       */}
       <div
         className={[
-          'fixed inset-y-0 left-0 z-50 w-64 text-white flex flex-col transition-transform duration-300 ease-in-out',
-          'md:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+          'sm:hidden fixed inset-y-0 left-0 z-50 w-64 text-white flex flex-col transition-transform duration-300 ease-in-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
         ].join(' ')}
         style={{ backgroundColor: sidebarBg }}
       >
-        <div
-          className="flex items-center justify-between px-6 py-5 border-b"
-          style={{ borderColor }}
-        >
+        <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor }}>
           <h2 className="text-xl font-bold">Dashboard</h2>
           <button
             onClick={onClose}
-            className="md:hidden p-1 rounded transition-colors"
+            className="p-1 rounded transition-colors"
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             aria-label="Close menu"
@@ -139,21 +226,12 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navBtn(onHomeClick,         Home,          'Home')}
-          {navBtn(onEmailsClick,       Inbox,         'Emails')}
-          {navBtn(onAddressesClick,    Mail,          'Addresses')}
-          {navBtn(onPromptsClick,      MessageSquare, 'Prompts')}
-          {navBtn(onCRMClick,          Users,         'CRM')}
-          {navBtn(onCalendarClick,     CalendarIcon,  'Calendar')}
-          {navBtn(onIntegrationsClick, Plug,          'Integrations')}
-          {onTeamClick && navBtn(onTeamClick, Users, 'Team', teamUnread > 0 ? teamUnread : undefined)}
-          {navBtn(onSettingsClick,     SettingsIcon,  'Settings')}
+          {navItems.map(({ onClick, Icon, label, badge }) =>
+            navBtn(onClick as () => void, Icon, label, (badge as number | undefined))
+          )}
         </nav>
 
-        <div
-          className="px-3 py-4 border-t space-y-1"
-          style={{ borderColor }}
-        >
+        <div className="px-3 py-4 border-t space-y-1" style={{ borderColor }}>
           {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
           <button
             onClick={nav(onSignOut)}

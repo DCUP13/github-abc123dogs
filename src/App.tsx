@@ -601,10 +601,10 @@ export default function App() {
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                 />
-                <div className="flex-1 md:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
-                  {/* Mobile top bar */}
+                <div className="flex-1 sm:ml-14 lg:ml-56 xl:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
+                  {/* Mobile top bar — only shows below sm where drawer is used */}
                   <div
-                    className="md:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
+                    className="sm:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"
                     style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--sb-bg-d'] ?? '#1e1b4b') : (THEME_VARS[colorScheme]?.['--sb-bg'] ?? '#3730a3') }}
                   >
                     <button
