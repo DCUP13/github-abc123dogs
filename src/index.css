@@ -21,16 +21,13 @@
 .dark .app-card-inner { background-color: var(--card-bg-inner-d, #273348); }
 
 /* ── Theme-aware scrollbars ──────────────────────────────────────────── */
-/* Thumb uses the sidebar background color so page scrollbars match the  */
-/* sidebar exactly. --sb-bg-d applies when dark mode is active.          */
+/* --scrollbar-thumb is set in App.tsx, resolving the correct light/dark  */
+/* sidebar color at runtime so the thumb always matches the sidebar.      */
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--sb-bg, #3730a3) transparent;
-}
-.dark * {
-  scrollbar-color: var(--sb-bg-d, #1e1b4b) transparent;
+  scrollbar-color: var(--scrollbar-thumb, #3730a3) transparent;
 }
 
 /* Webkit (Chrome, Safari, Edge) */
@@ -42,17 +39,11 @@
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: var(--sb-bg, #3730a3);
+  background-color: var(--scrollbar-thumb, #3730a3);
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--sb-hover, #4338ca);
-}
-.dark *::-webkit-scrollbar-thumb {
-  background-color: var(--sb-bg-d, #1e1b4b);
-}
-.dark *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--sb-hover-d, #3730a3);
+  background-color: var(--scrollbar-thumb-hover, #4338ca);
 }
 *::-webkit-scrollbar-corner {
   background: transparent;

@@ -578,7 +578,15 @@ export default function App() {
         <DashboardProvider>
           <div
             className={darkMode ? 'dark' : ''}
-            style={(THEME_VARS[colorScheme] ?? THEME_VARS['indigo']) as React.CSSProperties}
+            style={{
+              ...(THEME_VARS[colorScheme] ?? THEME_VARS['indigo']),
+              '--scrollbar-thumb': darkMode
+                ? (THEME_VARS[colorScheme]?.['--sb-bg-d'] ?? '#1e1b4b')
+                : (THEME_VARS[colorScheme]?.['--sb-bg'] ?? '#3730a3'),
+              '--scrollbar-thumb-hover': darkMode
+                ? (THEME_VARS[colorScheme]?.['--sb-hover-d'] ?? '#3730a3')
+                : (THEME_VARS[colorScheme]?.['--sb-hover'] ?? '#4338ca'),
+            } as React.CSSProperties}
           >
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
