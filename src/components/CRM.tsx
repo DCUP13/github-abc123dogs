@@ -383,7 +383,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   const resetInteractionForm = () => {
     setInteractionForm({
-      interaction_type: 'call',
+      interaction_type: 'email',
       subject: '',
       notes: '',
       interaction_date: new Date().toISOString().slice(0, 16),
