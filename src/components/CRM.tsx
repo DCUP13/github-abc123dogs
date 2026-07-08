@@ -118,7 +118,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     city: '',
     state: '',
     zip_code: '',
-    client_type: 'buyer' as const,
+    client_type: 'buyer' | 'seller' | 'renter' as const,
     status: 'lead' as const,
     budget_min: '',
     budget_max: '',
