@@ -129,7 +129,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   });
 
   const [interactionForm, setInteractionForm] = useState({
-    interaction_type: 'call' as const,
+    interaction_type: 'email' as const,
     subject: '',
     notes: '',
     interaction_date: new Date().toISOString().slice(0, 16),
