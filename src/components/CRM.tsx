@@ -1216,8 +1216,8 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         {/* Interaction Form Modal */}
         {showInteractionForm && selectedClient && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="app-card rounded-xl shadow-lg w-full max-w-md mx-4 sm:mx-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-md mx-4 sm:mx-auto flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                   Add Interaction
                 </h3>
@@ -1229,74 +1229,76 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 </button>
               </div>
 
-              <form onSubmit={handleSaveInteraction} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Interaction Type
-                  </label>
-                  <select
-                    value={interactionForm.interaction_type}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_type: e.target.value as any }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
-                  >
-                    {interactionTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
-                    ))}
-                  </select>
+              <form onSubmit={handleSaveInteraction} className="flex flex-col flex-1 min-h-0">
+                <div className="overflow-y-auto flex-1 p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Interaction Type
+                    </label>
+                    <select
+                      value={interactionForm.interaction_type}
+                      onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_type: e.target.value as any }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
+                    >
+                      {interactionTypes.map(type => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      value={interactionForm.subject}
+                      onChange={(e) => setInteractionForm(prev => ({ ...prev, subject: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
+                      placeholder="Brief subject or title"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Interaction Date
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={interactionForm.interaction_date}
+                      onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_date: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Follow-up Date (Optional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={interactionForm.follow_up_date}
+                      onChange={(e) => setInteractionForm(prev => ({ ...prev, follow_up_date: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Notes
+                    </label>
+                    <textarea
+                      value={interactionForm.notes}
+                      onChange={(e) => setInteractionForm(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={4}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
+                      placeholder="Interaction details and notes"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    value={interactionForm.subject}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
-                    placeholder="Brief subject or title"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Interaction Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={interactionForm.interaction_date}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, interaction_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Follow-up Date (Optional)
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={interactionForm.follow_up_date}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, follow_up_date: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Notes
-                  </label>
-                  <textarea
-                    value={interactionForm.notes}
-                    onChange={(e) => setInteractionForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={4}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 app-card-inner text-gray-900 dark:text-white"
-                    placeholder="Interaction details and notes"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4">
+                <div className="flex justify-end gap-2 p-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
                   <button
                     type="button"
                     onClick={resetInteractionForm}
