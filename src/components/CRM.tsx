@@ -68,6 +68,7 @@ const clientStatuses = [
 ];
 
 const interactionTypes = [
+  { value: 'email', label: 'Email', icon: Mail },
   { value: 'call', label: 'Call', icon: Phone },
 ];
 
