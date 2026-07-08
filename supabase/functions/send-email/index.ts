@@ -258,12 +258,22 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
   console.log(`Successfully sent individual emails to all ${recipients.length} recipients`)
 }
 
-function toHtmlBody(body: string): string {
-  const escaped = body
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-  return `<html><body><p>${escaped.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
+function toPlainText(body: string): string {
+  // Convert common HTML block elements to newlines before stripping tags
+  return body
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 async function sendIndividualSESEmail(
@@ -274,8 +284,7 @@ async function sendIndividualSESEmail(
   console.log(`Sending individual email via SMTP to: ${recipient}`)
 
   const encoder = new TextEncoder()
-  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  const htmlBody = toHtmlBody(email.body)
+  const plainBody = toPlainText(email.body)
 
   const headers: string[] = [
     `From: ${email.from_email}`,
@@ -283,7 +292,8 @@ async function sendIndividualSESEmail(
     `Subject: ${email.subject}`,
     `Message-ID: ${email.outgoing_message_id}`,
     `MIME-Version: 1.0`,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
   ]
 
   if (email.in_reply_to) {
@@ -294,12 +304,7 @@ async function sendIndividualSESEmail(
   const emailContent = [
     ...headers,
     ``,
-    `--${boundary}`,
-    `Content-Type: text/html; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
-    ``,
-    htmlBody,
-    `--${boundary}--`
+    plainBody,
   ].join('\r\n')
 
   const port = parseInt(sesSettings.smtp_port)
