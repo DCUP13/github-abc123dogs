@@ -1,10 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Route by message_id prefix: lr-* → LR Supabase, lb-* → LB Supabase
-function getClient(messageId) {
-  const prefix = messageId?.split('-')[0]?.toLowerCase();
+// Route by X-SES-MESSAGE-TAGS app value set in the SMTP header.
+// SES surfaces these as detail.mail.tags: { app: ['loiblast'] } in EventBridge events.
+function getClient(event) {
+  const tags = event.detail?.mail?.tags || {};
+  const app = Array.isArray(tags.app) ? tags.app[0] : tags.app;
 
-  if (prefix === 'lb') {
+  if (app === 'loiblast') {
     return createClient(
       process.env.LB_SUPABASE_URL,
       process.env.LB_SUPABASE_KEY
@@ -32,13 +34,14 @@ exports.handler = async (event) => {
       return { statusCode: 200 };
     }
 
-    const supabase = getClient(messageId);
+    const supabase = getClient(event);
 
-    // Look up the email_sent row
+    // Look up email_sent by ses_message_id (set from SMTP 250 response on new emails).
+    // Fall back to message_id for any rows created before this change.
     const { data: emailRecord, error: lookupError } = await supabase
       .from('email_sent')
       .select('id')
-      .eq('message_id', messageId)
+      .or(`ses_message_id.eq.${messageId},message_id.eq.${messageId}`)
       .maybeSingle();
 
     if (lookupError) throw lookupError;
@@ -70,36 +73,23 @@ exports.handler = async (event) => {
 
     switch (eventType) {
       case 'Email Sent':
-        update = {
-          delivery_status: 'sent',
-        };
+        update = { delivery_status: 'sent' };
         break;
 
       case 'Email Delivered':
-        update = {
-          delivery_status: 'delivered',
-          delivered_at: eventTime,
-        };
+        update = { delivery_status: 'delivered', delivered_at: eventTime };
         break;
 
       case 'Email Opened':
-        update = {
-          delivery_status: 'opened',
-          opened_at: eventTime,
-        };
+        update = { delivery_status: 'opened', opened_at: eventTime };
         break;
 
       case 'Email Clicked':
-        update = {
-          delivery_status: 'clicked',
-          clicked_at: eventTime,
-        };
+        update = { delivery_status: 'clicked', clicked_at: eventTime };
         break;
 
       case 'Email Delivery Delayed':
-        update = {
-          delivery_status: 'delayed',
-        };
+        update = { delivery_status: 'delayed' };
         break;
 
       case 'Email Bounced':
@@ -142,7 +132,6 @@ exports.handler = async (event) => {
         console.log(`No update mapped for event type: ${eventType}`);
     }
 
-    // Apply email_sent update if there's anything to write
     if (Object.keys(update).length > 0 && emailRecord) {
       const { error: updateError } = await supabase
         .from('email_sent')

@@ -41,36 +41,19 @@ serve(async (req) => {
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey)
 
     const requestBody = await req.json().catch(() => ({}))
-    const specificEmailId = requestBody.emailId
+    const specificEmailId = requestBody.emailId ?? null
 
-    let query = supabaseClient
-      .from('email_outbox')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
+    // Atomically claim emails — prevents duplicate processing when the DB trigger
+    // and a concurrent poller both fire at the same time.
+    const { data: outboxEmails, error: claimError } = await supabaseClient
+      .rpc('claim_outbox_emails', { p_email_id: specificEmailId })
 
-    if (specificEmailId) {
-      query = query.eq('id', specificEmailId).limit(1)
-    } else {
-      query = query.limit(10)
-    }
-
-    const { data: outboxEmails, error: fetchError } = await query
-
-    if (fetchError) throw fetchError
+    if (claimError) throw claimError
 
     const results = []
 
     for (const email of outboxEmails) {
       try {
-        await supabaseClient
-          .from('email_outbox')
-          .update({
-            status: 'sending',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', email.id)
-
         // lb- prefix identifies this as a loiblast email for cross-app SES event routing
         const domain = email.from_email.split('@')[1] || 'mail'
         const outgoingMessageId = `<lb-${crypto.randomUUID()}@${domain}>`
@@ -134,11 +117,12 @@ serve(async (req) => {
           .single()
 
         let emailSent = false
+        let sesMessageId: string | null = null
         let errorMessage = ''
 
         if (sesSettings && !emailSent) {
           try {
-            await sendViaSES(enrichedEmail, sesSettings)
+            sesMessageId = await sendViaSES(enrichedEmail, sesSettings)
             emailSent = true
           } catch (error) {
             console.error('SES sending failed:', error)
@@ -168,6 +152,7 @@ serve(async (req) => {
               reply_to_id: email.reply_to_id,
               attachments: email.attachments,
               message_id: outgoingMessageId,
+              ses_message_id: sesMessageId,
               in_reply_to: inReplyTo,
               email_references: emailReferences,
               sent_at: new Date().toISOString(),
@@ -232,7 +217,9 @@ serve(async (req) => {
   }
 })
 
-async function sendViaSES(email: EmailData, sesSettings: any) {
+// Returns the SES-assigned message ID parsed from the SMTP 250 response.
+// This ID matches detail.mail.messageId in SES EventBridge events.
+async function sendViaSES(email: EmailData, sesSettings: any): Promise<string | null> {
   if (!sesSettings.smtp_username || !sesSettings.smtp_password || !sesSettings.smtp_server || !sesSettings.smtp_port) {
     throw new Error('SMTP credentials not configured in database')
   }
@@ -241,11 +228,14 @@ async function sendViaSES(email: EmailData, sesSettings: any) {
 
   console.log(`Sending individual emails via SMTP to ${recipients.length} recipients:`, recipients)
 
+  let firstSesId: string | null = null
   for (const recipient of recipients) {
-    await sendIndividualSESEmail(email, sesSettings, recipient)
+    const sesId = await sendIndividualSESEmail(email, sesSettings, recipient)
+    if (!firstSesId) firstSesId = sesId
   }
 
   console.log(`Successfully sent individual emails to all ${recipients.length} recipients`)
+  return firstSesId
 }
 
 function toPlainText(body: string): string {
@@ -269,7 +259,7 @@ async function sendIndividualSESEmail(
   email: EmailData,
   sesSettings: any,
   recipient: string
-) {
+): Promise<string | null> {
   console.log(`Sending individual email via SMTP to: ${recipient}`)
 
   const encoder = new TextEncoder()
@@ -280,6 +270,7 @@ async function sendIndividualSESEmail(
     `To: ${recipient}`,
     `Subject: ${email.subject}`,
     `Message-ID: ${email.outgoing_message_id}`,
+    `X-SES-MESSAGE-TAGS: app=loiblast`,
     `MIME-Version: 1.0`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: 7bit`,
@@ -314,6 +305,8 @@ async function sendIndividualSESEmail(
     })
     activeConn = conn
   }
+
+  let sesMessageId: string | null = null
 
   try {
     let reader = activeConn.readable.getReader()
@@ -364,7 +357,13 @@ async function sendIndividualSESEmail(
     await readSMTPResponse(reader)
 
     await writer.write(encoder.encode(emailContent + '\r\n.\r\n'))
-    await readSMTPResponse(reader)
+    const dataResponse = await readSMTPResponse(reader)
+
+    // SES responds with "250 Ok <messageId@email.amazonaws.com>"
+    // Extract the local part before @ — this matches detail.mail.messageId in EventBridge.
+    const idMatch = dataResponse.match(/<([^@>]+)/)
+    sesMessageId = idMatch ? idMatch[1] : null
+    if (sesMessageId) console.log(`SES message ID: ${sesMessageId}`)
 
     await writer.write(encoder.encode(`QUIT\r\n`))
     await readSMTPResponse(reader)
@@ -380,6 +379,8 @@ async function sendIndividualSESEmail(
       console.error('Error closing connection:', e)
     }
   }
+
+  return sesMessageId
 }
 
 async function readSMTPResponse(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<string> {
