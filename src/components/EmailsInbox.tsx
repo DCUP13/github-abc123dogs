@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight, Eye, MousePointer2, CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
@@ -120,6 +120,7 @@ interface EmailEvent {
   event_type: string;
   event_time: string;
   recipient?: string;
+  email_sent_id?: string;
 }
 
 interface DraftEmail {
@@ -178,8 +179,78 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   const [isTogglingMode, setIsTogglingMode] = useState(false);
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const [selectedEmailEvents, setSelectedEmailEvents] = useState<EmailEvent[]>([]);
+  const [emailEventCounts, setEmailEventCounts] = useState<Record<string, EmailEvent[]>>({});
 
   const isManager = userRole === 'owner' || userRole === 'manager';
+
+  // ── Realtime subscriptions ──────────────────────────────────────────
+  // We subscribe to both email_sent (for list-level timestamp columns) and
+  // email_events (for the detailed events panel). On any change we refetch
+  // the relevant data so the UI stays live.
+  const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([]);
+
+  const clearRealtimeChannels = useCallback(() => {
+    for (const ch of channelsRef.current) {
+      try { supabase.removeChannel(ch); } catch { /* already removed */ }
+    }
+    channelsRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    clearRealtimeChannels();
+
+    // email_sent changes → refresh the sent list (updates delivery columns)
+    const sentCh = supabase
+      .channel('email_sent_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'email_sent' }, (payload) => {
+        // Optimistically patch the row in local state for instant feedback
+        setSentEmails(prev => {
+          const updated = payload.new as Partial<SentEmail>;
+          return prev.map(e => e.id === (updated as any).id ? { ...e, ...updated } as SentEmail : e);
+        });
+      })
+      .subscribe();
+
+    // email_events changes → refresh events for selected email + update list icons
+    const eventsCh = supabase
+      .channel('email_events_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'email_events' }, (payload) => {
+        const ev = payload.new as EmailEvent;
+        // Update the detailed panel if this event belongs to the selected email
+        setSelectedEmailEvents(prev =>
+          prev.some(e => e.id === ev.id) ? prev : [...prev, ev].sort((a, b) =>
+            new Date(a.event_time).getTime() - new Date(b.event_time).getTime())
+        );
+        // Also patch the email_sent row's delivery columns via a lightweight refetch
+        if (ev.email_sent_id) {
+          setEmailEventCounts(prev => {
+            const existing = prev[ev.email_sent_id!] || [];
+            if (existing.some(e => e.id === ev.id)) return prev;
+            return { ...prev, [ev.email_sent_id!]: [...existing, ev].sort((a, b) =>
+              new Date(a.event_time).getTime() - new Date(b.event_time).getTime()) };
+          });
+          setSentEmails(prev => {
+            const idx = prev.findIndex(e => e.id === ev.email_sent_id);
+            if (idx === -1) return prev;
+            const updated = { ...prev[idx] };
+            // Map event types to timestamp columns
+            if (ev.event_type === 'Email Delivered' && !updated.delivered_at) updated.delivered_at = ev.event_time;
+            if (ev.event_type === 'Email Opened' && !updated.opened_at) updated.opened_at = ev.event_time;
+            if (ev.event_type === 'Email Clicked' && !updated.clicked_at) updated.clicked_at = ev.event_time;
+            if (ev.event_type === 'Email Bounced' && !updated.bounced_at) updated.bounced_at = ev.event_time;
+            if ((ev.event_type === 'Email Rendering Failed' || ev.event_type === 'Email Rejected') && !updated.failed_at) updated.failed_at = ev.event_time;
+            updated.delivery_status = ev.event_type;
+            const next = [...prev];
+            next[idx] = updated;
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    channelsRef.current = [sentCh, eventsCh];
+    return clearRealtimeChannels;
+  }, []);
 
   useEffect(() => {
     fetchAllEmails();
@@ -223,6 +294,33 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       setSelectedEmailEvents([]);
     }
   }, [selectedEmail, activeTab]);
+
+  // Fetch event counts for all sent emails (for list-level icons)
+  useEffect(() => {
+    if (activeTab === 'sent' && sentEmails.length > 0) {
+      fetchAllEmailEvents();
+    }
+  }, [activeTab, sentEmails.length]);
+
+  const fetchAllEmailEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('email_events')
+        .select('id, event_id, event_type, event_time, recipient, email_sent_id')
+        .order('event_time', { ascending: true });
+      if (error) throw error;
+      const grouped: Record<string, EmailEvent[]> = {};
+      for (const ev of data || []) {
+        const key = (ev as any).email_sent_id;
+        if (!key) continue;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(ev);
+      }
+      setEmailEventCounts(grouped);
+    } catch (error) {
+      console.error('Error fetching all email events:', error);
+    }
+  };
 
   const buildThreadMessages = async (sentEmail: SentEmail) => {
     if (!sentEmail.reply_to_id) return;
@@ -487,6 +585,48 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       console.error('Error fetching email events:', error);
       setSelectedEmailEvents([]);
     }
+  };
+
+  // Compact event icons for the sent email list — shows which events have
+  // occurred, with a tooltip showing the timestamp.
+  const EVENT_ICON_CONFIG: Record<string, { Icon: React.ElementType; cls: string; label: string }> = {
+    'Email Delivered': { Icon: CheckCircle,   cls: 'text-blue-500',   label: 'Delivered' },
+    'Email Opened':    { Icon: Eye,           cls: 'text-amber-500',  label: 'Opened' },
+    'Email Clicked':   { Icon: MousePointer2, cls: 'text-green-500',  label: 'Clicked' },
+    'Email Bounced':   { Icon: XCircle,       cls: 'text-red-500',    label: 'Bounced' },
+    'Email Rejected':          { Icon: XCircle,       cls: 'text-red-500',    label: 'Rejected' },
+    'Email Rendering Failed':  { Icon: XCircle,       cls: 'text-red-500',    label: 'Failed' },
+    'Email Complaint Received':{ Icon: AlertTriangle, cls: 'text-orange-500', label: 'Complained' },
+    'Email Delivery Delayed':  { Icon: Clock,         cls: 'text-yellow-500', label: 'Delayed' },
+  };
+
+  const renderListEventIcons = (emailId: string) => {
+    const events = emailEventCounts[emailId] || [];
+    if (events.length === 0) return null;
+    // Deduplicate by event_type, keeping the first occurrence
+    const seen = new Set<string>();
+    const icons: { Icon: React.ElementType; cls: string; label: string; time: string }[] = [];
+    for (const ev of events) {
+      if (seen.has(ev.event_type)) continue;
+      seen.add(ev.event_type);
+      const cfg = EVENT_ICON_CONFIG[ev.event_type];
+      if (!cfg) continue;
+      icons.push({ ...cfg, time: ev.event_time });
+    }
+    if (icons.length === 0) return null;
+    return (
+      <div className="flex items-center gap-1">
+        {icons.map((ic, i) => (
+          <span
+            key={i}
+            title={`${ic.label}: ${ic.time ? new Date(ic.time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}`}
+            className="inline-flex"
+          >
+            <ic.Icon className={`w-3 h-3 ${ic.cls}`} />
+          </span>
+        ))}
+      </div>
+    );
   };
 
   const fetchDraftEmails = async () => {
@@ -1087,6 +1227,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                               </div>
                             )}
                             {activeTab === 'sent' && renderStatusBadge((email as SentEmail).delivery_status ?? null, true)}
+                            {activeTab === 'sent' && renderListEventIcons(email.id)}
                           </div>
                           <div className="mb-1">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -1213,47 +1354,39 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                   const openEvents = selectedEmailEvents.filter(e => e.event_type === 'Email Opened');
                   const effectiveStatus = getEffectiveStatus(selectedEmailEvents);
                   return (
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Delivery Events</span>
-                        {renderStatusBadge(effectiveStatus)}
-                      </div>
-                      <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                        {selectedEmailEvents.map((ev, idx) => {
-                          const isMPP = ev.event_type === 'Email Opened' && openEvents.length > 1 && ev.id === openEvents[0].id;
-                          const configs: Record<string, { label: string; Icon: React.ElementType; iconCls: string }> = {
-                            'Email Sent':              { label: 'Sent',       Icon: Send,          iconCls: 'text-gray-400' },
-                            'Email Delivery Delayed':  { label: 'Delayed',    Icon: Clock,         iconCls: 'text-yellow-500' },
-                            'Email Delivered':         { label: 'Delivered',  Icon: CheckCircle,   iconCls: 'text-blue-500' },
-                            'Email Opened':            { label: 'Opened',     Icon: Eye,           iconCls: 'text-amber-500' },
-                            'Email Clicked':           { label: 'Clicked',    Icon: MousePointer2, iconCls: 'text-green-500' },
-                            'Email Bounced':           { label: 'Bounced',    Icon: XCircle,       iconCls: 'text-red-500' },
-                            'Email Rejected':          { label: 'Rejected',   Icon: XCircle,       iconCls: 'text-red-500' },
-                            'Email Rendering Failed':  { label: 'Failed',     Icon: XCircle,       iconCls: 'text-red-500' },
-                            'Email Complaint Received':{ label: 'Complained', Icon: AlertTriangle, iconCls: 'text-orange-500' },
-                          };
-                          const cfg = configs[ev.event_type] ?? { label: ev.event_type, Icon: Zap, iconCls: 'text-gray-400' };
-                          const { Icon, iconCls } = cfg;
-                          const label = isMPP ? 'Opened *' : cfg.label;
-                          return (
-                            <div key={ev.id} className="flex items-center justify-between px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${iconCls}`} />
-                                <span className={`text-xs font-medium ${isMPP ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                                  {label}
-                                </span>
-                              </div>
-                              <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-4">
-                                {ev.event_time ? new Date(ev.event_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <div className="flex items-center gap-2 flex-wrap py-1">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Events:</span>
+                      {renderStatusBadge(effectiveStatus)}
+                      {selectedEmailEvents.map((ev) => {
+                        const isMPP = ev.event_type === 'Email Opened' && openEvents.length > 1 && ev.id === openEvents[0].id;
+                        const configs: Record<string, { label: string; Icon: React.ElementType; iconCls: string }> = {
+                          'Email Sent':              { label: 'Sent',       Icon: Send,          iconCls: 'text-gray-400' },
+                          'Email Delivery Delayed':  { label: 'Delayed',    Icon: Clock,         iconCls: 'text-yellow-500' },
+                          'Email Delivered':         { label: 'Delivered',  Icon: CheckCircle,   iconCls: 'text-blue-500' },
+                          'Email Opened':            { label: 'Opened',     Icon: Eye,           iconCls: 'text-amber-500' },
+                          'Email Clicked':           { label: 'Clicked',    Icon: MousePointer2, iconCls: 'text-green-500' },
+                          'Email Bounced':           { label: 'Bounced',    Icon: XCircle,       iconCls: 'text-red-500' },
+                          'Email Rejected':          { label: 'Rejected',   Icon: XCircle,       iconCls: 'text-red-500' },
+                          'Email Rendering Failed':  { label: 'Failed',     Icon: XCircle,       iconCls: 'text-red-500' },
+                          'Email Complaint Received':{ label: 'Complained', Icon: AlertTriangle, iconCls: 'text-orange-500' },
+                        };
+                        const cfg = configs[ev.event_type] ?? { label: ev.event_type, Icon: Zap, iconCls: 'text-gray-400' };
+                        const { Icon, iconCls } = cfg;
+                        const label = isMPP ? 'Opened *' : cfg.label;
+                        const timeStr = ev.event_time ? new Date(ev.event_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+                        return (
+                          <span
+                            key={ev.id}
+                            title={`${cfg.label}: ${timeStr}`}
+                            className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700/60 ${isMPP ? 'opacity-50' : ''}`}
+                          >
+                            <Icon className={`w-3 h-3 flex-shrink-0 ${iconCls}`} />
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{label}</span>
+                          </span>
+                        );
+                      })}
                       {openEvents.length > 1 && (
-                        <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700/50">
-                          <span className="text-xs text-gray-400 dark:text-gray-500">* Mail Privacy Protection pre-fetch (iPhone/Apple Mail)</span>
-                        </div>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">* MPP pre-fetch</span>
                       )}
                     </div>
                   );
