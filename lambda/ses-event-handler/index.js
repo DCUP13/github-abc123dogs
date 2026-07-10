@@ -29,7 +29,21 @@ exports.handler = async (event) => {
     const eventType = event['detail-type'] || 'UNKNOWN';
     const messageId = detail.mail?.messageId || null;
     const recipient = detail.mail?.destination?.[0] || null;
-    const eventTime = detail.mail?.timestamp || event.time || new Date().toISOString();
+    // SES puts the per-event timestamp in a different sub-object for each
+    // event type (delivery.timestamp, bounce.timestamp, etc.). Open events
+    // have no per-event timestamp, so fall back to the EventBridge emission
+    // time (event.time) and then the mail acceptance time. Using
+    // detail.mail.timestamp unconditionally makes every event for a given
+    // email share the same timestamp.
+    const eventTime =
+      detail.delivery?.timestamp ||
+      detail.bounce?.timestamp ||
+      detail.complaint?.timestamp ||
+      detail.click?.timestamp ||
+      detail.send?.timestamp ||
+      event.time ||
+      detail.mail?.timestamp ||
+      new Date().toISOString();
 
     console.log('Parsed event fields:', JSON.stringify({ eventType, messageId, recipient, eventTime }, null, 2));
 
