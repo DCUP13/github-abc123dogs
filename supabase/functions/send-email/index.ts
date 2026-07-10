@@ -366,10 +366,11 @@ async function sendIndividualSESEmail(
     await writer.write(encoder.encode(emailContent + '\r\n.\r\n'))
     const dataResponse = await readSMTPResponse(reader)
 
-    // SES responds with "250 Ok <messageId@email.amazonaws.com>"
-    // Extract the local part before @ — this matches detail.mail.messageId in EventBridge.
-    const idMatch = dataResponse.match(/<([^@>]+)/)
-    sesMessageId = idMatch ? idMatch[1] : null
+    // SES responds with "250 Ok <messageId@email.amazonaws.com>" or "250 Ok messageId"
+    // Extract the ID — this matches detail.mail.messageId in EventBridge.
+    const bracketMatch = dataResponse.match(/<([^@>]+)/)
+    const bareMatch = dataResponse.match(/250 Ok\s+(\S+)/i)
+    sesMessageId = bracketMatch ? bracketMatch[1] : (bareMatch ? bareMatch[1] : null)
     if (sesMessageId) console.log(`SES message ID: ${sesMessageId}`)
 
     await writer.write(encoder.encode(`QUIT\r\n`))
