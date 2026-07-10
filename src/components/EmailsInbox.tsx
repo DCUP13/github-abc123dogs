@@ -619,10 +619,12 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
         {icons.map((ic, i) => (
           <span
             key={i}
-            title={`${ic.label}: ${ic.time ? new Date(ic.time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}`}
-            className="inline-flex"
+            className="event-tooltip inline-flex"
           >
             <ic.Icon className={`w-3 h-3 ${ic.cls}`} />
+            <span className="event-tooltip__bubble">
+              {ic.label}: {ic.time ? new Date(ic.time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+            </span>
           </span>
         ))}
       </div>
@@ -1377,11 +1379,13 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                         return (
                           <span
                             key={ev.id}
-                            title={`${cfg.label}: ${timeStr}`}
-                            className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700/60 ${isMPP ? 'opacity-50' : ''}`}
+                            className={`event-tooltip inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700/60 ${isMPP ? 'opacity-50' : ''}`}
                           >
                             <Icon className={`w-3 h-3 flex-shrink-0 ${iconCls}`} />
                             <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{label}</span>
+                            <span className="event-tooltip__bubble">
+                              {cfg.label}: {timeStr}
+                            </span>
                           </span>
                         );
                       })}
