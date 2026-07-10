@@ -73,8 +73,9 @@ serve(async (req) => {
           .eq('id', email.id)
 
         // Build threading headers before sending
+        // lr- prefix identifies this as a loireply email for cross-app SES event routing
         const domain = email.from_email.split('@')[1] || 'mail'
-        const outgoingMessageId = `<${crypto.randomUUID()}@${domain}>`
+        const outgoingMessageId = `<lr-${crypto.randomUUID()}@${domain}>`
         let inReplyTo: string | null = null
         let emailReferences: string | null = null
 
