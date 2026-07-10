@@ -9,13 +9,13 @@ function getClient(event) {
   if (app === 'loiblast') {
     return createClient(
       process.env.LB_SUPABASE_URL,
-      process.env.LB_SUPABASE_KEY
+      process.env.LB_SUPABASE_SERVICE_ROLE_KEY || process.env.LB_SUPABASE_KEY
     );
   }
 
   return createClient(
     process.env.LR_SUPABASE_URL,
-    process.env.LR_SUPABASE_KEY
+    process.env.LR_SUPABASE_SERVICE_ROLE_KEY || process.env.LR_SUPABASE_KEY
   );
 }
 
