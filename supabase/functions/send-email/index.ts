@@ -262,20 +262,6 @@ function toPlainText(body: string): string {
     .trim()
 }
 
-// Converts plain text to minimal HTML that looks identical to plain text in
-// mail clients. SES requires an HTML part to inject the open tracking pixel.
-function toMinimalHtml(plainText: string): string {
-  const escaped = plainText
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-  const withBreaks = escaped
-    .replace(/\r\n/g, '\n')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-  return `<html><body><p>${withBreaks}</p></body></html>`
-}
-
 async function sendIndividualSESEmail(
   email: EmailData,
   sesSettings: any,
@@ -285,7 +271,7 @@ async function sendIndividualSESEmail(
 
   const encoder = new TextEncoder()
   const plainBody = toPlainText(email.body)
-  const htmlBody = toMinimalHtml(plainBody)
+  const htmlBody = email.body.trim().startsWith('<') ? email.body : `<html><body><p>${email.body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
   const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, '')}`
 
   const headers: string[] = [
