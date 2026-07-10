@@ -199,14 +199,21 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   useEffect(() => {
     clearRealtimeChannels();
 
-    // email_sent changes → refresh the sent list (updates delivery columns)
+    // email_sent changes → refresh sent list (updates delivery columns + adds new emails)
     const sentCh = supabase
       .channel('email_sent_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'email_sent' }, (payload) => {
-        // Optimistically patch the row in local state for instant feedback
+        const updated = payload.new as Partial<SentEmail>;
         setSentEmails(prev => {
-          const updated = payload.new as Partial<SentEmail>;
-          return prev.map(e => e.id === (updated as any).id ? { ...e, ...updated } as SentEmail : e);
+          const idx = prev.findIndex(e => e.id === (updated as any).id);
+          if (idx !== -1) {
+            // Update existing row
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...updated } as SentEmail;
+            return next;
+          }
+          // New email — append to the list so icons appear as events arrive
+          return [...prev, updated as SentEmail];
         });
       })
       .subscribe();
