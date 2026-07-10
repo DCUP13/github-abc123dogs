@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight, Eye, MousePointer2, CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
+import { Mail, MailOpen, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight, Eye, MousePointer2, CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { ReplyDialog } from './ReplyDialog';
@@ -619,7 +619,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   // occurred, with a tooltip showing the timestamp.
   const EVENT_ICON_CONFIG: Record<string, { Icon: React.ElementType; cls: string; label: string }> = {
     'Email Delivered': { Icon: CheckCircle,   cls: 'text-blue-500',   label: 'Delivered' },
-    'Email Opened':    { Icon: Eye,           cls: 'text-amber-500',  label: 'Opened' },
+    'Email Opened':    { Icon: MailOpen,      cls: 'text-amber-500',  label: 'Opened' },
     'Email Clicked':   { Icon: MousePointer2, cls: 'text-green-500',  label: 'Clicked' },
     'Email Bounced':   { Icon: XCircle,       cls: 'text-red-500',    label: 'Bounced' },
     'Email Rejected':          { Icon: XCircle,       cls: 'text-red-500',    label: 'Rejected' },
@@ -897,7 +897,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       'Email Sent':              { label: 'Sent',       cls: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',       Icon: Send },
       'Email Delivery Delayed':  { label: 'Delayed',    cls: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', Icon: Clock },
       'Email Delivered':         { label: 'Delivered',  cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',         Icon: CheckCircle },
-      'Email Opened':            { label: 'Opened',     cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',     Icon: Eye },
+      'Email Opened':            { label: 'Opened',     cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',     Icon: MailOpen },
       'Email Clicked':           { label: 'Clicked',    cls: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',     Icon: MousePointer2 },
       'Email Bounced':           { label: 'Bounced',    cls: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',             Icon: XCircle },
       'Email Rejected':          { label: 'Rejected',   cls: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',             Icon: XCircle },
@@ -1393,7 +1393,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                           'Email Sent':              { label: 'Sent',       Icon: Send,          iconCls: 'text-gray-400' },
                           'Email Delivery Delayed':  { label: 'Delayed',    Icon: Clock,         iconCls: 'text-yellow-500' },
                           'Email Delivered':         { label: 'Delivered',  Icon: CheckCircle,   iconCls: 'text-blue-500' },
-                          'Email Opened':            { label: 'Opened',     Icon: Eye,           iconCls: 'text-amber-500' },
+                          'Email Opened':            { label: 'Opened',     Icon: MailOpen,      iconCls: 'text-amber-500' },
                           'Email Clicked':           { label: 'Clicked',    Icon: MousePointer2, iconCls: 'text-green-500' },
                           'Email Bounced':           { label: 'Bounced',    Icon: XCircle,       iconCls: 'text-red-500' },
                           'Email Rejected':          { label: 'Rejected',   Icon: XCircle,       iconCls: 'text-red-500' },
