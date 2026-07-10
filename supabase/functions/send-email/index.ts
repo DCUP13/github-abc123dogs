@@ -271,7 +271,8 @@ async function sendIndividualSESEmail(
 
   const encoder = new TextEncoder()
   const plainBody = toPlainText(email.body)
-  const htmlBody = email.body.trim().startsWith('<') ? email.body : `<html><body><p>${email.body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
+  const rawHtml = email.body.trim().startsWith('<') ? email.body : `<html><body><p>${email.body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
+  const htmlBody = rawHtml.replace(/(?<![="'])https?:\/\/[^\s<>"']+/g, url => `<a href="${url}">${url}</a>`)
   const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, '')}`
 
   const headers: string[] = [
