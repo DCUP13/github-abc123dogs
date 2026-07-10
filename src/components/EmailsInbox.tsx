@@ -188,12 +188,30 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   // email_events (for the detailed events panel). On any change we refetch
   // the relevant data so the UI stays live.
   const channelsRef = useRef<ReturnType<typeof supabase.channel>[]>([]);
+  const sentEmailsRef = useRef<SentEmail[]>([]);
+
+  useEffect(() => { sentEmailsRef.current = sentEmails; }, [sentEmails]);
 
   const clearRealtimeChannels = useCallback(() => {
     for (const ch of channelsRef.current) {
       try { supabase.removeChannel(ch); } catch { /* already removed */ }
     }
     channelsRef.current = [];
+  }, []);
+
+  // Fetch events for a single email and merge into emailEventCounts
+  const fetchEventsForEmail = useCallback(async (emailSentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_events')
+        .select('id, event_id, event_type, event_time, recipient, email_sent_id')
+        .eq('email_sent_id', emailSentId)
+        .order('event_time', { ascending: true });
+      if (error) throw error;
+      setEmailEventCounts(prev => ({ ...prev, [emailSentId]: data || [] }));
+    } catch (e) {
+      console.error('Error fetching events for email:', e);
+    }
   }, []);
 
   useEffect(() => {
@@ -204,17 +222,20 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       .channel('email_sent_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'email_sent' }, (payload) => {
         const updated = payload.new as Partial<SentEmail>;
+        const isNew = !sentEmailsRef.current.some(e => e.id === (updated as any).id);
         setSentEmails(prev => {
           const idx = prev.findIndex(e => e.id === (updated as any).id);
           if (idx !== -1) {
-            // Update existing row
             const next = [...prev];
             next[idx] = { ...next[idx], ...updated } as SentEmail;
             return next;
           }
-          // New email — append to the list so icons appear as events arrive
           return [...prev, updated as SentEmail];
         });
+        // For new emails, fetch any events that may have already arrived
+        if (isNew && (updated as any).id) {
+          fetchEventsForEmail((updated as any).id);
+        }
       })
       .subscribe();
 
