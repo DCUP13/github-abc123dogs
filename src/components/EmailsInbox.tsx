@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Mail, Paperclip, Search, RefreshCw, Clock, User, ArrowLeft, Reply, Send, Inbox, Inbox as Outbox, Plus, MessageSquare, ToggleLeft, ToggleRight, Eye, MousePointer2, CheckCircle, AlertTriangle, XCircle, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { ReplyDialog } from './ReplyDialog';
@@ -106,6 +106,20 @@ interface SentEmail {
   last_reply_at?: string;
   reply_to_id?: string;
   thread_position?: number;
+  delivery_status?: string;
+  opened_at?: string;
+  delivered_at?: string;
+  clicked_at?: string;
+  bounced_at?: string;
+  failed_at?: string;
+}
+
+interface EmailEvent {
+  id: string;
+  event_id: string;
+  event_type: string;
+  event_time: string;
+  recipient?: string;
 }
 
 interface DraftEmail {
@@ -163,6 +177,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
   const [inboxMode, setInboxMode] = useState<'master' | 'regular'>('master');
   const [isTogglingMode, setIsTogglingMode] = useState(false);
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
+  const [selectedEmailEvents, setSelectedEmailEvents] = useState<EmailEvent[]>([]);
 
   const isManager = userRole === 'owner' || userRole === 'manager';
 
@@ -198,6 +213,14 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
       buildInboxThreadMessages(selectedEmail as Email);
     } else {
       setThreadMessages([]);
+    }
+  }, [selectedEmail, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'sent' && selectedEmail) {
+      fetchEmailEvents(selectedEmail.id);
+    } else {
+      setSelectedEmailEvents([]);
     }
   }, [selectedEmail, activeTab]);
 
@@ -418,7 +441,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
     try {
       const { data, error } = await supabase
         .from('email_sent')
-        .select('id, to_email, from_email, subject, body, sent_at, created_at, reply_count, last_reply_at, reply_to_id')
+        .select('id, to_email, from_email, subject, body, sent_at, created_at, reply_count, last_reply_at, reply_to_id, delivery_status, opened_at, delivered_at, clicked_at, bounced_at, failed_at')
         .order('sent_at', { ascending: false });
       if (error) throw error;
 
@@ -448,6 +471,21 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
     } catch (error) {
       console.error('Error fetching sent emails:', error);
       setSentEmails([]);
+    }
+  };
+
+  const fetchEmailEvents = async (emailSentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('email_events')
+        .select('id, event_id, event_type, event_time, recipient')
+        .eq('email_sent_id', emailSentId)
+        .order('event_time', { ascending: true });
+      if (error) throw error;
+      setSelectedEmailEvents(data || []);
+    } catch (error) {
+      console.error('Error fetching email events:', error);
+      setSelectedEmailEvents([]);
     }
   };
 
@@ -661,6 +699,50 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
 
   const hasAttachments = (attachments: any) => {
     return attachments && Array.isArray(attachments) && attachments.length > 0;
+  };
+
+  const STATUS_PRIORITY: Record<string, number> = {
+    'Email Complaint Received': 8,
+    'Email Bounced': 7,
+    'Email Rendering Failed': 6,
+    'Email Rejected': 6,
+    'Email Clicked': 5,
+    'Email Opened': 4,
+    'Email Delivered': 3,
+    'Email Sent': 2,
+    'Email Delivery Delayed': 1,
+  };
+
+  const getEffectiveStatus = (events: EmailEvent[]): string | null => {
+    if (events.length === 0) return null;
+    return events.reduce((best, ev) => {
+      return (STATUS_PRIORITY[ev.event_type] ?? 0) > (STATUS_PRIORITY[best] ?? 0) ? ev.event_type : best;
+    }, events[0].event_type);
+  };
+
+  const renderStatusBadge = (status: string | null, small = false) => {
+    if (!status) return null;
+    const sz = small ? 'text-xs px-1.5 py-0.5' : 'text-xs px-2 py-1';
+    const configs: Record<string, { label: string; cls: string; Icon: React.ElementType }> = {
+      'Email Sent':              { label: 'Sent',       cls: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',       Icon: Send },
+      'Email Delivery Delayed':  { label: 'Delayed',    cls: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', Icon: Clock },
+      'Email Delivered':         { label: 'Delivered',  cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',         Icon: CheckCircle },
+      'Email Opened':            { label: 'Opened',     cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',     Icon: Eye },
+      'Email Clicked':           { label: 'Clicked',    cls: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',     Icon: MousePointer2 },
+      'Email Bounced':           { label: 'Bounced',    cls: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',             Icon: XCircle },
+      'Email Rejected':          { label: 'Rejected',   cls: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',             Icon: XCircle },
+      'Email Rendering Failed':  { label: 'Failed',     cls: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',             Icon: XCircle },
+      'Email Complaint Received':{ label: 'Complained', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300', Icon: AlertTriangle },
+    };
+    const cfg = configs[status];
+    if (!cfg) return null;
+    const { label, cls, Icon } = cfg;
+    return (
+      <div className={`flex items-center gap-1 rounded-full font-medium ${sz} ${cls}`}>
+        <Icon className="w-3 h-3" />
+        <span>{label}</span>
+      </div>
+    );
   };
 
   const getAttachmentIcon = (contentType: string) => {
@@ -1004,6 +1086,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                                 <span className="text-xs font-medium">{(email as SentEmail).reply_count}</span>
                               </div>
                             )}
+                            {activeTab === 'sent' && renderStatusBadge((email as SentEmail).delivery_status ?? null, true)}
                           </div>
                           <div className="mb-1">
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -1125,6 +1208,56 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     </div>
                   </div>
                 )}
+
+                {activeTab === 'sent' && selectedEmailEvents.length > 0 && (() => {
+                  const openEvents = selectedEmailEvents.filter(e => e.event_type === 'Email Opened');
+                  const effectiveStatus = getEffectiveStatus(selectedEmailEvents);
+                  return (
+                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Delivery Events</span>
+                        {renderStatusBadge(effectiveStatus)}
+                      </div>
+                      <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                        {selectedEmailEvents.map((ev, idx) => {
+                          const isMPP = ev.event_type === 'Email Opened' && openEvents.length > 1 && ev.id === openEvents[0].id;
+                          const configs: Record<string, { label: string; Icon: React.ElementType; iconCls: string }> = {
+                            'Email Sent':              { label: 'Sent',       Icon: Send,          iconCls: 'text-gray-400' },
+                            'Email Delivery Delayed':  { label: 'Delayed',    Icon: Clock,         iconCls: 'text-yellow-500' },
+                            'Email Delivered':         { label: 'Delivered',  Icon: CheckCircle,   iconCls: 'text-blue-500' },
+                            'Email Opened':            { label: 'Opened',     Icon: Eye,           iconCls: 'text-amber-500' },
+                            'Email Clicked':           { label: 'Clicked',    Icon: MousePointer2, iconCls: 'text-green-500' },
+                            'Email Bounced':           { label: 'Bounced',    Icon: XCircle,       iconCls: 'text-red-500' },
+                            'Email Rejected':          { label: 'Rejected',   Icon: XCircle,       iconCls: 'text-red-500' },
+                            'Email Rendering Failed':  { label: 'Failed',     Icon: XCircle,       iconCls: 'text-red-500' },
+                            'Email Complaint Received':{ label: 'Complained', Icon: AlertTriangle, iconCls: 'text-orange-500' },
+                          };
+                          const cfg = configs[ev.event_type] ?? { label: ev.event_type, Icon: Zap, iconCls: 'text-gray-400' };
+                          const { Icon, iconCls } = cfg;
+                          const label = isMPP ? 'Opened *' : cfg.label;
+                          return (
+                            <div key={ev.id} className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${iconCls}`} />
+                                <span className={`text-xs font-medium ${isMPP ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                                  {label}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-4">
+                                {ev.event_time ? new Date(ev.event_time).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {openEvents.length > 1 && (
+                        <div className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700/50">
+                          <span className="text-xs text-gray-400 dark:text-gray-500">* Mail Privacy Protection pre-fetch (iPhone/Apple Mail)</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {activeTab === 'inbox' && hasAttachments((selectedEmail as Email).attachments) && (
                   <div className="flex items-center gap-2 text-sm">
