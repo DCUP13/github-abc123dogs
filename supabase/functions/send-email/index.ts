@@ -262,6 +262,20 @@ function toPlainText(body: string): string {
     .trim()
 }
 
+// Converts plain text to minimal HTML that looks identical to plain text in
+// mail clients. SES requires an HTML part to inject the open tracking pixel.
+function toMinimalHtml(plainText: string): string {
+  const escaped = plainText
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  const withBreaks = escaped
+    .replace(/\r\n/g, '\n')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+  return `<html><body><p>${withBreaks}</p></body></html>`
+}
+
 async function sendIndividualSESEmail(
   email: EmailData,
   sesSettings: any,
@@ -271,6 +285,8 @@ async function sendIndividualSESEmail(
 
   const encoder = new TextEncoder()
   const plainBody = toPlainText(email.body)
+  const htmlBody = toMinimalHtml(plainBody)
+  const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, '')}`
 
   const headers: string[] = [
     `From: ${email.from_email}`,
@@ -278,9 +294,9 @@ async function sendIndividualSESEmail(
     `Subject: ${email.subject}`,
     `Message-ID: ${email.outgoing_message_id}`,
     `X-SES-MESSAGE-TAGS: app=loireply`,
+    `X-SES-CONFIGURATION-SET: my-first-configuration-set`,
     `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ]
 
   if (email.in_reply_to) {
@@ -291,7 +307,19 @@ async function sendIndividualSESEmail(
   const emailContent = [
     ...headers,
     ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
     plainBody,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    htmlBody,
+    ``,
+    `--${boundary}--`,
   ].join('\r\n')
 
   const port = parseInt(sesSettings.smtp_port)
