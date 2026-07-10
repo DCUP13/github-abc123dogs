@@ -264,6 +264,8 @@ async function sendIndividualSESEmail(
 
   const encoder = new TextEncoder()
   const plainBody = toPlainText(email.body)
+  const htmlBody = email.body.trim().startsWith('<') ? email.body : `<html><body><p>${email.body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p></body></html>`
+  const boundary = `----=_Part_${crypto.randomUUID().replace(/-/g, '')}`
 
   const headers: string[] = [
     `From: ${email.from_email}`,
@@ -271,9 +273,9 @@ async function sendIndividualSESEmail(
     `Subject: ${email.subject}`,
     `Message-ID: ${email.outgoing_message_id}`,
     `X-SES-MESSAGE-TAGS: app=loiblast`,
+    `X-SES-CONFIGURATION-SET: my-first-configuration-set`,
     `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    `Content-Transfer-Encoding: 7bit`,
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ]
 
   if (email.in_reply_to) {
@@ -284,7 +286,19 @@ async function sendIndividualSESEmail(
   const emailContent = [
     ...headers,
     ``,
+    `--${boundary}`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
     plainBody,
+    ``,
+    `--${boundary}`,
+    `Content-Type: text/html; charset=UTF-8`,
+    `Content-Transfer-Encoding: 7bit`,
+    ``,
+    htmlBody,
+    ``,
+    `--${boundary}--`,
   ].join('\r\n')
 
   const port = parseInt(sesSettings.smtp_port)
