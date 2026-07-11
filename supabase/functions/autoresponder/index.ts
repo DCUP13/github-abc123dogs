@@ -25,6 +25,19 @@ async function callAI(prompt: string): Promise<string> {
   return response.choices[0]?.message?.content || '';
 }
 
+async function callAIWithSystem(systemPrompt: string, userMessage: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    max_tokens: 500,
+    temperature: 0.7
+  });
+  return response.choices[0]?.message?.content || '';
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -108,7 +121,11 @@ Deno.serve(async (req: Request) => {
             prompt_type,
             step2_content,
             property_info,
-            company_info
+            company_info,
+            response_mode,
+            template_subject,
+            template_body,
+            template_ai_instructions
           )
         `)
         .eq('user_id', userId)
@@ -151,10 +168,49 @@ Deno.serve(async (req: Request) => {
 
     const replySubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
 
-    // Process each prompt — one-step or two-step — and collect final reply bodies
+    // Process each prompt and collect final reply bodies
     const replyParts: string[] = [];
+    let customSubject: string | null = null;
 
     for (const prompt of domainPrompts as any[]) {
+      const responseMode = prompt.response_mode || 'ai';
+
+      // ── Email Template: Basic ──────────────────────────────────────────────
+      if (responseMode === 'template') {
+        console.log(`Using basic template: ${prompt.title}`);
+        const templateBody = prompt.template_body || '';
+        if (templateBody) {
+          replyParts.push(templateBody);
+          if (prompt.template_subject && !customSubject) {
+            customSubject = prompt.template_subject;
+          }
+        }
+        continue;
+      }
+
+      // ── Email Template: Intelligent ────────────────────────────────────────
+      if (responseMode === 'intelligent_template') {
+        console.log(`Using intelligent template: ${prompt.title}`);
+        const templateBody = prompt.template_body || '';
+        const aiInstructions = prompt.template_ai_instructions || '';
+
+        if (templateBody) {
+          const systemPrompt = aiInstructions
+            ? `${aiInstructions}\n\nBase template to personalize:\n${templateBody}`
+            : `Personalize the following template for the incoming email:\n${templateBody}`;
+
+          const result = await callAIWithSystem(systemPrompt, emailContent);
+          if (result) {
+            replyParts.push(result);
+          }
+          if (prompt.template_subject && !customSubject) {
+            customSubject = prompt.template_subject;
+          }
+        }
+        continue;
+      }
+
+      // ── AI Mode: One-step or Two-step ──────────────────────────────────────
       const rawPropertyInfo = prompt.property_info;
       let propertyInfoText = '';
       if (rawPropertyInfo) {
@@ -179,14 +235,12 @@ Deno.serve(async (req: Request) => {
       if (prompt.prompt_type === 'two_step') {
         console.log(`Running two-step prompt: ${prompt.title}`);
 
-        // Step 1
         const step1Result = await callAI(step1Prompt);
         if (!step1Result) {
           console.error('Step 1 produced no output for prompt:', prompt.id);
           continue;
         }
 
-        // Persist step 1 result
         const { error: step1SaveError } = await supabase
           .from('prompt_step_results')
           .insert({
@@ -200,7 +254,6 @@ Deno.serve(async (req: Request) => {
           console.error('Failed to save step 1 result:', step1SaveError);
         }
 
-        // Step 2
         const step2Template = prompt.step2_content || '';
         const step2Prompt = step2Template
           .replace(/\{\{email_content\}\}/g, emailContent)
@@ -214,7 +267,6 @@ Deno.serve(async (req: Request) => {
           replyParts.push(step2Result);
         }
       } else {
-        // One-step
         console.log(`Running one-step prompt: ${prompt.title}`);
         const result = await callAI(step1Prompt);
         if (result) {
@@ -224,6 +276,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const replyBody = replyParts.join('\n\n');
+    const finalSubject = customSubject || replySubject;
 
     if (!replyBody) {
       throw new Error('No reply content generated');
@@ -236,7 +289,7 @@ Deno.serve(async (req: Request) => {
           user_id: userId,
           to_email: originalSender,
           from_email: receivedByEmail,
-          subject: replySubject,
+          subject: finalSubject,
           body: replyBody,
           reply_to_id: emailId,
           attachments: [],
@@ -262,7 +315,7 @@ Deno.serve(async (req: Request) => {
           user_id: userId,
           sender: receivedByEmail,
           receiver: [originalSender],
-          subject: replySubject,
+          subject: finalSubject,
           body: replyBody,
           attachments: [],
           created_at: new Date().toISOString(),
