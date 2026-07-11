@@ -61,7 +61,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl md:text-2xl text-om-mahogany max-w-3xl mx-auto" style={{ fontFamily: "'EB Garamond', serif" }}>
-            Choose the plan that fits your needs. Whether you're an individual professional or managing a team, we have the right solution for you.
+            Please contact us regarding investment and availability. We'll work with you to find the right fit.
           </p>
         </div>
       </section>
@@ -84,15 +84,9 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                   Perfect for solo professionals and consultants who want to automate their email workflow.
                 </p>
                 <div className="mb-6 p-4 bg-om-parchment border border-om-tan rounded-lg">
-                  <p className="text-sm md:text-base text-om-brown uppercase tracking-widest mb-3">Starting at</p>
-                  <div className="mb-2">
-                    <span className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep">$5,000</span>
-                    <span className="text-base md:text-lg text-om-brown ml-2">initial investment</span>
-                  </div>
-                  <div>
-                    <span className="text-2xl md:text-3xl font-display font-semibold text-om-forest-deep">$1,000<span className="text-base md:text-lg">/mo</span></span>
-                    <span className="text-base md:text-lg text-om-brown ml-2">monthly service fee</span>
-                  </div>
+                  <p className="text-base md:text-lg text-om-brown" style={{ fontFamily: "'EB Garamond', serif" }}>
+                    Contact us to discuss investment and availability for your situation.
+                  </p>
                 </div>
                 <button
                   onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Individual Plan Inquiry'}
@@ -116,6 +110,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     ['Reply Tracking', 'Monitor email responses and engagement'],
                     ['Analytics Dashboard', 'Track email performance and metrics'],
                     ['Group Support Calls', 'Join weekly group training and Q&A sessions'],
+                    ['1 on 1 Support', 'Direct one-on-one sessions with a dedicated team member'],
                     ['Email Support', 'Get help via email within 24 hours'],
                     ['Regular Updates', 'Access to all new features and improvements'],
                   ].map(([title, sub]) => (
