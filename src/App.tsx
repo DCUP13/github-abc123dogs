@@ -15,6 +15,7 @@ import { GoogleCallback } from './components/GoogleCallback';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import { CookiePolicy } from './components/CookiePolicy';
+import ADAPage from './components/ADAPage';
 import { LandingPage } from './components/LandingPage';
 import { FeaturesPage } from './components/FeaturesPage';
 import { PricingPage } from './components/PricingPage';
@@ -33,7 +34,7 @@ import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -687,6 +688,8 @@ export default function App() {
               <TermsOfService onBack={handleBackFromPolicy} />
             ) : view === 'cookie-policy' ? (
               <CookiePolicy onBackClick={handleBackFromPolicy} />
+            ) : view === 'ada' ? (
+              <ADAPage onBack={handleBackFromPolicy} />
             ) : view === 'google-callback' ? (
               <GoogleCallback />
             ) : view === 'features' ? (
@@ -726,6 +729,7 @@ export default function App() {
                 onPrivacyClick={() => updateView('privacy-policy')}
                 onTermsClick={() => updateView('terms-of-service')}
                 onCookieClick={() => updateView('cookie-policy')}
+                onADAClick={() => updateView('ada')}
               />
             ) : (
               <div className="min-h-screen bg-om-cream flex items-center justify-center p-4">

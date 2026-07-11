@@ -7,9 +7,10 @@ interface LandingPageProps {
   onPrivacyClick: () => void;
   onTermsClick: () => void;
   onCookieClick: () => void;
+  onADAClick: () => void;
 }
 
-export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick, onCookieClick }: LandingPageProps) {
+export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick, onCookieClick, onADAClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const onFeaturesClick = () => { window.dispatchEvent(new CustomEvent('navigate-to-features')); setMobileMenuOpen(false); };
   const onPricingClick  = () => { window.dispatchEvent(new CustomEvent('navigate-to-pricing'));  setMobileMenuOpen(false); };
@@ -279,6 +280,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
                   { label: 'Privacy Policy',    onClick: onPrivacyClick },
                   { label: 'Terms of Service',  onClick: onTermsClick },
                   { label: 'Cookie Policy',     onClick: onCookieClick },
+                  { label: 'Accessibility (ADA)', onClick: onADAClick },
                 ],
               },
             ].map(({ heading, links }) => (
