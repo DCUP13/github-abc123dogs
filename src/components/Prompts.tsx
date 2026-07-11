@@ -355,6 +355,9 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   };
 
   const upsertSharing = async (promptId: string, scope: string, orgIds: string[], userId: string) => {
+    const effectiveScope = isPlatformOwner ? scope : 'team';
+    const effectiveOrgIds = effectiveScope === 'organization' ? orgIds : [];
+
     // Delete existing first to handle scope changes
     const existing = sharedRecords[promptId];
     if (existing) {
@@ -363,15 +366,15 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
     const { data: sp, error } = await supabase
       .from('shared_prompts')
-      .insert({ prompt_id: promptId, shared_by: userId, scope })
+      .insert({ prompt_id: promptId, shared_by: userId, scope: effectiveScope })
       .select()
       .single();
 
     if (error) { console.error('Error sharing prompt:', error); toast.error('Failed to share prompt: ' + error.message); return; }
 
-    if (scope === 'organization' && orgIds.length > 0) {
+    if (effectiveScope === 'organization' && effectiveOrgIds.length > 0) {
       await supabase.from('shared_prompt_orgs').insert(
-        orgIds.map(organization_id => ({ shared_prompt_id: sp.id, organization_id }))
+        effectiveOrgIds.map(organization_id => ({ shared_prompt_id: sp.id, organization_id }))
       );
     }
   };
@@ -1342,82 +1345,88 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
                     {formData.share_enabled && (
                       <div className="px-4 pb-4 pt-3 space-y-3">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Choose who can see and use this prompt.</p>
-                        <div className="space-y-2">
-                          <label className="flex items-start gap-3 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="share_scope"
-                              value="team"
-                              checked={formData.share_scope === 'team'}
-                              onChange={() => setFormData(prev => ({ ...prev, share_scope: 'team' }))}
-                              className="mt-0.5"
-                            />
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">My Team</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Everyone in your organization(s) can see this.</p>
-                            </div>
-                          </label>
-                          <label className="flex items-start gap-3 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="share_scope"
-                              value="organization"
-                              checked={formData.share_scope === 'organization'}
-                              onChange={() => setFormData(prev => ({ ...prev, share_scope: 'organization' }))}
-                              className="mt-0.5"
-                            />
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Specific Organizations</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Choose which organizations to share with.</p>
-                            </div>
-                          </label>
-                          {isPlatformOwner && (
-                            <label className="flex items-start gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="share_scope"
-                                value="global"
-                                checked={formData.share_scope === 'global'}
-                                onChange={() => setFormData(prev => ({ ...prev, share_scope: 'global' }))}
-                                className="mt-0.5"
-                              />
-                              <div>
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                                  All Users <Shield className="w-3 h-3 text-amber-500" />
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Visible to all users on the platform.</p>
-                              </div>
-                            </label>
-                          )}
-                        </div>
-
-                        {/* Org selector */}
-                        {formData.share_scope === 'organization' && userOrgs.length > 0 && (
-                          <div className="space-y-1 pt-1">
-                            <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Select organizations:</p>
-                            {userOrgs.map(org => (
-                              <label key={org.id} className="flex items-center gap-2 cursor-pointer">
+                        {isPlatformOwner ? (
+                          <>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Choose who can see and use this prompt.</p>
+                            <div className="space-y-2">
+                              <label className="flex items-start gap-3 cursor-pointer">
                                 <input
-                                  type="checkbox"
-                                  checked={formData.share_org_ids.includes(org.id)}
-                                  onChange={(e) => {
-                                    setFormData(prev => ({
-                                      ...prev,
-                                      share_org_ids: e.target.checked
-                                        ? [...prev.share_org_ids, org.id]
-                                        : prev.share_org_ids.filter(id => id !== org.id)
-                                    }));
-                                  }}
-                                  className="rounded"
+                                  type="radio"
+                                  name="share_scope"
+                                  value="team"
+                                  checked={formData.share_scope === 'team'}
+                                  onChange={() => setFormData(prev => ({ ...prev, share_scope: 'team' }))}
+                                  className="mt-0.5"
                                 />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">{org.name}</span>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">My Team</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Everyone in your organization(s) can see this.</p>
+                                </div>
                               </label>
-                            ))}
-                          </div>
-                        )}
-                        {formData.share_scope === 'organization' && userOrgs.length === 0 && (
-                          <p className="text-xs text-yellow-600 dark:text-yellow-400">You are not a member of any organizations yet.</p>
+                              <label className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="share_scope"
+                                  value="organization"
+                                  checked={formData.share_scope === 'organization'}
+                                  onChange={() => setFormData(prev => ({ ...prev, share_scope: 'organization' }))}
+                                  className="mt-0.5"
+                                />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Specific Organizations</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Choose which organizations to share with.</p>
+                                </div>
+                              </label>
+                              <label className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="share_scope"
+                                  value="global"
+                                  checked={formData.share_scope === 'global'}
+                                  onChange={() => setFormData(prev => ({ ...prev, share_scope: 'global' }))}
+                                  className="mt-0.5"
+                                />
+                                <div>
+                                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                                    All Users <Shield className="w-3 h-3 text-amber-500" />
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Visible to all users on the platform.</p>
+                                </div>
+                              </label>
+                            </div>
+
+                            {/* Org selector */}
+                            {formData.share_scope === 'organization' && userOrgs.length > 0 && (
+                              <div className="space-y-1 pt-1">
+                                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Select organizations:</p>
+                                {userOrgs.map(org => (
+                                  <label key={org.id} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.share_org_ids.includes(org.id)}
+                                      onChange={(e) => {
+                                        setFormData(prev => ({
+                                          ...prev,
+                                          share_org_ids: e.target.checked
+                                            ? [...prev.share_org_ids, org.id]
+                                            : prev.share_org_ids.filter(id => id !== org.id)
+                                        }));
+                                      }}
+                                      className="rounded"
+                                    />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{org.name}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                            {formData.share_scope === 'organization' && userOrgs.length === 0 && (
+                              <p className="text-xs text-yellow-600 dark:text-yellow-400">You are not a member of any organizations yet.</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            This prompt will be shared with your team members and lead. Your account owner will also have access.
+                          </p>
                         )}
                       </div>
                     )}
