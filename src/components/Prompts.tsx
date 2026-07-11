@@ -96,6 +96,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [isPlatformOwner, setIsPlatformOwner] = useState(false);
   const [userOrgs, setUserOrgs] = useState<Org[]>([]);
   const [sharedRecords, setSharedRecords] = useState<Record<string, { id: string; scope: string; org_ids: string[] }>>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Shared IDs set — prompts that the current user has already shared (to show badge)
   const sharedPromptIds = new Set(Object.keys(sharedRecords));
@@ -143,6 +144,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     ]);
 
     setIsPlatformOwner(profileResult.data?.is_platform_owner ?? false);
+    setCurrentUserId(user.id);
 
     const orgs: Org[] = (orgsResult.data || [])
       .map((r: any) => r.organizations)
@@ -235,17 +237,27 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fetch shared_prompts without the profiles join (no FK to profiles table)
       const { data, error } = await supabase
         .from('shared_prompts')
         .select(`
           id, prompt_id, shared_by, scope, created_at,
-          profiles!shared_prompts_shared_by_fkey(email),
           shared_prompt_orgs(organization_id, organizations(name)),
           prompts(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) { console.error('Error fetching shared prompts:', error); return; }
+
+      // Resolve sharer emails separately via profiles
+      const sharerIds = [...new Set((data || []).map((sp: any) => sp.shared_by))];
+      const { data: profilesData } = sharerIds.length > 0
+        ? await supabase.from('profiles').select('id, email').in('id', sharerIds)
+        : { data: [] };
+      const profileMap: Record<string, string> = {};
+      for (const p of (profilesData || []) as any[]) {
+        profileMap[p.id] = p.email;
+      }
 
       const { data: domainsData } = await supabase.from('prompt_domains').select('prompt_id, domain');
       const domainsByPrompt = (domainsData || []).reduce((acc, item) => {
@@ -260,7 +272,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         shared_by: sp.shared_by,
         scope: sp.scope,
         created_at: sp.created_at,
-        sharer_email: sp.profiles?.email || 'Unknown',
+        sharer_email: profileMap[sp.shared_by] || 'Unknown',
         org_names: (sp.shared_prompt_orgs || []).map((o: any) => o.organizations?.name).filter(Boolean),
         prompt: {
           ...sp.prompts,
@@ -355,7 +367,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       .select()
       .single();
 
-    if (error) { console.error('Error sharing prompt:', error); return; }
+    if (error) { console.error('Error sharing prompt:', error); toast.error('Failed to share prompt: ' + error.message); return; }
 
     if (scope === 'organization' && orgIds.length > 0) {
       await supabase.from('shared_prompt_orgs').insert(
@@ -571,10 +583,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
   // ─── Shared Prompts View ───────────────────────────────────────────────────
 
-  const currentUserId = prompts.length > 0 ? undefined : undefined; // resolved via sharedBy comparison below
-
-  const myShares = sharedPrompts.filter(sp => sharedPromptIds.has(sp.prompt_id));
-  const sharedWithMe = sharedPrompts.filter(sp => !sharedPromptIds.has(sp.prompt_id));
+  const myShares = sharedPrompts.filter(sp => sp.shared_by === currentUserId);
+  const sharedWithMe = sharedPrompts.filter(sp => sp.shared_by !== currentUserId);
   const globalShares = isPlatformOwner ? sharedPrompts.filter(sp => sp.scope === 'global') : [];
 
   const scopeLabel = (sp: SharedPrompt) => {
