@@ -464,6 +464,11 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      if (!sp.prompt?.title) {
+        toast.error('Prompt data unavailable — please refresh and try again.');
+        return;
+      }
+
       const { data: newPrompt, error } = await supabase.from('prompts').insert({
         user_id: user.id,
         title: sp.prompt.title,
