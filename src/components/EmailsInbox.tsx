@@ -1180,7 +1180,7 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
               </div>
             </div>
 
-            <div className="app-card rounded-xl shadow-sm overflow-hidden">
+            <div className="app-card rounded-xl shadow-sm">
               {filteredEmails.length === 0 ? (
                 <div className="text-center py-12">
                   <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
