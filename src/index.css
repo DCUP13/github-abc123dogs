@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Skip navigation link ────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.5rem;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  z-index: 99999;
+  outline: 3px solid #facc15;
+  outline-offset: 2px;
+  border-radius: 0 0 8px 0;
+}
+
+/* ── Global focus indicator ─────────────────────────────────────────── */
+/* Provides a visible focus ring on all interactive elements when       */
+/* navigating by keyboard. Tailwind focus:ring classes are opt-in and   */
+/* many buttons in this codebase don't have them.                       */
+:focus-visible {
+  outline: 3px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Override for the rich text editor which has its own focus indicator  */
+.editor-content:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
+}
+
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(-8px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)  scale(1); }
@@ -109,10 +151,6 @@
   overflow-y: auto;
   word-wrap: break-word;
   position: relative;
-}
-
-.editor-content:focus {
-  outline: none;
 }
 
 /* File Preview Styles */

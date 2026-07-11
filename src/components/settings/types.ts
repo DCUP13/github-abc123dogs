@@ -1,4 +1,4 @@
-import { DivideIcon as LucideIcon } from 'lucide-react';
+import { Divide as LucideIcon } from 'lucide-react';
 
 export interface EmailSettings {
   smtpUsername: string;
@@ -36,6 +36,7 @@ export interface GeneralSettings {
 export interface ToggleProps {
   checked: boolean;
   onChange: () => void;
+  label?: string;
 }
 
 export interface SettingRowProps {

@@ -239,12 +239,13 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
                     <button
                       className="md:hidden ml-auto p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       onClick={() => toggleExpanded(index)}
-                      aria-label={open ? 'Collapse' : 'Expand'}
+                      aria-label={open ? `Collapse ${card.title}` : `Expand ${card.title}`}
+                      aria-expanded={open}
                     >
                       {expandedCards.has(index) ? (
-                        <ChevronUp className="w-4 h-4" />
+                        <ChevronUp className="w-4 h-4" aria-hidden="true" />
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-4 h-4" aria-hidden="true" />
                       )}
                     </button>
                   )}

@@ -18,6 +18,7 @@ interface SidebarProps {
   isSupportAdmin?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
+  currentView?: string;
 }
 
 function useTeamUnread() {
@@ -74,6 +75,7 @@ export function Sidebar({
   isSupportAdmin = false,
   isOpen = false,
   onClose,
+  currentView = '',
 }: SidebarProps) {
   const { darkMode } = useContext(ThemeContext);
   const teamUnread = useTeamUnread();
@@ -88,7 +90,7 @@ export function Sidebar({
   };
 
   // Full nav button — shows icon + label. Used at lg+
-  const navBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number) => (
+  const navBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number, isActive?: boolean) => (
     <button
       key={label}
       onClick={nav(onClick)}
@@ -96,8 +98,9 @@ export function Sidebar({
       onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
       title={label}
+      aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="w-4 h-4 flex-shrink-0" />
+      <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
       <span className="flex-1 text-left truncate">{label}</span>
       {!!badge && badge > 0 && (
         <span className="flex-shrink-0 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center px-1 leading-none">
@@ -108,7 +111,7 @@ export function Sidebar({
   );
 
   // Icon-only nav button — used at sm–lg
-  const iconBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number) => (
+  const iconBtn = (onClick: () => void, Icon: React.ElementType, label: string, badge?: number, isActive?: boolean) => (
     <button
       key={label}
       onClick={nav(onClick)}
@@ -117,8 +120,9 @@ export function Sidebar({
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
       title={label}
       aria-label={label}
+      aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="w-5 h-5 flex-shrink-0" />
+      <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
       {!!badge && badge > 0 && (
         <span className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
           {badge > 99 ? '99+' : badge}
@@ -126,6 +130,21 @@ export function Sidebar({
       )}
     </button>
   );
+
+  const VIEW_MAP: Record<string, string> = {
+    dashboard: 'Home',
+    emails: 'Emails',
+    addresses: 'Addresses',
+    prompts: 'Prompts',
+    crm: 'CRM',
+    calendar: 'Calendar',
+    integrations: 'Integrations',
+    'team-view': 'Team',
+    'team-management': 'Team',
+    settings: 'Settings',
+    support: isSupportAdmin ? 'Support Admin' : 'Support',
+  };
+  const activeLabel = VIEW_MAP[currentView] ?? '';
 
   const navItems = [
     { onClick: onHomeClick,         Icon: Home,          label: 'Home' },
@@ -171,10 +190,10 @@ export function Sidebar({
           {navItems.map(({ onClick, Icon, label, badge }) => (
             <React.Fragment key={label}>
               <span className="hidden lg:block">
-                {navBtn(onClick as () => void, Icon, label, (badge as number | undefined))}
+                {navBtn(onClick as () => void, Icon, label, (badge as number | undefined), label === activeLabel)}
               </span>
               <span className="lg:hidden">
-                {iconBtn(onClick as () => void, Icon, label, (badge as number | undefined))}
+                {iconBtn(onClick as () => void, Icon, label, (badge as number | undefined), label === activeLabel)}
               </span>
             </React.Fragment>
           ))}
@@ -183,10 +202,10 @@ export function Sidebar({
         {/* Footer */}
         <div className="px-1 lg:px-3 py-4 border-t space-y-1" style={{ borderColor }}>
           <span className="hidden lg:block">
-            {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
+            {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support', undefined, activeLabel === (isSupportAdmin ? 'Support Admin' : 'Support'))}
           </span>
           <span className="lg:hidden">
-            {iconBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
+            {iconBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support', undefined, activeLabel === (isSupportAdmin ? 'Support Admin' : 'Support'))}
           </span>
 
           <button
@@ -227,12 +246,12 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           {navItems.map(({ onClick, Icon, label, badge }) =>
-            navBtn(onClick as () => void, Icon, label, (badge as number | undefined))
+            navBtn(onClick as () => void, Icon, label, (badge as number | undefined), label === activeLabel)
           )}
         </nav>
 
         <div className="px-3 py-4 border-t space-y-1" style={{ borderColor }}>
-          {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support')}
+          {navBtn(onSupportClick, HelpCircle, isSupportAdmin ? 'Support Admin' : 'Support', undefined, activeLabel === (isSupportAdmin ? 'Support Admin' : 'Support'))}
           <button
             onClick={nav(onSignOut)}
             className="w-full flex items-center gap-3 px-4 py-2 text-sm rounded-lg transition-colors text-red-300 hover:text-red-200"

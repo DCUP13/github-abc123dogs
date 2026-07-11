@@ -45,20 +45,27 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <>
       {children}
       {createPortal(
-        <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none sm:top-4 sm:right-4 max-sm:top-auto max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:w-auto">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="false"
+          className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)] pointer-events-none sm:top-4 sm:right-4 max-sm:top-auto max-sm:bottom-4 max-sm:left-4 max-sm:right-4 max-sm:w-auto"
+        >
           {toasts.map(t => (
             <div
               key={t.id}
+              role={t.type === 'error' ? 'alert' : undefined}
+              aria-atomic="true"
               className={`flex items-start gap-3 p-4 rounded-lg shadow-lg border-l-4 bg-white dark:bg-gray-800 pointer-events-auto animate-toast-in ${borderMap[t.type]}`}
             >
-              {iconMap[t.type]}
+              <span aria-hidden="true">{iconMap[t.type]}</span>
               <p className="flex-1 text-sm text-gray-800 dark:text-gray-100 leading-snug">{t.message}</p>
               <button
                 onClick={() => remove(t.id)}
                 className="flex-shrink-0 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                aria-label="Dismiss"
+                aria-label={`Dismiss notification: ${t.message}`}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           ))}

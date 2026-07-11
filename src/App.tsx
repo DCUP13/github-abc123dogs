@@ -589,6 +589,7 @@ export default function App() {
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode, colorScheme, updateColorScheme, pageBg: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc'), cardBg: darkMode ? (THEME_VARS[colorScheme]?.['--card-bg-d'] ?? '#1e293b') : (THEME_VARS[colorScheme]?.['--card-bg'] ?? '#ffffff') }}>
       <EmailProvider>
         <DashboardProvider>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
           <div
             className={darkMode ? 'dark' : ''}
             style={{
@@ -621,8 +622,9 @@ export default function App() {
                   isSupportAdmin={isSupportAdmin}
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
+                  currentView={view}
                 />
-                <div className="flex-1 sm:ml-14 lg:ml-56 xl:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
+                <div id="main-content" className="flex-1 sm:ml-14 lg:ml-56 xl:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
                   {/* Mobile top bar — only shows below sm where drawer is used */}
                   <div
                     className="sm:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 text-white shadow"

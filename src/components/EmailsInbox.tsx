@@ -1060,8 +1060,10 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
             {/* Tabs */}
             <div className="mb-6">
               <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="flex space-x-8">
+                <nav className="flex space-x-8" role="tablist" aria-label="Email folders">
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'inbox'}
                     onClick={() => {
                       setActiveTab('inbox');
                       setSelectedEmail(null);
@@ -1073,11 +1075,13 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Inbox className="w-4 h-4" />
+                      <Inbox className="w-4 h-4" aria-hidden="true" />
                       Inbox ({emails.length})
                     </div>
                   </button>
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'drafts'}
                     onClick={() => {
                       setActiveTab('drafts');
                       setSelectedEmail(null);
@@ -1089,11 +1093,13 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                      <Mail className="w-4 h-4" aria-hidden="true" />
                       Drafts ({draftEmails.length})
                     </div>
                   </button>
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'outbox'}
                     onClick={() => {
                       setActiveTab('outbox');
                       setSelectedEmail(null);
@@ -1105,11 +1111,13 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Send className="w-4 h-4" />
+                      <Send className="w-4 h-4" aria-hidden="true" />
                       Outbox ({outboxEmails.length})
                     </div>
                   </button>
                   <button
+                    role="tab"
+                    aria-selected={activeTab === 'sent'}
                     onClick={() => {
                       setActiveTab('sent');
                       setSelectedEmail(null);
@@ -1121,11 +1129,21 @@ export function EmailsInbox({ onSignOut, currentView, userRole }: EmailsInboxPro
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                      <Mail className="w-4 h-4" aria-hidden="true" />
                       Sent ({sentEmails.length})
                     </div>
                   </button>
                 </nav>
+              </div>
+              <div
+                aria-live="polite"
+                aria-atomic="true"
+                className="sr-only"
+              >
+                {activeTab === 'inbox' && `Inbox, ${emails.length} email${emails.length !== 1 ? 's' : ''}`}
+                {activeTab === 'drafts' && `Drafts, ${draftEmails.length} email${draftEmails.length !== 1 ? 's' : ''}`}
+                {activeTab === 'outbox' && `Outbox, ${outboxEmails.length} email${outboxEmails.length !== 1 ? 's' : ''}`}
+                {activeTab === 'sent' && `Sent, ${sentEmails.length} email${sentEmails.length !== 1 ? 's' : ''}`}
               </div>
             </div>
 

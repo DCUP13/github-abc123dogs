@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarChart3, CheckCircle, ArrowRight, Menu, X } from 'lucide-react';
 
 interface LandingPageProps {
@@ -12,6 +12,12 @@ interface LandingPageProps {
 
 export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick, onCookieClick, onADAClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape' && mobileMenuOpen) setMobileMenuOpen(false); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileMenuOpen]);
   const onFeaturesClick = () => { window.dispatchEvent(new CustomEvent('navigate-to-features')); setMobileMenuOpen(false); };
   const onPricingClick  = () => { window.dispatchEvent(new CustomEvent('navigate-to-pricing'));  setMobileMenuOpen(false); };
   const onSecurityClick = () => { window.dispatchEvent(new CustomEvent('navigate-to-security')); setMobileMenuOpen(false); };
@@ -49,15 +55,17 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <button
               onClick={() => setMobileMenuOpen(o => !o)}
               className="md:hidden p-2 text-om-tan hover:text-om-parchment transition-colors"
-              aria-label="Toggle menu"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
             </button>
           </div>
         </div>
         {/* Mobile dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-om-forest-deep border-t border-om-forest px-6 py-4 flex flex-col gap-4">
+          <div id="mobile-menu" className="md:hidden bg-om-forest-deep border-t border-om-forest px-6 py-4 flex flex-col gap-4">
             <button onClick={onFeaturesClick} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Features</button>
             <button onClick={onPricingClick}  className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Pricing</button>
             <button onClick={onAboutClick}    className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">About</button>

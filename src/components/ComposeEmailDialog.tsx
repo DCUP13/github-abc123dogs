@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Plus, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
@@ -14,6 +14,14 @@ interface ComposeEmailDialogProps {
 export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEmailDialogProps) {
   const { sesEmails, googleEmails, sesDomains } = useEmails();
   const editorRef = useRef<RichTextEditorRef>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    dialogRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
   
   // Form state
   const [fromEmail, setFromEmail] = useState('');
@@ -270,17 +278,30 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto">
-      <div className="w-full max-w-5xl my-2 sm:my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 1rem)' }}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 sm:p-4 z-50 overflow-y-auto"
+      role="presentation"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="compose-dialog-title"
+        tabIndex={-1}
+        className="w-full max-w-5xl my-2 sm:my-4 flex flex-col"
+        style={{ maxHeight: 'calc(100vh - 1rem)' }}
+      >
         <div className="app-card rounded-xl shadow-lg flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Compose Email</h3>
+            <h3 id="compose-dialog-title" className="text-lg font-medium text-gray-900 dark:text-white">Compose Email</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              aria-label="Close compose dialog"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
           
@@ -351,10 +372,14 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
                   
                   {/* To Field */}
                   <div>
-                    <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label htmlFor="toEmailInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       To
                     </label>
-                    <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 app-card-inner flex flex-wrap items-center gap-1">
+                    <div
+                      role="group"
+                      aria-labelledby="toEmailLabel"
+                      className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 app-card-inner flex flex-wrap items-center gap-1"
+                    >
                       {toEmails.map((email, index) => (
                         <span
                           key={index}
@@ -364,13 +389,15 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
                           <button
                             type="button"
                             onClick={() => removeToEmail(email)}
+                            aria-label={`Remove ${email}`}
                             className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3" aria-hidden="true" />
                           </button>
                         </span>
                       ))}
                       <input
+                        id="toEmailInput"
                         type="email"
                         value={newToEmail}
                         onChange={(e) => {
@@ -380,6 +407,7 @@ export function ComposeEmailDialog({ onClose, onSend, onDraftSaved }: ComposeEma
                         onKeyPress={handleToEmailKeyPress}
                         onBlur={handleToEmailBlur}
                         placeholder={toEmails.length === 0 ? "Enter email addresses..." : ""}
+                        aria-label="Add recipient email address"
                         className="flex-1 min-w-0 w-full outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       />
                     </div>

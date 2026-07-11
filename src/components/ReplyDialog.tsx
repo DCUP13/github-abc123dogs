@@ -29,6 +29,14 @@ interface ReplyDialogProps {
 export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: ReplyDialogProps) {
   const { sesEmails, googleEmails, sesDomains } = useEmails();
   const editorRef = useRef<RichTextEditorRef>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    dialogRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
   
   // Form state
   const [fromEmail, setFromEmail] = useState('');
@@ -293,23 +301,36 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
-      <div className="w-full max-w-5xl my-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto"
+      role="presentation"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reply-dialog-title"
+        tabIndex={-1}
+        className="w-full max-w-5xl my-4 flex flex-col"
+        style={{ maxHeight: 'calc(100vh - 2rem)' }}
+      >
         <div className="app-card rounded-xl shadow-lg flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
+              <h3 id="reply-dialog-title" className="text-lg font-medium text-gray-900 dark:text-white">Reply</h3>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
-                <User className="w-4 h-4" />
+                <User className="w-4 h-4" aria-hidden="true" />
                 <span>Replying to: {originalEmail.sender}</span>
               </div>
             </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              aria-label="Close reply dialog"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
           
@@ -385,7 +406,7 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                   
                   {/* To Field */}
                   <div>
-                    <label htmlFor="toEmails" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label htmlFor="toEmailInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       To
                     </label>
                     <div className="min-h-[42px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 app-card-inner flex flex-wrap items-center gap-1">
@@ -398,13 +419,15 @@ export function ReplyDialog({ originalEmail, isReplyAll, onSend, onClose }: Repl
                           <button
                             type="button"
                             onClick={() => removeToEmail(email)}
+                            aria-label={`Remove ${email}`}
                             className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3 h-3" aria-hidden="true" />
                           </button>
                         </span>
                       ))}
                       <input
+                        id="toEmailInput"
                         type="email"
                         value={newToEmail}
                         onChange={(e) => {

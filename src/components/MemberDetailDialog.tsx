@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { X, Mail, Settings, Plus, Trash2, BarChart3, User, Save, Globe } from 'lucide-react';
 import { Toggle } from './Toggle';
@@ -42,6 +42,14 @@ interface DashboardStats {
 
 export default function MemberDetailDialog({ memberId, memberName, memberEmail, organizationId, onClose }: MemberDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<'emails' | 'domains' | 'settings' | 'stats'>('emails');
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    dialogRef.current?.focus();
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -420,12 +428,23 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
   const availableDomains = orgDomains.filter(od => !assignedDomainNames.has(od.domain));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-5xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto"
+      role="presentation"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-detail-dialog-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-5xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-              <User className="w-6 h-6" />
+            <h2 id="member-detail-dialog-title" className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <User className="w-6 h-6" aria-hidden="true" />
               {memberName}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">{memberEmail}</p>
@@ -433,8 +452,9 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            aria-label="Close member details"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -450,8 +470,10 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
           </div>
         )}
 
-        <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div role="tablist" aria-label="Member settings" className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
           <button
+            role="tab"
+            aria-selected={activeTab === 'emails'}
             onClick={() => setActiveTab('emails')}
             className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'emails'
@@ -459,10 +481,12 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            <Mail className="w-4 h-4 inline mr-2" />
+            <Mail className="w-4 h-4 inline mr-2" aria-hidden="true" />
             Email Accounts
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'domains'}
             onClick={() => setActiveTab('domains')}
             className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'domains'
@@ -470,10 +494,12 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            <Globe className="w-4 h-4 inline mr-2" />
+            <Globe className="w-4 h-4 inline mr-2" aria-hidden="true" />
             Domains
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'settings'}
             onClick={() => setActiveTab('settings')}
             className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'settings'
@@ -481,10 +507,12 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            <Settings className="w-4 h-4 inline mr-2" />
+            <Settings className="w-4 h-4 inline mr-2" aria-hidden="true" />
             Settings
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'stats'}
             onClick={() => setActiveTab('stats')}
             className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'stats'
@@ -492,7 +520,7 @@ export default function MemberDetailDialog({ memberId, memberName, memberEmail, 
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            <BarChart3 className="w-4 h-4 inline mr-2" />
+            <BarChart3 className="w-4 h-4 inline mr-2" aria-hidden="true" />
             Statistics
           </button>
         </div>
