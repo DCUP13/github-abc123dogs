@@ -237,15 +237,8 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch shared_prompts without the profiles join (no FK to profiles table)
-      const { data, error } = await supabase
-        .from('shared_prompts')
-        .select(`
-          id, prompt_id, shared_by, scope, created_at,
-          shared_prompt_orgs(organization_id, organizations(name)),
-          prompts(*)
-        `)
-        .order('created_at', { ascending: false });
+      // Fetch shared prompts via SECURITY DEFINER RPC to avoid cross-table RLS recursion
+      const { data, error } = await supabase.rpc('get_shared_prompts_for_user');
 
       if (error) { console.error('Error fetching shared prompts:', error); return; }
 
