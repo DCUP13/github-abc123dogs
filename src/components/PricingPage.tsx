@@ -104,7 +104,7 @@ export function PricingPage({ onBackClick, onSignInClick, onCreateAccountClick }
                     ['One Linked Domain', 'Connect and manage one email domain'],
                     ['AI-Powered Autoresponder', 'Automatic email responses with custom prompts'],
                     ['Email Draft Generation', 'AI generates drafts for your review'],
-                    ['Template Library', 'Create and save unlimited email templates'],
+                    ['Prompt Library', 'Create and save unlimited AI prompts'],
                     ['Client CRM', 'Manage contacts and track interactions'],
                     ['Google Calendar Integration', 'Seamless calendar sync and event management'],
                     ['Reply Tracking', 'Monitor email responses and engagement'],
