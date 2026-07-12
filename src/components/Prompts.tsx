@@ -98,6 +98,11 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [sharedRecords, setSharedRecords] = useState<Record<string, { id: string; scope: string; org_ids: string[] }>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [previewingShared, setPreviewingShared] = useState<SharedPrompt | null>(null);
+  const [quickSharePrompt, setQuickSharePrompt] = useState<Prompt | null>(null);
+  const [quickShareEnabled, setQuickShareEnabled] = useState(false);
+  const [quickShareScope, setQuickShareScope] = useState<'global' | 'organization' | 'team'>('team');
+  const [quickShareOrgIds, setQuickShareOrgIds] = useState<string[]>([]);
+  const [quickShareSaving, setQuickShareSaving] = useState(false);
 
   // Shared IDs set — prompts that the current user has already shared (to show badge)
   const sharedPromptIds = new Set(Object.keys(sharedRecords));
@@ -511,6 +516,37 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
     await fetchUserMeta();
     // Refresh prompts so badge updates
     await fetchPrompts();
+  };
+
+  const openQuickShare = (prompt: Prompt) => {
+    const existing = sharedRecords[prompt.id];
+    setQuickSharePrompt(prompt);
+    setQuickShareEnabled(!!existing);
+    setQuickShareScope((existing?.scope as 'global' | 'organization' | 'team') || 'team');
+    setQuickShareOrgIds(existing?.org_ids || []);
+  };
+
+  const handleQuickShareSave = async () => {
+    if (!quickSharePrompt) return;
+    setQuickShareSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (quickShareEnabled) {
+        await upsertSharing(quickSharePrompt.id, quickShareScope, quickShareOrgIds, user.id);
+        toast.success('Prompt shared.');
+      } else {
+        const existing = sharedRecords[quickSharePrompt.id];
+        if (existing) {
+          await supabase.from('shared_prompts').delete().eq('id', existing.id);
+          toast.success('Sharing removed.');
+        }
+      }
+      await fetchUserMeta();
+      setQuickSharePrompt(null);
+    } finally {
+      setQuickShareSaving(false);
+    }
   };
 
   const handleAddDomain = (domain: string) => {
@@ -976,6 +1012,9 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                       </button>
                       <button onClick={() => handleEditPrompt(prompt)} className="p-2 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" title="Edit">
                         <Edit className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => openQuickShare(prompt)} className={`p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${sharedPromptIds.has(prompt.id) ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400'}`} title={sharedPromptIds.has(prompt.id) ? 'Sharing settings' : 'Share'}>
+                        <Share2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDeletePrompt(prompt.id)} className="p-2 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700" title="Delete">
                         <Trash2 className="w-4 h-4" />
@@ -1541,6 +1580,89 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           </div>
         )}
       </div>
+
+      {/* Quick Share Modal */}
+      {quickSharePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setQuickSharePrompt(null)}>
+          <div className="app-card rounded-2xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Share Prompt</h2>
+              </div>
+              <button onClick={() => setQuickSharePrompt(null)} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{quickSharePrompt.title}</p>
+
+              {/* Enable toggle */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className="relative">
+                  <input type="checkbox" className="sr-only" checked={quickShareEnabled} onChange={e => setQuickShareEnabled(e.target.checked)} />
+                  <div className={`w-10 h-6 rounded-full transition-colors ${quickShareEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${quickShareEnabled ? 'translate-x-4' : ''}`} />
+                </div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Share this prompt</span>
+              </label>
+
+              {quickShareEnabled && (
+                <div className="space-y-3 pt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Who can see and use this prompt?</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="qs-scope" value="team" checked={quickShareScope === 'team'} onChange={() => setQuickShareScope('team')} className="text-blue-600" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">My team</span>
+                    </label>
+                    {userOrgs.length > 0 && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="qs-scope" value="organization" checked={quickShareScope === 'organization'} onChange={() => setQuickShareScope('organization')} className="text-blue-600" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Specific organizations</span>
+                      </label>
+                    )}
+                    {isPlatformOwner && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="qs-scope" value="global" checked={quickShareScope === 'global'} onChange={() => setQuickShareScope('global')} className="text-blue-600" />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">All users (global)</span>
+                      </label>
+                    )}
+                  </div>
+                  {quickShareScope === 'organization' && userOrgs.length > 0 && (
+                    <div className="space-y-1 pl-5">
+                      {userOrgs.map(org => (
+                        <label key={org.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={quickShareOrgIds.includes(org.id)}
+                            onChange={e => setQuickShareOrgIds(prev => e.target.checked ? [...prev, org.id] : prev.filter(id => id !== org.id))}
+                            className="text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{org.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 p-5 border-t border-gray-200 dark:border-gray-700">
+              <button onClick={() => setQuickSharePrompt(null)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleQuickShareSave}
+                disabled={quickShareSaving || (quickShareEnabled && quickShareScope === 'organization' && quickShareOrgIds.length === 0)}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+              >
+                {quickShareSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
