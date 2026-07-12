@@ -97,6 +97,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
   const [userOrgs, setUserOrgs] = useState<Org[]>([]);
   const [sharedRecords, setSharedRecords] = useState<Record<string, { id: string; scope: string; org_ids: string[] }>>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [previewingShared, setPreviewingShared] = useState<SharedPrompt | null>(null);
 
   // Shared IDs set — prompts that the current user has already shared (to show badge)
   const sharedPromptIds = new Set(Object.keys(sharedRecords));
@@ -638,6 +639,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
   if (view === 'shared') {
     return (
+      <>
       <div className="p-4 md:p-8 app-bg min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-6">
@@ -670,7 +672,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {myShares.map(sp => (
-                      <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm">
+                      <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPreviewingShared(sp)}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">{sp.prompt.title}</p>
@@ -711,7 +713,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {sharedWithMe.map(sp => (
-                      <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm">
+                      <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPreviewingShared(sp)}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">{sp.prompt.title}</p>
@@ -722,7 +724,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">By {sp.sharer_email}</p>
                           </div>
                           <button
-                            onClick={() => handleUseSharedPrompt(sp)}
+                            onClick={(e) => { e.stopPropagation(); handleUseSharedPrompt(sp); }}
                             className="ml-2 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap"
                           >
                             Use
@@ -753,7 +755,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {globalShares.map(sp => (
-                        <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm border border-amber-200 dark:border-amber-700/40">
+                        <div key={sp.id} className="app-card rounded-xl p-5 shadow-sm border border-amber-200 dark:border-amber-700/40 cursor-pointer hover:shadow-md transition-shadow" onClick={() => setPreviewingShared(sp)}>
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-gray-900 dark:text-white truncate">{sp.prompt.title}</p>
@@ -764,7 +766,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">By {sp.sharer_email}</p>
                             </div>
                             <button
-                              onClick={() => handleRemoveShared(sp.id, sp.prompt_id)}
+                              onClick={(e) => { e.stopPropagation(); handleRemoveShared(sp.id, sp.prompt_id); }}
                               className="ml-2 p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                               title="Moderate: remove from shared"
                             >
@@ -782,6 +784,92 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
           )}
         </div>
       </div>
+
+      {/* Shared Prompt Preview Modal */}
+      {previewingShared && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setPreviewingShared(null)}>
+          <div className="app-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white break-words">{previewingShared.prompt.title}</h2>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {previewingShared.prompt.category && (
+                    <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded-full">{previewingShared.prompt.category}</span>
+                  )}
+                  {renderModeBadge(previewingShared.prompt)}
+                  <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-full">By {previewingShared.sharer_email}</span>
+                </div>
+              </div>
+              <button onClick={() => setPreviewingShared(null)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto flex-1 p-6 space-y-4">
+              {previewingShared.prompt.response_mode === 'ai' && (
+                <>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Prompt</p>
+                    <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.content}</p>
+                  </div>
+                  {previewingShared.prompt.prompt_type === 'two_step' && previewingShared.prompt.step2_content && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Step 2</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.step2_content}</p>
+                    </div>
+                  )}
+                </>
+              )}
+              {previewingShared.prompt.response_mode !== 'ai' && (
+                <>
+                  {previewingShared.prompt.template_subject && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Subject</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200">{previewingShared.prompt.template_subject}</p>
+                    </div>
+                  )}
+                  {previewingShared.prompt.template_body && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Body</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_body}</p>
+                    </div>
+                  )}
+                  {previewingShared.prompt.template_ai_instructions && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">AI Instructions</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_ai_instructions}</p>
+                    </div>
+                  )}
+                </>
+              )}
+              {previewingShared.prompt.company_info && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Company Info</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.company_info}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <button onClick={() => setPreviewingShared(null)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                Close
+              </button>
+              {previewingShared.shared_by !== currentUserId && (
+                <button
+                  onClick={() => { handleUseSharedPrompt(previewingShared); setPreviewingShared(null); }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                >
+                  Add to My Prompts
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
     );
   }
 
