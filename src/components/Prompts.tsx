@@ -268,11 +268,23 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
         sharer_email: profileMap[sp.shared_by] || 'Unknown',
         org_names: (sp.shared_prompt_orgs || []).map((o: any) => o.organizations?.name).filter(Boolean),
         prompt: {
-          ...sp.prompts,
-          response_mode: sp.prompts?.response_mode || 'ai',
-          property_info: sp.prompts?.property_info
-            ? Array.isArray(sp.prompts.property_info) ? sp.prompts.property_info : [sp.prompts.property_info]
+          id: sp.p_id,
+          user_id: sp.p_user_id,
+          title: sp.p_title,
+          content: sp.p_content,
+          category: sp.p_category,
+          prompt_type: sp.p_prompt_type,
+          step2_content: sp.p_step2_content,
+          response_mode: sp.p_response_mode || 'ai',
+          template_subject: sp.p_template_subject,
+          template_body: sp.p_template_body,
+          template_ai_instructions: sp.p_template_ai_instructions,
+          property_info: sp.p_property_info
+            ? Array.isArray(sp.p_property_info) ? sp.p_property_info : [sp.p_property_info]
             : null,
+          company_info: sp.p_company_info,
+          created_at: sp.p_created_at,
+          updated_at: sp.p_updated_at,
           domains: domainsByPrompt[sp.prompt_id] || []
         }
       })));
