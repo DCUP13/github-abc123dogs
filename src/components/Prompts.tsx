@@ -685,7 +685,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                             </div>
                           </div>
                           <button
-                            onClick={() => handleRemoveShared(sp.id, sp.prompt_id)}
+                            onClick={(e) => { e.stopPropagation(); handleRemoveShared(sp.id, sp.prompt_id); }}
                             className="ml-2 p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Remove from shared"
                           >
@@ -807,48 +807,45 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto flex-1 p-6 space-y-4">
-              {previewingShared.prompt.response_mode === 'ai' && (
-                <>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Prompt</p>
-                    <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.content}</p>
-                  </div>
-                  {previewingShared.prompt.prompt_type === 'two_step' && previewingShared.prompt.step2_content && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Step 2</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.step2_content}</p>
-                    </div>
-                  )}
-                </>
+            <div className="overflow-y-auto flex-1 min-h-0 p-6 space-y-4">
+              {previewingShared.prompt.content && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Prompt</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.content}</p>
+                </div>
               )}
-              {previewingShared.prompt.response_mode !== 'ai' && (
-                <>
-                  {previewingShared.prompt.template_subject && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Subject</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200">{previewingShared.prompt.template_subject}</p>
-                    </div>
-                  )}
-                  {previewingShared.prompt.template_body && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Body</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_body}</p>
-                    </div>
-                  )}
-                  {previewingShared.prompt.template_ai_instructions && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">AI Instructions</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_ai_instructions}</p>
-                    </div>
-                  )}
-                </>
+              {previewingShared.prompt.step2_content && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Step 2</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.step2_content}</p>
+                </div>
+              )}
+              {previewingShared.prompt.template_subject && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Subject</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{previewingShared.prompt.template_subject}</p>
+                </div>
+              )}
+              {previewingShared.prompt.template_body && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Body</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_body}</p>
+                </div>
+              )}
+              {previewingShared.prompt.template_ai_instructions && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">AI Instructions</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.template_ai_instructions}</p>
+                </div>
               )}
               {previewingShared.prompt.company_info && (
                 <div>
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Company Info</p>
                   <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{previewingShared.prompt.company_info}</p>
                 </div>
+              )}
+              {!previewingShared.prompt.content && !previewingShared.prompt.template_body && !previewingShared.prompt.template_subject && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">No content available for this prompt.</p>
               )}
             </div>
 
