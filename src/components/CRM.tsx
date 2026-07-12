@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, Search, Phone, Mail, MapPin, DollarSign, Calendar, Building,
   CreditCard as Edit, Trash2, X, Save, MessageSquare, Star, Upload, Sparkles,
-  ChevronDown, Activity, User, Clock, AlertCircle, CheckCircle
+  Activity, User, Clock, AlertCircle, List, LayoutGrid, Settings2,
+  Send, Zap, ChevronDown, ChevronUp, CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { showConfirm } from '../lib/confirm';
 import { CsvImportDialog } from './crm/CsvImportDialog';
+import { CrmFieldsManager } from './crm/CrmFieldsManager';
 
 export interface Client {
   id: string;
@@ -90,6 +92,14 @@ interface OrgInfo {
   id: string;
   name: string;
   role: string;
+}
+
+interface OutreachSuggestion {
+  client_id: string;
+  reason: string;
+  priority: 'high' | 'medium' | 'low';
+  suggested_action: 'email' | 'call';
+  days_since_contact: number;
 }
 
 interface CRMProps {
@@ -175,6 +185,20 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
+  // View state
+  const [viewMode, setViewMode] = useState<'card' | 'table'>(() =>
+    (localStorage.getItem('crm_view_mode') as 'card' | 'table') || 'card'
+  );
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('crm_visible_columns');
+      return saved ? new Set(JSON.parse(saved)) : new Set(['name', 'status', 'type', 'email', 'phone', 'location', 'budget', 'grade', 'last_activity', 'assigned']);
+    } catch { return new Set(['name', 'status', 'type', 'email', 'phone', 'location', 'budget', 'grade', 'last_activity', 'assigned']); }
+  });
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
+  const [sortColumn, setSortColumn] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
   // UI state
   const [showClientForm, setShowClientForm] = useState(false);
   const [showInteractionForm, setShowInteractionForm] = useState(false);
@@ -191,6 +215,23 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const [activeTab, setActiveTab] = useState<'interactions' | 'activity' | 'grade'>('interactions');
   const [dupWarning, setDupWarning] = useState<Client | null>(null);
   const [gradingClientId, setGradingClientId] = useState<string | null>(null);
+
+  // Fields manager drawer
+  const [showFieldsDrawer, setShowFieldsDrawer] = useState(false);
+
+  // Smart outreach
+  const [showOutreach, setShowOutreach] = useState(false);
+  const [outreachSuggestions, setOutreachSuggestions] = useState<OutreachSuggestion[]>([]);
+  const [outreachLoading, setOutreachLoading] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+
+  // Compose email
+  const [composeClient, setComposeClient] = useState<Client | null>(null);
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeDrafting, setComposeDrafting] = useState(false);
+  const [composeReason, setComposeReason] = useState('');
 
   const [clientForm, setClientForm] = useState({
     first_name: '', last_name: '', email: '', phone: '',
@@ -234,6 +275,15 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       if (selectedClient.org_id) fetchCustomValues(selectedClient.id, selectedClient.org_id);
     }
   }, [selectedClient]);
+
+  // Persist view preferences
+  useEffect(() => {
+    localStorage.setItem('crm_view_mode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('crm_visible_columns', JSON.stringify([...visibleColumns]));
+  }, [visibleColumns]);
 
   // ─── Org setup ───────────────────────────────────────────────────────────
   const loadUserOrgs = async (userId: string) => {
@@ -440,7 +490,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         const { data: inserted, error } = await supabase.from('clients').insert(payload).select().single();
         if (error) throw error;
         await logActivity(inserted.id, 'created', { name: `${clientForm.first_name} ${clientForm.last_name}` });
-        // Auto-grade on create
         gradeClientInBackground(inserted, user.id);
         toast.success('Client added.');
       }
@@ -485,7 +534,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     if (!await showConfirm({ message: 'Delete this client and all associated data?', variant: 'danger', confirmText: 'Delete' })) return;
     try {
       if (crmMode === 'org') {
-        // Soft delete for org clients
         await supabase.from('clients').update({ deleted_at: new Date().toISOString() }).eq('id', id);
       } else {
         await supabase.from('clients').delete().eq('id', id);
@@ -592,6 +640,147 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     }
   };
 
+  // ─── Smart Outreach ───────────────────────────────────────────────────────
+  const handleLoadOutreach = async () => {
+    setOutreachLoading(true);
+    setOutreachSuggestions([]);
+    try {
+      const clientData = clients
+        .filter(c => !dismissedSuggestions.has(c.id))
+        .slice(0, 50)
+        .map(c => ({
+          id: c.id,
+          name: `${c.first_name} ${c.last_name}`,
+          status: c.status,
+          email: c.email || null,
+          client_type: c.client_type,
+          days_since_contact: lastActivity[c.id] ? daysSince(lastActivity[c.id]) : 999,
+          grade_score: clientGrades[c.id]?.overall_score || null,
+          grade_letter: clientGrades[c.id]?.grade_letter || null,
+          notes: c.notes || null,
+        }));
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-outreach-suggestions`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ clients: clientData }),
+      });
+      if (!res.ok) throw new Error('Outreach failed');
+      const json = await res.json();
+      setOutreachSuggestions((json.suggestions || []).filter((s: OutreachSuggestion) => !dismissedSuggestions.has(s.client_id)));
+    } catch (err: any) {
+      toast.error('Failed to load outreach suggestions.');
+    } finally {
+      setOutreachLoading(false);
+    }
+  };
+
+  const handleDismissSuggestion = (clientId: string) => {
+    setDismissedSuggestions(prev => new Set([...prev, clientId]));
+    setOutreachSuggestions(prev => prev.filter(s => s.client_id !== clientId));
+  };
+
+  // ─── Compose email ────────────────────────────────────────────────────────
+  const openCompose = (client: Client, reason?: string) => {
+    setComposeClient(client);
+    setComposeSubject('');
+    setComposeBody('');
+    setComposeReason(reason || '');
+  };
+
+  const handleAiDraft = async () => {
+    if (!composeClient) return;
+    setComposeDrafting(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-draft-message`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client: composeClient,
+          reason: composeReason,
+          grade: clientGrades[composeClient.id] || null,
+        }),
+      });
+      if (!res.ok) throw new Error('Draft failed');
+      const json = await res.json();
+      if (json.subject) setComposeSubject(json.subject);
+      if (json.body) setComposeBody(json.body);
+    } catch {
+      toast.error('Failed to generate draft. Please write it manually.');
+    } finally {
+      setComposeDrafting(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!composeClient || !composeSubject || !composeBody) return;
+    if (!composeClient.email) { toast.error('This client has no email address.'); return; }
+
+    setComposeSending(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Fetch SES settings for the sender
+      const { data: sesData } = await supabase
+        .from('amazon_ses_settings')
+        .select('noreply_domain')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const fromEmail = sesData?.noreply_domain
+        ? `noreply@${sesData.noreply_domain}`
+        : null;
+
+      if (!fromEmail) {
+        toast.error('No sending email address configured. Set up Amazon SES in Settings first.');
+        return;
+      }
+
+      // Insert into email_outbox for send-email function to process
+      const { error: outboxErr } = await supabase.from('email_outbox').insert({
+        user_id: user.id,
+        from_email: fromEmail,
+        to_email: composeClient.email,
+        subject: composeSubject,
+        body_html: `<p>${composeBody.replace(/\n/g, '<br/>')}</p>`,
+        body_text: composeBody,
+        status: 'pending',
+      });
+      if (outboxErr) throw outboxErr;
+
+      // Log as interaction
+      const interPayload: any = {
+        client_id: composeClient.id,
+        user_id: user.id,
+        interaction_type: 'email',
+        subject: composeSubject,
+        notes: composeBody,
+        interaction_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      if (composeClient.org_id) interPayload.org_id = composeClient.org_id;
+      await supabase.from('client_interactions').insert(interPayload);
+      await logActivity(composeClient.id, 'email_sent', { subject: composeSubject });
+
+      toast.success('Email queued successfully.');
+      setComposeClient(null);
+      await fetchLastActivities([composeClient.id]);
+    } catch (err: any) {
+      toast.error(`Failed to send: ${err.message}`);
+    } finally {
+      setComposeSending(false);
+    }
+  };
+
   // ─── Form helpers ─────────────────────────────────────────────────────────
   const resetClientForm = () => {
     setClientForm({
@@ -644,9 +833,9 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const removePreferredArea = (area: string) =>
     setClientForm(prev => ({ ...prev, preferred_areas: prev.preferred_areas.filter(a => a !== area) }));
 
-  // ─── Filtering ────────────────────────────────────────────────────────────
-  const getFilteredClients = () =>
-    clients.filter(c => {
+  // ─── Filtering + sorting ──────────────────────────────────────────────────
+  const getFilteredClients = () => {
+    let list = clients.filter(c => {
       const q = searchQuery.toLowerCase();
       const matchSearch =
         c.first_name.toLowerCase().includes(q) ||
@@ -658,6 +847,42 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       const matchAssigned = filterAssigned === 'all' || c.assigned_to === filterAssigned;
       return matchSearch && matchType && matchStatus && matchAssigned;
     });
+
+    if (sortColumn) {
+      list = [...list].sort((a, b) => {
+        let av: any, bv: any;
+        if (sortColumn === 'name') { av = `${a.first_name} ${a.last_name}`; bv = `${b.first_name} ${b.last_name}`; }
+        else if (sortColumn === 'status') { av = a.status; bv = b.status; }
+        else if (sortColumn === 'type') { av = a.client_type; bv = b.client_type; }
+        else if (sortColumn === 'email') { av = a.email || ''; bv = b.email || ''; }
+        else if (sortColumn === 'budget') { av = a.budget_max || 0; bv = b.budget_max || 0; }
+        else if (sortColumn === 'grade') { av = clientGrades[a.id]?.overall_score || 0; bv = clientGrades[b.id]?.overall_score || 0; }
+        else if (sortColumn === 'last_activity') {
+          av = lastActivity[a.id] ? new Date(lastActivity[a.id]).getTime() : 0;
+          bv = lastActivity[b.id] ? new Date(lastActivity[b.id]).getTime() : 0;
+        }
+        else { av = ''; bv = ''; }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return list;
+  };
+
+  const handleSort = (col: string) => {
+    if (sortColumn === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortColumn(col); setSortDir('asc'); }
+  };
+
+  const toggleColumn = (col: string) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(col)) { if (next.size > 2) next.delete(col); }
+      else next.add(col);
+      return next;
+    });
+  };
 
   const getTypeInfo = (type: string) => clientTypes.find(t => t.value === type) || clientTypes[0];
   const getStatusInfo = (s: string) => clientStatuses.find(x => x.value === s) || clientStatuses[0];
@@ -688,6 +913,30 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   const filteredClients = getFilteredClients();
   const currentOrg = userOrgs.find(o => o.id === selectedOrgId);
+
+  const tableColumns = [
+    { key: 'name', label: 'Name' },
+    { key: 'status', label: 'Status' },
+    { key: 'type', label: 'Type' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'location', label: 'Location' },
+    { key: 'budget', label: 'Budget' },
+    { key: 'grade', label: 'Grade' },
+    { key: 'last_activity', label: 'Last Activity' },
+    ...(crmMode === 'org' ? [{ key: 'assigned', label: 'Assigned' }] : []),
+    ...customFields.map(f => ({ key: `cf_${f.field_key}`, label: f.field_label })),
+  ];
+
+  const sortIcon = (col: string) => {
+    if (sortColumn !== col) return null;
+    return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 inline ml-0.5" /> : <ChevronDown className="w-3 h-3 inline ml-0.5" />;
+  };
+
+  const priorityColor = (p: string) =>
+    p === 'high' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' :
+    p === 'medium' ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' :
+    'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -738,6 +987,47 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 )}
 
+                {/* View toggle */}
+                <div className="flex items-center rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                  <button
+                    onClick={() => setViewMode('card')}
+                    title="Card view"
+                    className={`p-2 transition-colors ${viewMode === 'card' ? 'bg-indigo-600 text-white' : 'app-card text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    title="Table view"
+                    className={`p-2 transition-colors ${viewMode === 'table' ? 'bg-indigo-600 text-white' : 'app-card text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Manage Fields (org managers) */}
+                {crmMode === 'org' && isManager && (
+                  <button
+                    onClick={() => setShowFieldsDrawer(true)}
+                    title="Manage custom fields"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <Settings2 className="w-4 h-4 mr-1.5" />
+                    Fields
+                  </button>
+                )}
+
+                {/* Smart Outreach */}
+                {crmMode === 'org' && (
+                  <button
+                    onClick={() => { setShowOutreach(true); if (outreachSuggestions.length === 0) handleLoadOutreach(); }}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <Zap className="w-4 h-4 mr-1.5 text-amber-500" />
+                    Outreach
+                  </button>
+                )}
+
                 {/* Import CSV (org managers only) */}
                 {crmMode === 'org' && isManager && (
                   <button
@@ -745,7 +1035,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <Upload className="w-4 h-4 mr-1.5" />
-                    Import CSV
+                    Import
                   </button>
                 )}
 
@@ -791,21 +1081,42 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   })}
                 </select>
               )}
+              {viewMode === 'table' && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowColumnPicker(p => !p)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card text-gray-900 dark:text-white text-sm flex items-center gap-1.5"
+                  >
+                    Columns <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                  {showColumnPicker && (
+                    <div className="absolute right-0 top-full mt-1 w-48 app-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 p-2 space-y-1">
+                      {tableColumns.map(col => (
+                        <label key={col.key} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                          <input type="checkbox" checked={visibleColumns.has(col.key)} onChange={() => toggleColumn(col.key)}
+                            className="w-3.5 h-3.5 text-indigo-600 rounded" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Client list */}
-            <div className="app-card rounded-xl shadow-sm overflow-hidden">
-              {filteredClients.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    {clients.length === 0 ? 'No clients yet' : 'No clients match'}
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {clients.length === 0 ? 'Add your first client to get started.' : 'Try adjusting your search or filters.'}
-                  </p>
-                </div>
-              ) : (
+            {/* Client list / table */}
+            {filteredClients.length === 0 ? (
+              <div className="app-card rounded-xl shadow-sm text-center py-12">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  {clients.length === 0 ? 'No clients yet' : 'No clients match'}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  {clients.length === 0 ? 'Add your first client to get started.' : 'Try adjusting your search or filters.'}
+                </p>
+              </div>
+            ) : viewMode === 'card' ? (
+              <div className="app-card rounded-xl shadow-sm overflow-hidden">
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredClients.map(client => {
                     const typeInfo = getTypeInfo(client.client_type);
@@ -853,6 +1164,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                                 {getMemberDisplay(client.assigned_to).initials}
                               </div>
                             )}
+                            {client.email && (
+                              <button onClick={e => { e.stopPropagation(); openCompose(client); }}
+                                title="Send email"
+                                className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <Send className="w-4 h-4" />
+                              </button>
+                            )}
                             <button onClick={e => { e.stopPropagation(); handleEditClient(client); }}
                               className="p-1.5 text-gray-400 hover:text-indigo-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
                               <Edit className="w-4 h-4" />
@@ -867,8 +1185,123 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     );
                   })}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              /* Table view */
+              <div className="app-card rounded-xl shadow-sm overflow-hidden" onClick={() => setShowColumnPicker(false)}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        {tableColumns.filter(c => visibleColumns.has(c.key)).map(col => (
+                          <th
+                            key={col.key}
+                            onClick={() => !col.key.startsWith('cf_') && handleSort(col.key)}
+                            className={`px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap ${!col.key.startsWith('cf_') ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none' : ''}`}
+                          >
+                            {col.label}{sortIcon(col.key)}
+                          </th>
+                        ))}
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {filteredClients.map(client => {
+                        const typeInfo = getTypeInfo(client.client_type);
+                        const statusInfo = getStatusInfo(client.status);
+                        const grade = clientGrades[client.id];
+
+                        return (
+                          <tr
+                            key={client.id}
+                            onClick={() => setSelectedClient(client)}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer transition-colors"
+                          >
+                            {visibleColumns.has('name') && (
+                              <td className="px-4 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                                {client.first_name} {client.last_name}
+                              </td>
+                            )}
+                            {visibleColumns.has('status') && (
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusInfo.color}`}>{statusInfo.label}</span>
+                              </td>
+                            )}
+                            {visibleColumns.has('type') && (
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${typeInfo.color}`}>{typeInfo.label}</span>
+                              </td>
+                            )}
+                            {visibleColumns.has('email') && (
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-[180px] truncate">{client.email || '—'}</td>
+                            )}
+                            {visibleColumns.has('phone') && (
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{client.phone || '—'}</td>
+                            )}
+                            {visibleColumns.has('location') && (
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                {[client.city, client.state].filter(Boolean).join(', ') || '—'}
+                              </td>
+                            )}
+                            {visibleColumns.has('budget') && (
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                {client.budget_min || client.budget_max
+                                  ? `${client.budget_min ? formatCurrency(client.budget_min) : '?'} – ${client.budget_max ? formatCurrency(client.budget_max) : '?'}`
+                                  : '—'}
+                              </td>
+                            )}
+                            {visibleColumns.has('grade') && (
+                              <td className="px-4 py-3">
+                                {grade ? (
+                                  <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${getGradeColor(grade.grade_letter)}`}>
+                                    {grade.grade_letter} ({grade.overall_score})
+                                  </span>
+                                ) : '—'}
+                              </td>
+                            )}
+                            {visibleColumns.has('last_activity') && (
+                              <td className="px-4 py-3">
+                                <LastActivityBadge date={lastActivity[client.id] || null} />
+                              </td>
+                            )}
+                            {crmMode === 'org' && visibleColumns.has('assigned') && (
+                              <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                {client.assigned_to ? getMemberDisplay(client.assigned_to).label : '—'}
+                              </td>
+                            )}
+                            {customFields.filter(f => visibleColumns.has(`cf_${f.field_key}`)).map(f => (
+                              <td key={f.field_key} className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-[160px] truncate">
+                                {f.field_type === 'boolean'
+                                  ? (customValues[`${client.id}_${f.field_key}`] === 'true' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : '—')
+                                  : (customValues[`${client.id}_${f.field_key}`] || '—')}
+                              </td>
+                            ))}
+                            <td className="px-4 py-3 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center justify-end gap-1">
+                                {client.email && (
+                                  <button onClick={() => openCompose(client)} title="Send email"
+                                    className="p-1.5 text-gray-400 hover:text-indigo-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <Send className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <button onClick={() => handleEditClient(client)}
+                                  className="p-1.5 text-gray-400 hover:text-indigo-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => handleDeleteClient(client.id)}
+                                  className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* ─── Client Detail ─────────────────────────────────────────── */
@@ -901,6 +1334,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
               </div>
 
               <div className="flex gap-2 flex-wrap">
+                {selectedClient.email && (
+                  <button onClick={() => openCompose(selectedClient)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <Send className="w-4 h-4 mr-1.5" />
+                    Email
+                  </button>
+                )}
                 <button onClick={handleAiSummary}
                   className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700">
                   <Sparkles className="w-4 h-4 mr-1.5" />
@@ -1029,7 +1469,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
               {/* Right: Tabs */}
               <div className="lg:col-span-2 space-y-5">
-                {/* Tab bar */}
                 <div className="flex border-b border-gray-200 dark:border-gray-700">
                   {(['interactions', 'grade', 'activity'] as const).map(tab => (
                     <button
@@ -1046,7 +1485,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   ))}
                 </div>
 
-                {/* Interactions tab */}
                 {activeTab === 'interactions' && (
                   <div className="app-card rounded-xl shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4">
@@ -1101,7 +1539,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 )}
 
-                {/* Grade tab */}
                 {activeTab === 'grade' && (
                   <div className="app-card rounded-xl shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4">
@@ -1160,7 +1597,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 )}
 
-                {/* Activity log tab */}
                 {activeTab === 'activity' && (
                   <div className="app-card rounded-xl shadow-sm p-5">
                     <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Activity Log</h2>
@@ -1202,6 +1638,201 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
           </div>
         )}
 
+        {/* ─── Manage Fields Drawer ────────────────────────────────── */}
+        {showFieldsDrawer && selectedOrgId && (
+          <div className="fixed inset-0 z-50 flex">
+            <div className="flex-1" onClick={() => setShowFieldsDrawer(false)} />
+            <div className="w-full max-w-sm app-card shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-y-auto">
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-5 h-5 text-indigo-500" />
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Manage CRM Fields</h3>
+                </div>
+                <button onClick={() => setShowFieldsDrawer(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-5 flex-1">
+                <CrmFieldsManager
+                  orgId={selectedOrgId}
+                  onChange={fields => setCustomFields(fields)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Smart Outreach Panel ────────────────────────────────── */}
+        {showOutreach && (
+          <div className="fixed inset-0 z-50 flex">
+            <div className="flex-1 bg-black/40" onClick={() => setShowOutreach(false)} />
+            <div className="w-full max-w-md app-card shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500" />
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Smart Outreach</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleLoadOutreach}
+                    disabled={outreachLoading}
+                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50"
+                  >
+                    {outreachLoading ? 'Analyzing…' : 'Refresh'}
+                  </button>
+                  <button onClick={() => setShowOutreach(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {outreachLoading ? (
+                  <div className="flex items-center justify-center py-16 gap-3">
+                    <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-gray-600 dark:text-gray-300 text-sm">Analyzing your contacts…</span>
+                  </div>
+                ) : outreachSuggestions.length === 0 ? (
+                  <div className="text-center py-16">
+                    <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400 font-medium">All caught up!</p>
+                    <p className="text-sm text-gray-400 mt-1">No contacts need immediate outreach.</p>
+                  </div>
+                ) : (
+                  outreachSuggestions.map(s => {
+                    const client = clients.find(c => c.id === s.client_id);
+                    if (!client) return null;
+                    return (
+                      <div key={s.client_id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-sm text-gray-900 dark:text-white">{client.first_name} {client.last_name}</span>
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${priorityColor(s.priority)}`}>
+                                {s.priority}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{s.reason}</p>
+                            <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {s.days_since_contact >= 999 ? 'Never contacted' : `${s.days_since_contact}d since last contact`}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleDismissSuggestion(s.client_id)}
+                            className="text-gray-300 hover:text-gray-500 dark:hover:text-gray-400 flex-shrink-0 p-1"
+                            title="Dismiss"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          {client.email && (
+                            <button
+                              onClick={() => { openCompose(client, s.reason); setShowOutreach(false); }}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              Draft Email
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { setSelectedClient(client); setShowOutreach(false); }}
+                            className="flex-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            View Profile
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Compose Email Modal ─────────────────────────────────── */}
+        {composeClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="app-card rounded-xl shadow-lg w-full max-w-lg flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Send className="w-5 h-5 text-indigo-500" />
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">Send Email</h3>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">To: {composeClient.email}</p>
+                </div>
+                <button onClick={() => setComposeClient(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-5 flex-1 overflow-y-auto space-y-4">
+                {composeReason && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-xs text-amber-700 dark:text-amber-400"><span className="font-semibold">Outreach reason:</span> {composeReason}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    value={composeSubject}
+                    onChange={e => setComposeSubject(e.target.value)}
+                    placeholder="Email subject"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card-inner text-gray-900 dark:text-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                  <textarea
+                    value={composeBody}
+                    onChange={e => setComposeBody(e.target.value)}
+                    rows={8}
+                    placeholder="Write your message here…"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card-inner text-gray-900 dark:text-white text-sm resize-none"
+                  />
+                </div>
+                <button
+                  onClick={handleAiDraft}
+                  disabled={composeDrafting}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 disabled:opacity-50"
+                >
+                  {composeDrafting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      Drafting with AI…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      AI Draft
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="flex justify-end gap-2 p-5 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <button onClick={() => setComposeClient(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={composeSending || !composeSubject || !composeBody}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {composeSending ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  {composeSending ? 'Sending…' : 'Send'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── AI Summary Modal ───────────────────────────────────── */}
         {showAiSummary && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1238,7 +1869,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Duplicate Email Detected</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    A contact with this email already exists in the org CRM: <strong>{dupWarning.first_name} {dupWarning.last_name}</strong>
+                    A contact with this email already exists: <strong>{dupWarning.first_name} {dupWarning.last_name}</strong>
                   </p>
                 </div>
               </div>
@@ -1347,7 +1978,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </div>
                 </div>
 
-                {/* Assigned to (org mode only) */}
                 {crmMode === 'org' && orgMembers.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assigned To</label>
