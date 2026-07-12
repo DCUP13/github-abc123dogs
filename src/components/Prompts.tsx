@@ -1610,39 +1610,58 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
 
               {quickShareEnabled && (
                 <div className="space-y-3 pt-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Who can see and use this prompt?</p>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="qs-scope" value="team" checked={quickShareScope === 'team'} onChange={() => setQuickShareScope('team')} className="text-blue-600" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">My team</span>
-                    </label>
-                    {userOrgs.length > 0 && (
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="qs-scope" value="organization" checked={quickShareScope === 'organization'} onChange={() => setQuickShareScope('organization')} className="text-blue-600" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Specific organizations</span>
-                      </label>
-                    )}
-                    {isPlatformOwner && (
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="qs-scope" value="global" checked={quickShareScope === 'global'} onChange={() => setQuickShareScope('global')} className="text-blue-600" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">All users (global)</span>
-                      </label>
-                    )}
-                  </div>
-                  {quickShareScope === 'organization' && userOrgs.length > 0 && (
-                    <div className="space-y-1 pl-5">
-                      {userOrgs.map(org => (
-                        <label key={org.id} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={quickShareOrgIds.includes(org.id)}
-                            onChange={e => setQuickShareOrgIds(prev => e.target.checked ? [...prev, org.id] : prev.filter(id => id !== org.id))}
-                            className="text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{org.name}</span>
+                  {isPlatformOwner ? (
+                    <>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Choose who can see and use this prompt.</p>
+                      <div className="space-y-2">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input type="radio" name="qs-scope" value="team" checked={quickShareScope === 'team'} onChange={() => setQuickShareScope('team')} className="mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">My Team</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Visible to members of your organization.</p>
+                          </div>
                         </label>
-                      ))}
-                    </div>
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input type="radio" name="qs-scope" value="organization" checked={quickShareScope === 'organization'} onChange={() => setQuickShareScope('organization')} className="mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Specific Organizations</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Visible only to selected organizations.</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input type="radio" name="qs-scope" value="global" checked={quickShareScope === 'global'} onChange={() => setQuickShareScope('global')} className="mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                              <Globe className="w-3.5 h-3.5 text-amber-500" />All Users
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Visible to every user on the platform.</p>
+                          </div>
+                        </label>
+                      </div>
+                      {quickShareScope === 'organization' && userOrgs.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Select organizations:</p>
+                          {userOrgs.map(org => (
+                            <label key={org.id} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={quickShareOrgIds.includes(org.id)}
+                                onChange={e => setQuickShareOrgIds(prev => e.target.checked ? [...prev, org.id] : prev.filter(id => id !== org.id))}
+                                className="rounded"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{org.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      {quickShareScope === 'organization' && userOrgs.length === 0 && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">You are not a member of any organizations yet.</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      This prompt will be shared with your team members and lead. Your account owner will also have access.
+                    </p>
                   )}
                 </div>
               )}
@@ -1654,7 +1673,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
               </button>
               <button
                 onClick={handleQuickShareSave}
-                disabled={quickShareSaving || (quickShareEnabled && quickShareScope === 'organization' && quickShareOrgIds.length === 0)}
+                disabled={quickShareSaving || (quickShareEnabled && isPlatformOwner && quickShareScope === 'organization' && quickShareOrgIds.length === 0)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
               >
                 {quickShareSaving ? 'Saving...' : 'Save'}
