@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Building2, Globe, MapPin, Users, Briefcase, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Building2, Globe, MapPin, Users, Briefcase, Save, X, Plus, Trash2, LayoutList, GripVertical } from 'lucide-react';
 
 interface Organization {
   id: string;
@@ -42,6 +42,14 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
   const [domainError, setDomainError] = useState('');
   const [domainSuccess, setDomainSuccess] = useState('');
   const [domainSaving, setDomainSaving] = useState(false);
+
+  // CRM custom fields
+  interface CustomField { id: string; field_key: string; field_label: string; field_type: string; options: string[] | null; sort_order: number; }
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
+  const [newField, setNewField] = useState({ label: '', type: 'text', options: '' });
+  const [fieldSaving, setFieldSaving] = useState(false);
+  const [fieldError, setFieldError] = useState('');
 
   useEffect(() => {
     loadOrganization();
@@ -85,6 +93,7 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
       });
 
       loadOrgDomains(orgId);
+      loadCustomFields(orgId);
     } catch (err: any) {
       console.error('Error loading organization:', err);
       setError(err.message);
@@ -165,6 +174,56 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
     } finally {
       setDomainSaving(false);
     }
+  };
+
+  const loadCustomFields = async (id: string) => {
+    setCustomFieldsLoading(true);
+    const { data } = await supabase
+      .from('client_custom_fields')
+      .select('*')
+      .eq('org_id', id)
+      .order('sort_order', { ascending: true });
+    setCustomFields(data || []);
+    setCustomFieldsLoading(false);
+  };
+
+  const handleAddField = async () => {
+    const label = newField.label.trim();
+    if (!label) { setFieldError('Field name is required.'); return; }
+    if (!organization) return;
+    const key = label.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (customFields.some(f => f.field_key === key)) {
+      setFieldError('A field with this name already exists.'); return;
+    }
+    try {
+      setFieldSaving(true); setFieldError('');
+      const options = newField.type === 'dropdown'
+        ? newField.options.split(',').map(s => s.trim()).filter(Boolean)
+        : null;
+      const { error } = await supabase.from('client_custom_fields').insert({
+        org_id: organization.id,
+        field_key: key,
+        field_label: label,
+        field_type: newField.type,
+        options: options?.length ? options : null,
+        sort_order: customFields.length,
+      });
+      if (error) throw error;
+      setNewField({ label: '', type: 'text', options: '' });
+      loadCustomFields(organization.id);
+    } catch (err: any) {
+      setFieldError(err.message);
+    } finally {
+      setFieldSaving(false);
+    }
+  };
+
+  const handleDeleteField = async (id: string) => {
+    if (!confirm('Delete this custom field? All stored values for this field will also be removed.')) return;
+    await supabase.from('client_custom_values').delete().eq('field_key',
+      customFields.find(f => f.id === id)?.field_key || '');
+    await supabase.from('client_custom_fields').delete().eq('id', id);
+    if (organization) loadCustomFields(organization.id);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -483,6 +542,104 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
                 ))}
               </div>
             )}
+          </div>
+          {/* CRM Custom Fields */}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+              <LayoutList className="w-4 h-4" />
+              CRM Custom Fields
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Add extra data fields to client records for everyone in this organization.
+            </p>
+
+            {fieldError && (
+              <div className="mb-3 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm">{fieldError}</div>
+            )}
+
+            {/* Existing fields */}
+            {customFieldsLoading ? (
+              <p className="text-sm text-gray-400 py-3">Loading fields…</p>
+            ) : customFields.length === 0 ? (
+              <p className="text-center text-gray-400 dark:text-gray-500 py-5 text-sm">No custom fields yet.</p>
+            ) : (
+              <div className="space-y-2 mb-4">
+                {customFields.map(f => (
+                  <div key={f.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/60 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{f.field_label}</span>
+                        <span className="ml-2 text-xs text-gray-400 capitalize">{f.field_type}</span>
+                        {f.options && f.options.length > 0 && (
+                          <span className="ml-1 text-xs text-gray-400">— {f.options.join(', ')}</span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteField(f.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors flex-shrink-0"
+                      title="Delete field"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add new field */}
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Add Field</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Field Name *</label>
+                  <input
+                    type="text"
+                    value={newField.label}
+                    onChange={e => { setNewField(p => ({ ...p, label: e.target.value })); setFieldError(''); }}
+                    placeholder="e.g. Pre-approval Status"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Field Type</label>
+                  <select
+                    value={newField.type}
+                    onChange={e => setNewField(p => ({ ...p, type: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="text">Text</option>
+                    <option value="number">Number</option>
+                    <option value="date">Date</option>
+                    <option value="dropdown">Dropdown</option>
+                    <option value="boolean">Yes / No</option>
+                  </select>
+                </div>
+              </div>
+              {newField.type === 'dropdown' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Options (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newField.options}
+                    onChange={e => setNewField(p => ({ ...p, options: e.target.value }))}
+                    placeholder="Option A, Option B, Option C"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              )}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAddField}
+                  disabled={fieldSaving || !newField.label.trim()}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  {fieldSaving ? 'Adding…' : 'Add Field'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
