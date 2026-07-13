@@ -12,6 +12,7 @@ interface Organization {
   website: string;
   location: string;
   owner_id: string;
+  allow_member_add_clients: boolean;
 }
 
 interface OrganizationSettingsProps {
@@ -47,6 +48,8 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
   interface CustomField { id: string; field_key: string; field_label: string; field_type: string; options: string[] | null; sort_order: number; }
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
+  const [allowMemberAddClients, setAllowMemberAddClients] = useState(true);
+  const [savingMemberPerm, setSavingMemberPerm] = useState(false);
   const [newField, setNewField] = useState({ label: '', type: 'text', options: '' });
   const [fieldSaving, setFieldSaving] = useState(false);
   const [fieldError, setFieldError] = useState('');
@@ -82,6 +85,7 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
 
       const orgData = orgRes.data;
       setOrganization(orgData);
+      setAllowMemberAddClients(orgData.allow_member_add_clients ?? true);
       setFormData({
         name: orgData.name || '',
         description: orgData.description || '',
@@ -174,6 +178,17 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
     } finally {
       setDomainSaving(false);
     }
+  };
+
+  const handleToggleMemberAddClients = async (value: boolean) => {
+    if (!organization) return;
+    setSavingMemberPerm(true);
+    setAllowMemberAddClients(value);
+    await supabase
+      .from('organizations')
+      .update({ allow_member_add_clients: value })
+      .eq('id', organization.id);
+    setSavingMemberPerm(false);
   };
 
   const loadCustomFields = async (id: string) => {
@@ -543,6 +558,30 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
               </div>
             )}
           </div>
+          {/* CRM Permissions */}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+              <Users className="w-4 h-4" />
+              CRM Permissions
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Control what members can do in the organization CRM.
+            </p>
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Members can add contacts</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">When off, only managers and owners can add new contacts to the org CRM.</p>
+              </div>
+              <button
+                onClick={() => handleToggleMemberAddClients(!allowMemberAddClients)}
+                disabled={savingMemberPerm}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ml-4 ${allowMemberAddClients ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowMemberAddClients ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          </div>
+
           {/* CRM Custom Fields */}
           <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">

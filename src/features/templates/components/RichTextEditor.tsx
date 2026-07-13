@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Type } from 'lucide-react';
+import React, { forwardRef, useImperativeHandle, useRef, useEffect, useState as useStateImport } from 'react';
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, List, ListOrdered, Type, ChevronDown } from 'lucide-react';
 
 export interface RichTextEditorRef {
   getContent: () => string;
@@ -8,6 +8,7 @@ export interface RichTextEditorRef {
 interface RichTextEditorProps {
   content: string;
   className?: string;
+  placeholderFields?: Array<{ key: string; label: string }>;
 }
 
 const fontFamilies = [
@@ -106,7 +107,7 @@ const getActiveStyles = (selection: Selection, editorElement: HTMLElement | null
 };
 
 export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
-  ({ content, className = '' }, ref) => {
+  ({ content, className = '', placeholderFields }, ref) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const [activeStyles, setActiveStyles] = React.useState({
       bold: false,
@@ -117,6 +118,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       fontFamily: '',
       fontSize: '2'
     });
+    const [showFieldPicker, setShowFieldPicker] = useStateImport(false);
 
     useImperativeHandle(ref, () => ({
       getContent: () => editorRef.current?.innerHTML || ''
@@ -140,8 +142,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       updateActiveStyles();
     };
 
-    const handleFontSize = (size: string) => {
-      const fontSize = fontSizes.find(s => s.value === size);
+    const handleFontSize = (size: string) => {      const fontSize = fontSizes.find(s => s.value === size);
       if (!fontSize) return;
 
       const selection = window.getSelection();
@@ -178,6 +179,13 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       }
 
       editorRef.current?.focus();
+      updateActiveStyles();
+    };
+
+    const insertPlaceholder = (key: string) => {
+      editorRef.current?.focus();
+      document.execCommand('insertText', false, `{{${key}}}`);
+      setShowFieldPicker(false);
       updateActiveStyles();
     };
 
@@ -380,6 +388,36 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
           >
             <Type className="w-4 h-4" />
           </button>
+
+          {placeholderFields && placeholderFields.length > 0 && (
+            <>
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
+              <div className="relative">
+                <button
+                  onClick={() => setShowFieldPicker(v => !v)}
+                  className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white"
+                  title="Insert field placeholder"
+                >
+                  Insert Field
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showFieldPicker && (
+                  <div className="absolute top-full left-0 mt-1 z-50 w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 max-h-64 overflow-y-auto">
+                    {placeholderFields.map(f => (
+                      <button
+                        key={f.key}
+                        onMouseDown={(e) => { e.preventDefault(); insertPlaceholder(f.key); }}
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      >
+                        <span className="font-mono text-xs text-blue-600 dark:text-blue-400 mr-2">{`{{${f.key}}}`}</span>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
           </div>
         </div>
 

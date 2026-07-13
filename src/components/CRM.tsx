@@ -3,13 +3,14 @@ import {
   Users, Plus, Search, Phone, Mail, MapPin, DollarSign, Calendar, Building,
   CreditCard as Edit, Trash2, X, Save, MessageSquare, Star, Upload, Sparkles,
   Activity, User, Clock, AlertCircle, List, LayoutGrid, Settings2,
-  Send, Zap, ChevronDown, ChevronUp, CheckCircle2
+  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
 import { showConfirm } from '../lib/confirm';
 import { CsvImportDialog } from './crm/CsvImportDialog';
 import { CrmFieldsManager } from './crm/CrmFieldsManager';
+import { CrmCampaign } from './crm/CrmCampaign';
 
 export interface Client {
   id: string;
@@ -185,6 +186,20 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
+  // Personal custom fields (non-org mode)
+  const [userCustomFields, setUserCustomFields] = useState<CustomField[]>([]);
+  const [userCustomValues, setUserCustomValues] = useState<Record<string, string>>({});
+
+  // Org permission
+  const [allowMemberAdd, setAllowMemberAdd] = useState(true);
+
+  // SES sender emails for compose
+  const [sesEmails, setSesEmails] = useState<string[]>([]);
+  const [composeFromEmail, setComposeFromEmail] = useState('');
+
+  // Campaigns
+  const [showCampaigns, setShowCampaigns] = useState(false);
+
   // View state
   const [viewMode, setViewMode] = useState<'card' | 'table'>(() =>
     (localStorage.getItem('crm_view_mode') as 'card' | 'table') || 'card'
@@ -260,6 +275,8 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       if (!user) { setIsLoading(false); return; }
       setCurrentUserId(user.id);
       await loadUserOrgs(user.id);
+      await loadUserCustomFields(user.id);
+      await loadSesEmails(user.id);
     })();
   }, []);
 
@@ -273,6 +290,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       fetchClientGrade(selectedClient.id);
       fetchActivityLog(selectedClient.id);
       if (selectedClient.org_id) fetchCustomValues(selectedClient.id, selectedClient.org_id);
+      if (!selectedClient.org_id && currentUserId) fetchUserCustomValues(selectedClient.id, currentUserId);
     }
   }, [selectedClient]);
 
@@ -307,6 +325,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     setIsManager(org?.role === 'owner' || org?.role === 'manager');
     await loadOrgMembers(orgId);
     await loadCustomFields(orgId);
+    // Fetch org permission
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('allow_member_add_clients')
+      .eq('id', orgId)
+      .maybeSingle();
+    setAllowMemberAdd(orgData?.allow_member_add_clients ?? true);
   };
 
   const loadOrgMembers = async (orgId: string) => {
@@ -330,6 +355,26 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       .eq('org_id', orgId)
       .order('sort_order', { ascending: true });
     setCustomFields((data as CustomField[]) || []);
+  };
+
+  const loadUserCustomFields = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_custom_fields')
+      .select('*')
+      .eq('user_id', userId)
+      .order('sort_order', { ascending: true });
+    setUserCustomFields((data as CustomField[]) || []);
+  };
+
+  const loadSesEmails = async (userId: string) => {
+    const { data } = await supabase
+      .from('amazon_ses_emails')
+      .select('email')
+      .eq('user_id', userId)
+      .eq('verified', true);
+    const emails = (data || []).map((r: any) => r.email);
+    setSesEmails(emails);
+    if (emails.length > 0 && !composeFromEmail) setComposeFromEmail(emails[0]);
   };
 
   const handleModeChange = async (mode: 'personal' | 'org') => {
@@ -427,6 +472,17 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     const map: Record<string, string> = {};
     data?.forEach(v => { map[v.field_key] = v.value || ''; });
     setCustomValues(map);
+  };
+
+  const fetchUserCustomValues = async (clientId: string, userId: string) => {
+    const { data } = await supabase
+      .from('user_custom_values')
+      .select('field_key, value')
+      .eq('client_id', clientId)
+      .eq('user_id', userId);
+    const map: Record<string, string> = {};
+    data?.forEach(v => { map[v.field_key] = v.value || ''; });
+    setUserCustomValues(map);
   };
 
   // ─── Duplicate check ──────────────────────────────────────────────────────
@@ -723,32 +779,16 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const handleSendEmail = async () => {
     if (!composeClient || !composeSubject || !composeBody) return;
     if (!composeClient.email) { toast.error('This client has no email address.'); return; }
+    if (!composeFromEmail) { toast.error('No sending address selected. Verify a sender in Settings > Email.'); return; }
 
     setComposeSending(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Fetch SES settings for the sender
-      const { data: sesData } = await supabase
-        .from('amazon_ses_settings')
-        .select('noreply_domain')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const fromEmail = sesData?.noreply_domain
-        ? `noreply@${sesData.noreply_domain}`
-        : null;
-
-      if (!fromEmail) {
-        toast.error('No sending email address configured. Set up Amazon SES in Settings first.');
-        return;
-      }
-
-      // Insert into email_outbox for send-email function to process
       const { error: outboxErr } = await supabase.from('email_outbox').insert({
         user_id: user.id,
-        from_email: fromEmail,
+        from_email: composeFromEmail,
         to_email: composeClient.email,
         subject: composeSubject,
         body_html: `<p>${composeBody.replace(/\n/g, '<br/>')}</p>`,
@@ -757,7 +797,6 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       });
       if (outboxErr) throw outboxErr;
 
-      // Log as interaction
       const interPayload: any = {
         client_id: composeClient.id,
         user_id: user.id,
@@ -1028,6 +1067,17 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </button>
                 )}
 
+                {/* Campaigns (managers) */}
+                {crmMode === 'org' && isManager && (
+                  <button
+                    onClick={() => setShowCampaigns(true)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <Megaphone className="w-4 h-4 mr-1.5 text-blue-500" />
+                    Campaigns
+                  </button>
+                )}
+
                 {/* Import CSV (org managers only) */}
                 {crmMode === 'org' && isManager && (
                   <button
@@ -1039,6 +1089,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </button>
                 )}
 
+                {(crmMode === 'personal' || allowMemberAdd || isManager) && (
                 <button
                   onClick={() => { setClientForm(prev => ({ ...prev, assigned_to: currentUserId || '' })); setShowClientForm(true); }}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
@@ -1046,6 +1097,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <Plus className="w-4 h-4 mr-2" />
                   Add Client
                 </button>
+                )}
               </div>
             </div>
 
@@ -1773,6 +1825,18 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     <p className="text-xs text-amber-700 dark:text-amber-400"><span className="font-semibold">Outreach reason:</span> {composeReason}</p>
                   </div>
                 )}
+                {sesEmails.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From</label>
+                    <select
+                      value={composeFromEmail}
+                      onChange={e => setComposeFromEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card-inner text-gray-900 dark:text-white text-sm"
+                    >
+                      {sesEmails.map(e => <option key={e} value={e}>{e}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
                   <input
@@ -2139,6 +2203,18 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
             currentUserId={currentUserId || ''}
             onClose={() => setShowCsvImport(false)}
             onImported={() => { setShowCsvImport(false); fetchClients(); }}
+          />
+        )}
+
+        {/* ─── Campaigns ───────────────────────────────────────────── */}
+        {showCampaigns && selectedOrgId && (
+          <CrmCampaign
+            orgId={selectedOrgId}
+            clients={clients}
+            orgCustomFields={customFields}
+            sesEmails={sesEmails}
+            currentUserId={currentUserId || ''}
+            onClose={() => setShowCampaigns(false)}
           />
         )}
       </div>

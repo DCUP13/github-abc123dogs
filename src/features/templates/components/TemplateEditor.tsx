@@ -9,9 +9,10 @@ interface TemplateEditorProps {
   template: Template;
   onSave: (template: Template) => void;
   onCancel: () => void;
+  placeholderFields?: Array<{ key: string; label: string }>;
 }
 
-export function TemplateEditor({ template, onSave, onCancel }: TemplateEditorProps) {
+export function TemplateEditor({ template, onSave, onCancel, placeholderFields }: TemplateEditorProps) {
   const editorRef = useRef<RichTextEditorRef>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
@@ -66,6 +67,7 @@ export function TemplateEditor({ template, onSave, onCancel }: TemplateEditorPro
               ref={editorRef}
               content={template.content}
               className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              placeholderFields={placeholderFields}
             />
           )}
         </div>
