@@ -13,6 +13,7 @@ interface Organization {
   location: string;
   owner_id: string;
   allow_member_add_clients: boolean;
+  who_can_run_campaigns: 'managers' | 'members';
 }
 
 interface OrganizationSettingsProps {
@@ -49,6 +50,7 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [customFieldsLoading, setCustomFieldsLoading] = useState(false);
   const [allowMemberAddClients, setAllowMemberAddClients] = useState(true);
+  const [whoCanRunCampaigns, setWhoCanRunCampaigns] = useState<'managers' | 'members'>('managers');
   const [savingMemberPerm, setSavingMemberPerm] = useState(false);
   const [newField, setNewField] = useState({ label: '', type: 'text', options: '' });
   const [fieldSaving, setFieldSaving] = useState(false);
@@ -86,6 +88,7 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
       const orgData = orgRes.data;
       setOrganization(orgData);
       setAllowMemberAddClients(orgData.allow_member_add_clients ?? true);
+      setWhoCanRunCampaigns(orgData.who_can_run_campaigns ?? 'managers');
       setFormData({
         name: orgData.name || '',
         description: orgData.description || '',
@@ -187,6 +190,17 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
     await supabase
       .from('organizations')
       .update({ allow_member_add_clients: value })
+      .eq('id', organization.id);
+    setSavingMemberPerm(false);
+  };
+
+  const handleWhoCanRunCampaigns = async (value: 'managers' | 'members') => {
+    if (!organization) return;
+    setSavingMemberPerm(true);
+    setWhoCanRunCampaigns(value);
+    await supabase
+      .from('organizations')
+      .update({ who_can_run_campaigns: value })
       .eq('id', organization.id);
     setSavingMemberPerm(false);
   };
@@ -579,6 +593,21 @@ export default function OrganizationSettings({ orgId, onClose }: OrganizationSet
               >
                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${allowMemberAddClients ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/40 rounded-lg border border-gray-200 dark:border-gray-700 mt-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Who can run campaigns</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Members can launch campaigns directly; otherwise they go to the manager approval queue.</p>
+              </div>
+              <select
+                value={whoCanRunCampaigns}
+                onChange={e => handleWhoCanRunCampaigns(e.target.value as 'managers' | 'members')}
+                disabled={savingMemberPerm}
+                className="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="managers">Managers only (others require approval)</option>
+                <option value="members">All members</option>
+              </select>
             </div>
           </div>
 

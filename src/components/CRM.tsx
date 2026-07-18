@@ -3,7 +3,7 @@ import {
   Users, Plus, Search, Phone, Mail, MapPin, DollarSign, Calendar, Building,
   CreditCard as Edit, Trash2, X, Save, MessageSquare, Star, Upload, Sparkles,
   Activity, User, Clock, AlertCircle, List, LayoutGrid, Settings2,
-  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone, ArrowUpCircle, ClipboardCheck, X, RotateCcw
+  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone, ArrowUpCircle, ClipboardCheck, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
@@ -199,6 +199,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   // Campaigns
   const [showCampaigns, setShowCampaigns] = useState(false);
+  const [whoCanRunCampaigns, setWhoCanRunCampaigns] = useState<'managers' | 'members'>('managers');
 
   // Promote personal contact to org
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
@@ -343,10 +344,11 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     // Fetch org permission
     const { data: orgData } = await supabase
       .from('organizations')
-      .select('allow_member_add_clients')
+      .select('allow_member_add_clients, who_can_run_campaigns')
       .eq('id', orgId)
       .maybeSingle();
     setAllowMemberAdd(orgData?.allow_member_add_clients ?? true);
+    setWhoCanRunCampaigns(orgData?.who_can_run_campaigns ?? 'managers');
   };
 
   const loadOrgMembers = async (orgId: string) => {
@@ -2401,7 +2403,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
             userCustomFields={userCustomFields}
             sesEmails={sesEmails}
             currentUserId={currentUserId || ''}
-            isManager={isManager}
+            isManager={isManager || whoCanRunCampaigns === 'members'}
             onClose={() => setShowCampaigns(false)}
           />
         )}
