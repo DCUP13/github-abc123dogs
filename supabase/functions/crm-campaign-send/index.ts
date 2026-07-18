@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { campaign_id, client_ids, org_id, from_email, subject, body_html } = await req.json();
+    const { campaign_id, client_ids, org_id, user_id, scope = 'org', from_email, subject, body_html } = await req.json();
 
     if (!campaign_id || !client_ids?.length) {
       return new Response(JSON.stringify({ error: "campaign_id and client_ids required" }), {
@@ -46,12 +46,23 @@ Deno.serve(async (req: Request) => {
 
     if (clientsErr) throw clientsErr;
 
-    // Fetch custom values for all clients
-    const { data: cvData } = await supabase
-      .from("client_custom_values")
-      .select("client_id, field_key, value")
-      .in("client_id", client_ids)
-      .eq("org_id", org_id);
+    // Fetch custom values for all clients (personal vs org)
+    let cvData: any[] | null = null;
+    if (scope === 'personal') {
+      const res = await supabase
+        .from("user_custom_values")
+        .select("client_id, field_key, value")
+        .in("client_id", client_ids)
+        .eq("user_id", user_id);
+      cvData = res.data;
+    } else {
+      const res = await supabase
+        .from("client_custom_values")
+        .select("client_id, field_key, value")
+        .in("client_id", client_ids)
+        .eq("org_id", org_id);
+      cvData = res.data;
+    }
 
     const customValuesByClient: Record<string, Record<string, string>> = {};
     (cvData || []).forEach((row: any) => {

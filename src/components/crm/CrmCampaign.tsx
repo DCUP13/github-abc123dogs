@@ -26,9 +26,11 @@ interface Template {
 }
 
 interface CrmCampaignProps {
-  orgId: string;
+  scope: 'personal' | 'org';
+  orgId?: string | null;
   clients: Client[];
   orgCustomFields: CustomField[];
+  userCustomFields?: CustomField[];
   sesEmails: string[];
   currentUserId: string;
   onClose: () => void;
@@ -43,7 +45,7 @@ const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
   { key: 'validate', label: 'Review & Send', icon: Send },
 ];
 
-export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, currentUserId, onClose }: CrmCampaignProps) {
+export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustomFields = [], sesEmails, currentUserId, onClose }: CrmCampaignProps) {
   const [step, setStep] = useState<Step>('audience');
 
   // Audience
@@ -60,8 +62,21 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
   const [bodyHtml, setBodyHtml] = useState('');
   const [campaignName, setCampaignName] = useState('');
 
-  // From
-  const [fromEmail, setFromEmail] = useState(sesEmails[0] || '');
+  // From — prefer persisted default sender
+  const [fromEmail, setFromEmail] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('default_ses_email')
+        .eq('user_id', currentUserId)
+        .maybeSingle();
+      const saved = settings?.default_ses_email as string | undefined;
+      if (saved && sesEmails.includes(saved)) setFromEmail(saved);
+      else if (sesEmails.length > 0) setFromEmail(sesEmails[0]);
+    })();
+  }, [sesEmails, currentUserId]);
 
   // Validate
   const [validating, setValidating] = useState(false);
@@ -122,9 +137,10 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
     }
   };
 
+  const activeCustomFields = scope === 'personal' ? userCustomFields : orgCustomFields;
   const allKnownFields = [
     ...STANDARD_FIELDS,
-    ...orgCustomFields.map(f => ({ key: f.field_key, label: f.field_label })),
+    ...activeCustomFields.map(f => ({ key: f.field_key, label: f.field_label })),
   ];
 
   const runValidation = async () => {
@@ -138,12 +154,23 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
     if (unknown.length === 0) {
       const selectedClients = clients.filter(c => selectedClientIds.has(c.id));
 
-      // Fetch custom values for all selected clients
-      const { data: cvData } = await supabase
-        .from('client_custom_values')
-        .select('client_id, field_key, value')
-        .in('client_id', selectedClients.map(c => c.id))
-        .eq('org_id', orgId);
+      // Fetch custom values for all selected clients (personal vs org)
+      let cvData: any[] | null = null;
+      if (scope === 'personal') {
+        const res = await supabase
+          .from('user_custom_values')
+          .select('client_id, field_key, value')
+          .in('client_id', selectedClients.map(c => c.id))
+          .eq('user_id', currentUserId);
+        cvData = res.data;
+      } else {
+        const res = await supabase
+          .from('client_custom_values')
+          .select('client_id, field_key, value')
+          .in('client_id', selectedClients.map(c => c.id))
+          .eq('org_id', orgId);
+        cvData = res.data;
+      }
 
       const customValuesByClient: Record<string, Record<string, string>> = {};
       (cvData || []).forEach((row: any) => {
@@ -195,12 +222,19 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
 
     setSending(true);
     try {
+      // Persist default sender
+      await supabase
+        .from('user_settings')
+        .update({ default_ses_email: fromEmail, updated_at: new Date().toISOString() })
+        .eq('user_id', currentUserId);
+
       // Create campaign record
       const { data: campaign, error: campaignErr } = await supabase
         .from('crm_campaigns')
         .insert({
           user_id: currentUserId,
-          org_id: orgId,
+          org_id: scope === 'org' ? orgId : null,
+          scope,
           name: campaignName,
           subject,
           body_html: bodyHtml,
@@ -227,7 +261,9 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
         body: JSON.stringify({
           campaign_id: campaign.id,
           client_ids: contactsToSend,
-          org_id: orgId,
+          scope,
+          org_id: scope === 'org' ? orgId : null,
+          user_id: currentUserId,
           from_email: fromEmail,
           subject,
           body_html: bodyHtml,
@@ -258,7 +294,12 @@ export function CrmCampaign({ orgId, clients, orgCustomFields, sesEmails, curren
       <div className="app-card rounded-xl shadow-xl w-full max-w-3xl my-4 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Campaign</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">New Campaign</h2>
+            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${scope === 'personal' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300'}`}>
+              {scope === 'personal' ? 'Personal' : 'Org'}
+            </span>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <X className="w-5 h-5" />
           </button>

@@ -3,7 +3,7 @@ import {
   Users, Plus, Search, Phone, Mail, MapPin, DollarSign, Calendar, Building,
   CreditCard as Edit, Trash2, X, Save, MessageSquare, Star, Upload, Sparkles,
   Activity, User, Clock, AlertCircle, List, LayoutGrid, Settings2,
-  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone
+  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone, ArrowUpCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
@@ -199,6 +199,15 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
 
   // Campaigns
   const [showCampaigns, setShowCampaigns] = useState(false);
+
+  // Promote personal contact to org
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoteClientId, setPromoteClientId] = useState<string | null>(null);
+  const [promoteTargetOrg, setPromoteTargetOrg] = useState<string>('');
+  const [promotePreview, setPromotePreview] = useState<any>(null);
+  const [promoteSelectedFields, setPromoteSelectedFields] = useState<string[]>([]);
+  const [promoteDuplicate, setPromoteDuplicate] = useState<any>(null);
+  const [promoteLoading, setPromoteLoading] = useState(false);
 
   // View state
   const [viewMode, setViewMode] = useState<'card' | 'table'>(() =>
@@ -786,6 +795,11 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Persist default sender for next time
+      await supabase.from('user_settings')
+        .update({ default_ses_email: composeFromEmail, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
       const { error: outboxErr } = await supabase.from('email_outbox').insert({
         user_id: user.id,
         from_email: composeFromEmail,
@@ -818,6 +832,78 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     } finally {
       setComposeSending(false);
     }
+  };
+
+  // ─── Promote personal contact to org ──────────────────────────────────────
+  const handlePromotePreview = async (clientId: string, targetOrgId: string) => {
+    setPromoteLoading(true);
+    setPromoteDuplicate(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/promote-client-to-org`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId, target_org_id: targetOrgId, phase: 'preview' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Preview failed');
+      if (json.duplicate) {
+        setPromoteDuplicate(json);
+      } else {
+        setPromotePreview(json);
+        setPromoteSelectedFields((json.personal_fields || []).map((f: any) => f.field_key));
+      }
+    } catch (err: any) {
+      toast.error(`Promote preview failed: ${err.message}`);
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
+
+  const handlePromoteCommit = async () => {
+    if (!promoteClientId || !promoteTargetOrg) return;
+    setPromoteLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/promote-client-to-org`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: promoteClientId,
+          target_org_id: promoteTargetOrg,
+          phase: 'commit',
+          selected_fields: promoteSelectedFields,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Commit failed');
+      toast.success('Contact promoted to organization.');
+      setShowPromoteDialog(false);
+      setPromoteClientId(null);
+      setPromotePreview(null);
+      setPromoteDuplicate(null);
+      setPromoteSelectedFields([]);
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(`Promote failed: ${err.message}`);
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
+
+  const openPromoteDialog = (clientId: string) => {
+    setPromoteClientId(clientId);
+    setPromotePreview(null);
+    setPromoteDuplicate(null);
+    setPromoteSelectedFields([]);
+    setPromoteTargetOrg(userOrgs[0]?.id || '');
+    setShowPromoteDialog(true);
   };
 
   // ─── Form helpers ─────────────────────────────────────────────────────────
@@ -1067,8 +1153,8 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   </button>
                 )}
 
-                {/* Campaigns (managers) */}
-                {crmMode === 'org' && isManager && (
+                {/* Campaigns (personal: always; org: managers) */}
+                {(crmMode === 'personal' || (crmMode === 'org' && isManager)) && (
                   <button
                     onClick={() => setShowCampaigns(true)}
                     className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -1231,6 +1317,12 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                               className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
                               <Trash2 className="w-4 h-4" />
                             </button>
+                            {crmMode === 'personal' && userOrgs.length > 0 && (
+                              <button onClick={e => { e.stopPropagation(); openPromoteDialog(client.id); }} title="Promote to organization"
+                                className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                                <ArrowUpCircle className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2207,15 +2299,121 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         )}
 
         {/* ─── Campaigns ───────────────────────────────────────────── */}
-        {showCampaigns && selectedOrgId && (
+        {showCampaigns && (crmMode === 'personal' || selectedOrgId) && (
           <CrmCampaign
+            scope={crmMode}
             orgId={selectedOrgId}
             clients={clients}
             orgCustomFields={customFields}
+            userCustomFields={userCustomFields}
             sesEmails={sesEmails}
             currentUserId={currentUserId || ''}
             onClose={() => setShowCampaigns(false)}
           />
+        )}
+
+        {/* ─── Promote to Organization Dialog ─────────────────────────────── */}
+        {showPromoteDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Promote to Organization</h2>
+
+              {promoteDuplicate ? (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      A contact with this email already exists in the organization: <strong>{promoteDuplicate.existing_name}</strong>
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                      The contact was not moved. You can view the existing org contact or cancel.
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => { setShowPromoteDialog(false); setPromoteDuplicate(null); }}
+                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      Cancel
+                    </button>
+                    <button onClick={() => { setShowPromoteDialog(false); setPromoteDuplicate(null); }}
+                      className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                      View Existing
+                    </button>
+                  </div>
+                </div>
+              ) : !promotePreview ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Organization</label>
+                    <select value={promoteTargetOrg} onChange={e => setPromoteTargetOrg(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                      {userOrgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setShowPromoteDialog(false)}
+                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      Cancel
+                    </button>
+                    <button disabled={!promoteTargetOrg || promoteLoading}
+                      onClick={() => handlePromotePreview(promoteClientId!, promoteTargetOrg)}
+                      className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                      {promoteLoading ? 'Checking...' : 'Continue'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Select which fields to carry over to <strong>{userOrgs.find(o => o.id === promoteTargetOrg)?.name}</strong>.
+                    Matching org fields will be populated; missing org fields will be created automatically.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs">
+                    <button onClick={() => setPromoteSelectedFields(promotePreview.personal_fields.map((f: any) => f.field_key))}
+                      className="text-blue-600 hover:underline">Select all</button>
+                    <span className="text-gray-400">|</span>
+                    <button onClick={() => setPromoteSelectedFields([])}
+                      className="text-blue-600 hover:underline">Select none</button>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {promotePreview.personal_fields.map((f: any) => {
+                      const checked = promoteSelectedFields.includes(f.field_key);
+                      const orgMatch = promotePreview.org_fields.find((of: any) => of.field_key === f.field_key);
+                      return (
+                        <label key={f.field_key} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                          <input type="checkbox" checked={checked}
+                            onChange={e => {
+                              if (e.target.checked) setPromoteSelectedFields([...promoteSelectedFields, f.field_key]);
+                              else setPromoteSelectedFields(promoteSelectedFields.filter(k => k !== f.field_key));
+                            }}
+                            className="mt-1" />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{f.field_label}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Value: {f.value || <span className="italic">empty</span>}
+                              {orgMatch ? <span className="ml-2 text-green-600">→ matches org field</span> : <span className="ml-2 text-blue-600">→ new org field</span>}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                    {promotePreview.personal_fields.length === 0 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">No custom fields on this contact.</p>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setPromotePreview(null)}
+                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      Back
+                    </button>
+                    <button disabled={promoteLoading}
+                      onClick={handlePromoteCommit}
+                      className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                      {promoteLoading ? 'Moving...' : 'Promote Contact'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
