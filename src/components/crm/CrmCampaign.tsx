@@ -33,6 +33,7 @@ interface CrmCampaignProps {
   userCustomFields?: CustomField[];
   sesEmails: string[];
   currentUserId: string;
+  isManager?: boolean;
   onClose: () => void;
 }
 
@@ -45,7 +46,7 @@ const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
   { key: 'validate', label: 'Review & Send', icon: Send },
 ];
 
-export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustomFields = [], sesEmails, currentUserId, onClose }: CrmCampaignProps) {
+export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustomFields = [], sesEmails, currentUserId, isManager = false, onClose }: CrmCampaignProps) {
   const [step, setStep] = useState<Step>('audience');
 
   // Audience
@@ -228,6 +229,9 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
         .update({ default_ses_email: fromEmail, updated_at: new Date().toISOString() })
         .eq('user_id', currentUserId);
 
+      // Org campaigns by non-managers go to the approval queue instead of sending immediately.
+      const needsApproval = scope === 'org' && !isManager;
+
       // Create campaign record
       const { data: campaign, error: campaignErr } = await supabase
         .from('crm_campaigns')
@@ -239,7 +243,7 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
           subject,
           body_html: bodyHtml,
           from_email: fromEmail,
-          status: 'sending',
+          status: needsApproval ? 'draft' : 'sending',
           total_count: contactsToSend.length,
           sent_count: 0,
           skipped_count: contactResults.filter(r => !r.canSend).length,
@@ -249,6 +253,33 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
         .single();
 
       if (campaignErr) throw campaignErr;
+
+      if (needsApproval) {
+        // Compute next queue position for this org
+        const { data: maxPos } = await supabase
+          .from('crm_campaign_approvals')
+          .select('queue_position')
+          .eq('org_id', orgId)
+          .order('queue_position', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const nextPos = (maxPos?.queue_position || 0) + 1;
+
+        const { error: approvalErr } = await supabase
+          .from('crm_campaign_approvals')
+          .insert({
+            campaign_id: campaign.id,
+            org_id: orgId,
+            requested_by: currentUserId,
+            status: 'pending',
+            queue_position: nextPos,
+          });
+        if (approvalErr) throw approvalErr;
+
+        toast.success(`Campaign submitted for approval — ${contactsToSend.length} recipients queued for manager review.`);
+        onClose();
+        return;
+      }
 
       // Call edge function to send
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-campaign-send`;
@@ -555,9 +586,9 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
               className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{scope === 'org' && !isManager ? 'Submitting…' : 'Sending…'}</>
               ) : (
-                <><Send className="w-4 h-4 mr-2" />Launch Campaign</>
+                <><Send className="w-4 h-4 mr-2" />{scope === 'org' && !isManager ? 'Submit for Approval' : 'Launch Campaign'}</>
               )}
             </button>
           )}

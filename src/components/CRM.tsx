@@ -3,7 +3,7 @@ import {
   Users, Plus, Search, Phone, Mail, MapPin, DollarSign, Calendar, Building,
   CreditCard as Edit, Trash2, X, Save, MessageSquare, Star, Upload, Sparkles,
   Activity, User, Clock, AlertCircle, List, LayoutGrid, Settings2,
-  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone, ArrowUpCircle
+  Send, Zap, ChevronDown, ChevronUp, CheckCircle2, Megaphone, ArrowUpCircle, ClipboardCheck, X, RotateCcw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from '../lib/toast';
@@ -208,6 +208,12 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const [promoteSelectedFields, setPromoteSelectedFields] = useState<string[]>([]);
   const [promoteDuplicate, setPromoteDuplicate] = useState<any>(null);
   const [promoteLoading, setPromoteLoading] = useState(false);
+
+  // Org campaign approval queue
+  const [showApprovalQueue, setShowApprovalQueue] = useState(false);
+  const [approvalQueue, setApprovalQueue] = useState<any[]>([]);
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState<Record<string, string>>({});
 
   // View state
   const [viewMode, setViewMode] = useState<'card' | 'table'>(() =>
@@ -906,6 +912,77 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     setShowPromoteDialog(true);
   };
 
+  // ─── Org campaign approval queue ──────────────────────────────────────────
+  const fetchApprovalQueue = async () => {
+    if (!selectedOrgId) return;
+    setApprovalLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('crm_campaign_approvals')
+        .select(`
+          id, campaign_id, org_id, requested_by, status, requested_at, reviewed_by, reviewed_at, queue_position, manager_notes,
+          campaign:crm_campaigns(id, name, subject, body_html, from_email, status, total_count, sent_count, scope, user_id)
+        `)
+        .eq('org_id', selectedOrgId)
+        .order('queue_position', { ascending: true });
+      if (error) throw error;
+      setApprovalQueue(data || []);
+    } catch (err: any) {
+      toast.error(`Failed to load approval queue: ${err.message}`);
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const updateApproval = async (approvalId: string, status: string, notes?: string) => {
+    setApprovalLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const updates: any = {
+        status,
+        reviewed_by: user?.id,
+        reviewed_at: new Date().toISOString(),
+      };
+      if (notes !== undefined) updates.manager_notes = notes;
+      const { error } = await supabase
+        .from('crm_campaign_approvals')
+        .update(updates)
+        .eq('id', approvalId);
+      if (error) throw error;
+      toast.success(`Campaign ${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'returned for review'}.`);
+      await fetchApprovalQueue();
+    } catch (err: any) {
+      toast.error(`Update failed: ${err.message}`);
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const reorderApproval = async (approvalId: string, direction: 'up' | 'down') => {
+    const sorted = [...approvalQueue].sort((a, b) => a.queue_position - b.queue_position);
+    const idx = sorted.findIndex(a => a.id === approvalId);
+    if (idx < 0) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    setApprovalLoading(true);
+    try {
+      const a = sorted[idx];
+      const b = sorted[swapIdx];
+      await supabase.from('crm_campaign_approvals').update({ queue_position: b.queue_position }).eq('id', a.id);
+      await supabase.from('crm_campaign_approvals').update({ queue_position: a.queue_position }).eq('id', b.id);
+      await fetchApprovalQueue();
+    } catch (err: any) {
+      toast.error(`Reorder failed: ${err.message}`);
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const sendApprovalBack = async (approvalId: string) => {
+    const notes = approvalNotes[approvalId] || '';
+    await updateApproval(approvalId, 'returned_for_review', notes);
+  };
+
   // ─── Form helpers ─────────────────────────────────────────────────────────
   const resetClientForm = () => {
     setClientForm({
@@ -1161,6 +1238,22 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   >
                     <Megaphone className="w-4 h-4 mr-1.5 text-blue-500" />
                     Campaigns
+                  </button>
+                )}
+
+                {/* Approval Queue (org + managers only) */}
+                {crmMode === 'org' && isManager && (
+                  <button
+                    onClick={() => { setShowApprovalQueue(true); fetchApprovalQueue(); }}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ClipboardCheck className="w-4 h-4 mr-1.5 text-amber-500" />
+                    Approvals
+                    {approvalQueue.filter(a => a.status === 'pending').length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-amber-500 text-white">
+                        {approvalQueue.filter(a => a.status === 'pending').length}
+                      </span>
+                    )}
                   </button>
                 )}
 
@@ -2308,11 +2401,120 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
             userCustomFields={userCustomFields}
             sesEmails={sesEmails}
             currentUserId={currentUserId || ''}
+            isManager={isManager}
             onClose={() => setShowCampaigns(false)}
           />
         )}
 
-        {/* ─── Promote to Organization Dialog ─────────────────────────────── */}
+        {/* ─── Org Campaign Approval Queue Dialog ──────────────────────────── */}
+        {showApprovalQueue && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Campaign Approval Queue</h2>
+                <button onClick={() => setShowApprovalQueue(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {approvalLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : approvalQueue.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic py-8 text-center">
+                  No campaigns awaiting approval.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {[...approvalQueue].sort((a, b) => a.queue_position - b.queue_position).map((a, idx) => {
+                    const c = a.campaign;
+                    const isPending = a.status === 'pending';
+                    const statusColor = a.status === 'approved' ? 'green' : a.status === 'rejected' ? 'red' : a.status === 'returned_for_review' ? 'amber' : 'blue';
+                    return (
+                      <div key={a.id} className={`p-4 rounded-xl border ${isPending ? 'border-amber-200 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono text-gray-400">#{idx + 1}</span>
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{c?.name || 'Untitled campaign'}</h3>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
+                              <div>From: {c?.from_email || '—'}</div>
+                              <div>Subject: {c?.subject || '—'}</div>
+                              <div>Recipients: {c?.total_count || 0}</div>
+                              <div>Requested: {new Date(a.requested_at).toLocaleString()}</div>
+                            </div>
+                            {a.status !== 'pending' && (
+                              <div className="mt-2">
+                                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-${statusColor}-100 text-${statusColor}-800 dark:bg-${statusColor}-900 dark:text-${statusColor}-300`}>
+                                  {a.status.replace(/_/g, ' ')}
+                                </span>
+                                {a.reviewed_at && (
+                                  <span className="ml-2 text-xs text-gray-400">{new Date(a.reviewed_at).toLocaleString()}</span>
+                                )}
+                              </div>
+                            )}
+                            {a.manager_notes && (
+                              <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                                Notes: {a.manager_notes}
+                              </div>
+                            )}
+                          </div>
+
+                          {isPending && (
+                            <div className="flex flex-col gap-1">
+                              <button disabled={idx === 0 || approvalLoading}
+                                onClick={() => reorderApproval(a.id, 'up')} title="Move up"
+                                className="p-1 text-gray-400 hover:text-blue-500 disabled:opacity-30">
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <button disabled={idx === approvalQueue.length - 1 || approvalLoading}
+                                onClick={() => reorderApproval(a.id, 'down')} title="Move down"
+                                className="p-1 text-gray-400 hover:text-blue-500 disabled:opacity-30">
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {isPending && (
+                          <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700 space-y-2">
+                            <textarea
+                              placeholder="Notes for the requester (optional)..."
+                              value={approvalNotes[a.id] || ''}
+                              onChange={e => setApprovalNotes({ ...approvalNotes, [a.id]: e.target.value })}
+                              rows={2}
+                              className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button disabled={approvalLoading}
+                                onClick={() => updateApproval(a.id, 'approved')}
+                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
+                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+                              </button>
+                              <button disabled={approvalLoading}
+                                onClick={() => updateApproval(a.id, 'rejected')}
+                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">
+                                <X className="w-4 h-4 mr-1" /> Reject
+                              </button>
+                              <button disabled={approvalLoading}
+                                onClick={() => sendApprovalBack(a.id)}
+                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50">
+                                <RotateCcw className="w-4 h-4 mr-1" /> Return for review
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {showPromoteDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
