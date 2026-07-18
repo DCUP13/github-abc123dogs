@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, FileText, Mail, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Send, Loader2, Check } from 'lucide-react';
+import { X, Users, FileText, Mail, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Send, Loader2, Check, Plus, Trash2, Clock, GitBranch } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from '../../lib/toast';
 import {
@@ -39,6 +39,37 @@ interface CrmCampaignProps {
 
 type Step = 'audience' | 'message' | 'from' | 'validate';
 
+type CampaignMode = 'single' | 'sequence';
+
+interface SequenceStep {
+  id: string;
+  name: string;
+  subject: string;
+  body_html: string;
+  delay_days: number;
+  branch_type: 'none' | 'opened' | 'replied' | 'clicked' | 'bounced' | 'unsubscribed';
+  branch_target_step: number | null;
+}
+
+const BRANCH_OPTIONS: { value: SequenceStep['branch_type']; label: string }[] = [
+  { value: 'none', label: 'No branch' },
+  { value: 'opened', label: 'If opened' },
+  { value: 'replied', label: 'If replied' },
+  { value: 'clicked', label: 'If clicked' },
+  { value: 'bounced', label: 'If bounced' },
+  { value: 'unsubscribed', label: 'If unsubscribed' },
+];
+
+const newStep = (order: number): SequenceStep => ({
+  id: crypto.randomUUID(),
+  name: `Step ${order}`,
+  subject: '',
+  body_html: '',
+  delay_days: order === 1 ? 0 : 1,
+  branch_type: 'none',
+  branch_target_step: null,
+});
+
 const STEPS: { key: Step; label: string; icon: React.ElementType }[] = [
   { key: 'audience', label: 'Audience', icon: Users },
   { key: 'message', label: 'Message', icon: FileText },
@@ -62,6 +93,8 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [campaignName, setCampaignName] = useState('');
+  const [mode, setMode] = useState<CampaignMode>('single');
+  const [steps, setSteps] = useState<SequenceStep[]>([newStep(1)]);
 
   // From — prefer persisted default sender
   const [fromEmail, setFromEmail] = useState('');
@@ -144,16 +177,35 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
     ...activeCustomFields.map(f => ({ key: f.field_key, label: f.field_label })),
   ];
 
+  const updateStep = (id: string, patch: Partial<SequenceStep>) => {
+    setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+  };
+  const addStep = () => setSteps(prev => [...prev, newStep(prev.length + 1)]);
+  const removeStep = (id: string) => setSteps(prev => prev.length > 1 ? prev.filter(s => s.id !== id) : prev);
+  const moveStep = (id: string, dir: -1 | 1) => {
+    setSteps(prev => {
+      const idx = prev.findIndex(s => s.id === id);
+      if (idx < 0) return prev;
+      const next = idx + dir;
+      if (next < 0 || next >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[idx], copy[next]] = [copy[next], copy[idx]];
+      return copy.map((s, i) => ({ ...s, name: s.name.startsWith('Step ') ? `Step ${i + 1}` : s.name }));
+    });
+  };
+
   const runValidation = async () => {
     setValidating(true);
     setUnknownTokens([]);
     setContactResults([]);
 
-    const unknown = validatePlaceholders(bodyHtml, allKnownFields);
+    const bodyToValidate = mode === 'sequence' ? steps.map(s => s.body_html).join('\n') : bodyHtml;
+    const unknown = validatePlaceholders(bodyToValidate, allKnownFields);
     setUnknownTokens(unknown);
 
     if (unknown.length === 0) {
       const selectedClients = clients.filter(c => selectedClientIds.has(c.id));
+      const bodyForValidation = mode === 'sequence' ? steps.map(s => s.body_html).join('\n') : bodyHtml;
 
       // Fetch custom values for all selected clients (personal vs org)
       let cvData: any[] | null = null;
@@ -179,7 +231,7 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
         customValuesByClient[row.client_id][row.field_key] = row.value || '';
       });
 
-      const results = validateContactsForTemplate(bodyHtml, selectedClients as any, customValuesByClient, {});
+      const results = validateContactsForTemplate(bodyForValidation, selectedClients as any, customValuesByClient, {});
       setContactResults(results);
     }
 
@@ -188,7 +240,11 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
 
   const canAdvance = (): boolean => {
     if (step === 'audience') return selectedClientIds.size > 0;
-    if (step === 'message') return !!subject.trim() && !!bodyHtml.trim() && !!campaignName.trim();
+    if (step === 'message') {
+      if (!campaignName.trim()) return false;
+      if (mode === 'single') return !!subject.trim() && !!bodyHtml.trim();
+      return steps.length > 0 && steps.every(s => !!s.subject.trim() && !!s.body_html.trim());
+    }
     if (step === 'from') return !!fromEmail;
     return false;
   };
@@ -233,6 +289,8 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
       const needsApproval = scope === 'org' && !isManager;
 
       // Create campaign record
+      const isSequence = mode === 'sequence' && steps.length > 0;
+      const sequenceId = isSequence ? crypto.randomUUID() : null;
       const { data: campaign, error: campaignErr } = await supabase
         .from('crm_campaigns')
         .insert({
@@ -240,19 +298,37 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
           org_id: scope === 'org' ? orgId : null,
           scope,
           name: campaignName,
-          subject,
-          body_html: bodyHtml,
+          subject: isSequence ? steps[0].subject : subject,
+          body_html: isSequence ? steps[0].body_html : bodyHtml,
           from_email: fromEmail,
           status: needsApproval ? 'draft' : 'sending',
           total_count: contactsToSend.length,
           sent_count: 0,
           skipped_count: contactResults.filter(r => !r.canSend).length,
           failed_count: 0,
+          sequence_id: sequenceId,
         })
         .select()
         .single();
 
       if (campaignErr) throw campaignErr;
+
+      // Persist sequence steps
+      if (isSequence && sequenceId) {
+        const stepRows = steps.map((s, i) => ({
+          campaign_id: campaign.id,
+          step_order: i + 1,
+          name: s.name,
+          subject: s.subject,
+          body_html: s.body_html,
+          delay_days: s.delay_days,
+          from_email: fromEmail,
+          branch_type: s.branch_type,
+          branch_target_step: s.branch_target_step,
+        }));
+        const { error: stepsErr } = await supabase.from('crm_campaign_steps').insert(stepRows);
+        if (stepsErr) throw stepsErr;
+      }
 
       if (needsApproval) {
         // Compute next queue position for this org
@@ -296,8 +372,9 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
           org_id: scope === 'org' ? orgId : null,
           user_id: currentUserId,
           from_email: fromEmail,
-          subject,
-          body_html: bodyHtml,
+          subject: isSequence ? steps[0].subject : subject,
+          body_html: isSequence ? steps[0].body_html : bodyHtml,
+          is_sequence: isSequence,
         }),
       });
 
@@ -423,26 +500,104 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject *</label>
-                <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
-                  placeholder="Email subject line"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm app-card-inner text-gray-900 dark:text-white" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Campaign Type</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setMode('single')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition ${mode === 'single' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
+                    <Mail className="w-4 h-4 inline mr-1.5" />Single email
+                  </button>
+                  <button type="button" onClick={() => setMode('sequence')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition ${mode === 'sequence' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
+                    <GitBranch className="w-4 h-4 inline mr-1.5" />Multi-step sequence
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body *</label>
-                <textarea value={bodyHtml} onChange={e => setBodyHtml(e.target.value)}
-                  rows={8}
-                  placeholder="Write your message here. Use {{first_name}}, {{last_name}}, etc. for personalization."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm app-card-inner text-gray-900 dark:text-white resize-none font-mono" />
-              </div>
+              {mode === 'single' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject *</label>
+                    <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                      placeholder="Email subject line"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm app-card-inner text-gray-900 dark:text-white" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body *</label>
+                    <textarea value={bodyHtml} onChange={e => setBodyHtml(e.target.value)}
+                      rows={8}
+                      placeholder="Write your message here. Use {{first_name}}, {{last_name}}, etc. for personalization."
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm app-card-inner text-gray-900 dark:text-white resize-none font-mono" />
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  {steps.map((s, i) => (
+                    <div key={s.id} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/30">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                          <input type="text" value={s.name} onChange={e => updateStep(s.id, { name: e.target.value })}
+                            placeholder="Step name"
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white" />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => moveStep(s.id, -1)} disabled={i === 0}
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => moveStep(s.id, 1)} disabled={i === steps.length - 1}
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                          <button type="button" onClick={() => removeStep(s.id)} disabled={steps.length === 1}
+                            className="p-1 text-red-400 hover:text-red-600 disabled:opacity-30"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      </div>
+                      <input type="text" value={s.subject} onChange={e => updateStep(s.id, { subject: e.target.value })}
+                        placeholder="Subject *"
+                        className="w-full px-2 py-1.5 mb-2 text-sm border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white" />
+                      <textarea value={s.body_html} onChange={e => updateStep(s.id, { body_html: e.target.value })}
+                        rows={4}
+                        placeholder="Body * — use {{first_name}} etc."
+                        className="w-full px-2 py-1.5 mb-2 text-sm border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white resize-none font-mono" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <Clock className="w-3.5 h-3.5" />
+                          Wait
+                          <input type="number" min={0} value={s.delay_days} onChange={e => updateStep(s.id, { delay_days: Math.max(0, parseInt(e.target.value) || 0) })}
+                            className="w-14 px-1.5 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white" />
+                          day(s)
+                        </label>
+                        <label className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <GitBranch className="w-3.5 h-3.5" />
+                          <select value={s.branch_type} onChange={e => updateStep(s.id, { branch_type: e.target.value as SequenceStep['branch_type'], branch_target_step: e.target.value === 'none' ? null : s.branch_target_step })}
+                            className="px-1.5 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white">
+                            {BRANCH_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                        </label>
+                        {s.branch_type !== 'none' && (
+                          <select value={s.branch_target_step ?? ''} onChange={e => updateStep(s.id, { branch_target_step: e.target.value ? parseInt(e.target.value) : null })}
+                            className="px-1.5 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded app-card-inner text-gray-900 dark:text-white">
+                            <option value="">Jump to step…</option>
+                            {steps.map((_, j) => <option key={j} value={j + 1}>Step {j + 1}</option>)}
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addStep}
+                    className="w-full py-2 text-sm font-medium text-blue-600 dark:text-blue-400 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                    <Plus className="w-4 h-4 inline mr-1.5" />Add step
+                  </button>
+                </div>
+              )}
 
               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">Available placeholders:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {allKnownFields.map(f => (
                     <code key={f.key}
-                      onClick={() => setBodyHtml(prev => prev + `{{${f.key}}}`)}
+                      onClick={() => {
+                        if (mode === 'single') setBodyHtml(prev => prev + `{{${f.key}}}`);
+                        else setSteps(prev => prev.map((s, i) => i === prev.length - 1 ? { ...s, body_html: s.body_html + `{{${f.key}}}` } : s));
+                      }}
                       className="px-1.5 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/60 font-mono"
                       title={`Insert {{${f.key}}}`}
                     >

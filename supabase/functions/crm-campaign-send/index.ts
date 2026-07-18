@@ -29,13 +29,25 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { campaign_id, client_ids, org_id, user_id, scope = 'org', from_email, subject, body_html } = await req.json();
+    const { campaign_id, client_ids, org_id, user_id, scope = 'org', from_email, subject, body_html, is_sequence = false } = await req.json();
 
     if (!campaign_id || !client_ids?.length) {
       return new Response(JSON.stringify({ error: "campaign_id and client_ids required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Fetch sequence steps if this is a sequence campaign
+    let sequenceSteps: any[] = [];
+    if (is_sequence) {
+      const { data: stepsData, error: stepsErr } = await supabase
+        .from("crm_campaign_steps")
+        .select("*")
+        .eq("campaign_id", campaign_id)
+        .order("step_order", { ascending: true });
+      if (stepsErr) throw stepsErr;
+      sequenceSteps = stepsData || [];
     }
 
     // Fetch clients
@@ -87,24 +99,69 @@ Deno.serve(async (req: Request) => {
       }
 
       const customValues = customValuesByClient[client.id] || {};
-      const resolvedBody = resolvePlaceholders(body_html, client, customValues);
-      const resolvedSubject = resolvePlaceholders(subject, client, customValues);
 
-      outboxRows.push({
-        from_email,
-        to_email: client.email,
-        subject: resolvedSubject,
-        body_html: resolvedBody,
-        body_text: resolvedBody.replace(/<[^>]*>/g, ""),
-        status: "pending",
-        campaign_id,
-      });
-
-      campaignContactRows.push({
-        campaign_id,
-        client_id: client.id,
-        status: "pending",
-      });
+      if (is_sequence && sequenceSteps.length > 0) {
+        // Schedule step 1 immediately, subsequent steps with delay_days offsets
+        const firstStep = sequenceSteps[0];
+        const resolvedBody = resolvePlaceholders(firstStep.body_html, client, customValues);
+        const resolvedSubject = resolvePlaceholders(firstStep.subject, client, customValues);
+        outboxRows.push({
+          from_email,
+          to_email: client.email,
+          subject: resolvedSubject,
+          body_html: resolvedBody,
+          body_text: resolvedBody.replace(/<[^>]*>/g, ""),
+          status: "pending",
+          campaign_id,
+          step_id: firstStep.id,
+          current_step: 1,
+          send_after: new Date().toISOString(),
+        });
+        // Schedule subsequent steps with cumulative delay
+        let cumulativeDays = 0;
+        for (let i = 1; i < sequenceSteps.length; i++) {
+          const step = sequenceSteps[i];
+          cumulativeDays += step.delay_days || 0;
+          const sendAfter = new Date(Date.now() + cumulativeDays * 24 * 60 * 60 * 1000).toISOString();
+          const sBody = resolvePlaceholders(step.body_html, client, customValues);
+          const sSubject = resolvePlaceholders(step.subject, client, customValues);
+          outboxRows.push({
+            from_email,
+            to_email: client.email,
+            subject: sSubject,
+            body_html: sBody,
+            body_text: sBody.replace(/<[^>]*>/g, ""),
+            status: "pending",
+            campaign_id,
+            step_id: step.id,
+            current_step: i + 1,
+            send_after: sendAfter,
+          });
+        }
+        campaignContactRows.push({
+          campaign_id,
+          client_id: client.id,
+          status: "active",
+          current_step: 1,
+        });
+      } else {
+        const resolvedBody = resolvePlaceholders(body_html, client, customValues);
+        const resolvedSubject = resolvePlaceholders(subject, client, customValues);
+        outboxRows.push({
+          from_email,
+          to_email: client.email,
+          subject: resolvedSubject,
+          body_html: resolvedBody,
+          body_text: resolvedBody.replace(/<[^>]*>/g, ""),
+          status: "pending",
+          campaign_id,
+        });
+        campaignContactRows.push({
+          campaign_id,
+          client_id: client.id,
+          status: "pending",
+        });
+      }
 
       sentCount++;
     }
