@@ -923,18 +923,38 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         .from('crm_campaign_approvals')
         .select(`
           id, campaign_id, org_id, requested_by, status, requested_at, reviewed_by, reviewed_at, queue_position, manager_notes,
-          campaign:crm_campaigns(id, name, subject, body_html, from_email, status, total_count, sent_count, scope, user_id)
+          campaign:crm_campaigns(id, name, subject, body_html, from_email, status, total_count, sent_count, scope, user_id, sequence_id, org_id)
         `)
         .eq('org_id', selectedOrgId)
         .order('queue_position', { ascending: true });
       if (error) throw error;
       setApprovalQueue(data || []);
+      // Fetch steps for any sequence campaigns
+      const seqCampaignIds = (data || []).filter((a: any) => a.campaign?.sequence_id).map((a: any) => a.campaign_id);
+      if (seqCampaignIds.length > 0) {
+        const { data: stepsData } = await supabase
+          .from('crm_campaign_steps')
+          .select('*')
+          .in('campaign_id', seqCampaignIds)
+          .order('step_order', { ascending: true });
+        const byCampaign: Record<string, any[]> = {};
+        for (const s of (stepsData || [])) {
+          if (!byCampaign[s.campaign_id]) byCampaign[s.campaign_id] = [];
+          byCampaign[s.campaign_id].push(s);
+        }
+        setApprovalSteps(byCampaign);
+      } else {
+        setApprovalSteps({});
+      }
     } catch (err: any) {
       toast.error(`Failed to load approval queue: ${err.message}`);
     } finally {
       setApprovalLoading(false);
     }
   };
+
+  const [approvalSteps, setApprovalSteps] = useState<Record<string, any[]>>({});
+  const [expandedApproval, setExpandedApproval] = useState<string | null>(null);
 
   const updateApproval = async (approvalId: string, status: string, notes?: string) => {
     setApprovalLoading(true);
@@ -951,7 +971,50 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         .update(updates)
         .eq('id', approvalId);
       if (error) throw error;
-      toast.success(`Campaign ${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'returned for review'}.`);
+
+      // If approved, trigger the send
+      if (status === 'approved') {
+        const approval = approvalQueue.find(a => a.id === approvalId);
+        const c = approval?.campaign;
+        if (c) {
+          // Fetch campaign contacts to get client_ids
+          const { data: contacts } = await supabase
+            .from('crm_campaign_contacts')
+            .select('client_id')
+            .eq('campaign_id', c.id);
+          const clientIds = (contacts || []).map((cc: any) => cc.client_id);
+          const isSequence = !!c.sequence_id;
+          if (clientIds.length > 0) {
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-campaign-send`;
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                campaign_id: c.id,
+                client_ids: clientIds,
+                scope: c.scope || 'org',
+                org_id: c.org_id,
+                user_id: c.user_id,
+                from_email: c.from_email,
+                subject: c.subject,
+                body_html: c.body_html,
+                is_sequence: isSequence,
+              }),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.error || 'Failed to launch approved campaign');
+            }
+            // Mark campaign as sending
+            await supabase.from('crm_campaigns').update({ status: 'sending' }).eq('id', c.id);
+          }
+        }
+      }
+
+      toast.success(`Campaign ${status === 'approved' ? 'approved & launched' : status === 'rejected' ? 'rejected' : 'returned for review'}.`);
       await fetchApprovalQueue();
     } catch (err: any) {
       toast.error(`Update failed: ${err.message}`);
@@ -2433,7 +2496,14 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   {[...approvalQueue].sort((a, b) => a.queue_position - b.queue_position).map((a, idx) => {
                     const c = a.campaign;
                     const isPending = a.status === 'pending';
-                    const statusColor = a.status === 'approved' ? 'green' : a.status === 'rejected' ? 'red' : a.status === 'returned_for_review' ? 'amber' : 'blue';
+                    const isSequence = !!c?.sequence_id;
+                    const stepList = c ? (approvalSteps[c.id] || []) : [];
+                    const isExpanded = expandedApproval === a.id;
+                    const requester = a.requested_by ? getMemberDisplay(a.requested_by) : { label: 'Unknown', initials: '?' };
+                    const statusBadge = a.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                      : a.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                      : a.status === 'returned_for_review' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
                     return (
                       <div key={a.id} className={`p-4 rounded-xl border ${isPending ? 'border-amber-200 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'}`}>
                         <div className="flex items-start justify-between gap-3">
@@ -2441,16 +2511,22 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-mono text-gray-400">#{idx + 1}</span>
                               <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{c?.name || 'Untitled campaign'}</h3>
+                              {isSequence && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                                  {stepList.length || '?'}-step sequence
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-y-0.5">
                               <div>From: {c?.from_email || '—'}</div>
                               <div>Subject: {c?.subject || '—'}</div>
                               <div>Recipients: {c?.total_count || 0}</div>
+                              <div>Requested by: {requester.label}</div>
                               <div>Requested: {new Date(a.requested_at).toLocaleString()}</div>
                             </div>
                             {a.status !== 'pending' && (
                               <div className="mt-2">
-                                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-${statusColor}-100 text-${statusColor}-800 dark:bg-${statusColor}-900 dark:text-${statusColor}-300`}>
+                                <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${statusBadge}`}>
                                   {a.status.replace(/_/g, ' ')}
                                 </span>
                                 {a.reviewed_at && (
@@ -2461,6 +2537,36 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                             {a.manager_notes && (
                               <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
                                 Notes: {a.manager_notes}
+                              </div>
+                            )}
+                            {/* Content preview toggle */}
+                            <button onClick={() => setExpandedApproval(isExpanded ? null : a.id)}
+                              className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                              {isExpanded ? 'Hide preview' : 'Preview content'}
+                            </button>
+                            {isExpanded && (
+                              <div className="mt-2 space-y-2">
+                                {isSequence && stepList.length > 0 ? (
+                                  stepList.map((s, si) => (
+                                    <div key={s.id} className="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">{si + 1}</span>
+                                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{s.name || `Step ${si + 1}`}</span>
+                                        {s.delay_days > 0 && <span className="text-xs text-gray-400">+{s.delay_days}d</span>}
+                                        {s.branch_type !== 'none' && <span className="text-xs text-indigo-500">→ {s.branch_type} → step {s.branch_target_step}</span>}
+                                      </div>
+                                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Subject: {s.subject || '—'}</p>
+                                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 max-h-24 overflow-y-auto prose prose-sm max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: s.body_html || '<em class="text-gray-400">No content</em>' }} />
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Subject: {c?.subject || '—'}</p>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 max-h-32 overflow-y-auto prose prose-sm max-w-none"
+                                      dangerouslySetInnerHTML={{ __html: c?.body_html || '<em class="text-gray-400">No content</em>' }} />
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -2494,7 +2600,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                               <button disabled={approvalLoading}
                                 onClick={() => updateApproval(a.id, 'approved')}
                                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">
-                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+                                <CheckCircle2 className="w-4 h-4 mr-1" /> Approve & Launch
                               </button>
                               <button disabled={approvalLoading}
                                 onClick={() => updateApproval(a.id, 'rejected')}
