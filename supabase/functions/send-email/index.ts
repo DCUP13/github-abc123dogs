@@ -54,6 +54,60 @@ serve(async (req) => {
 
     for (const email of outboxEmails) {
       try {
+        // ── Sequence orchestration: evaluate branch conditions before sending ──
+        let skipSend = false
+        let skipReason = ''
+        if (email.step_id && email.campaign_id) {
+          const { data: evalResult, error: evalErr } = await supabaseClient
+            .rpc('evaluate_sequence_step', { p_outbox_id: email.id })
+          if (evalErr) {
+            console.error('evaluate_sequence_step error:', evalErr)
+          } else if (evalResult) {
+            const action = evalResult.action
+            if (action === 'skip') {
+              skipSend = true
+              skipReason = evalResult.reason || 'skipped by branch condition'
+            } else if (action === 'jump') {
+              // Reschedule this outbox row to the target step
+              const jumpStep = evalResult.jump_step
+              const { data: jumpStepRow } = await supabaseClient
+                .from('crm_campaign_steps')
+                .select('id, subject, body_html, delay_days')
+                .eq('campaign_id', email.campaign_id)
+                .eq('step_order', jumpStep)
+                .maybeSingle()
+              if (jumpStepRow) {
+                const sendAfter = new Date(Date.now() + (jumpStepRow.delay_days || 0) * 24 * 60 * 60 * 1000).toISOString()
+                await supabaseClient
+                  .from('email_outbox')
+                  .insert({
+                    user_id: email.user_id,
+                    from_email: email.from_email,
+                    to_email: email.to_email,
+                    subject: jumpStepRow.subject,
+                    body: jumpStepRow.body_html,
+                    status: 'pending',
+                    campaign_id: email.campaign_id,
+                    step_id: jumpStepRow.id,
+                    current_step: jumpStep,
+                    send_after: sendAfter,
+                  })
+                skipSend = true
+                skipReason = `jumping to step ${jumpStep}`
+              }
+            }
+          }
+        }
+
+        if (skipSend) {
+          await supabaseClient
+            .from('email_outbox')
+            .delete()
+            .eq('id', email.id)
+          results.push({ id: email.id, status: 'skipped', reason: skipReason })
+          continue
+        }
+
         // Build threading headers before sending.
         // lr- prefix identifies this as a loireply email for cross-app SES event routing.
         const domain = email.from_email.split('@')[1] || 'mail'
@@ -156,6 +210,8 @@ serve(async (req) => {
               ses_message_id: sesMessageId,
               in_reply_to: inReplyTo,
               email_references: emailReferences,
+              campaign_id: email.campaign_id || null,
+              step_id: email.step_id || null,
               sent_at: new Date().toISOString(),
               created_at: email.created_at
             })
@@ -164,6 +220,13 @@ serve(async (req) => {
             .from('email_outbox')
             .delete()
             .eq('id', email.id)
+
+          // ── Sequence orchestration: update contact progress after send ──
+          if (email.step_id && email.campaign_id) {
+            const { error: progErr } = await supabaseClient
+              .rpc('update_sequence_progress', { p_outbox_id: email.id, p_success: true })
+            if (progErr) console.error('update_sequence_progress error:', progErr)
+          }
 
           // Increment sent_emails counter — triggers update_dashboard_statistics
           const sesTry = await supabaseClient.rpc('increment_sent_emails_ses', { p_address: email.from_email, p_user_id: email.user_id })
@@ -181,6 +244,13 @@ serve(async (req) => {
               updated_at: new Date().toISOString()
             })
             .eq('id', email.id)
+
+          // ── Sequence orchestration: mark contact failed, cancel remaining steps ──
+          if (email.step_id && email.campaign_id) {
+            const { error: progErr } = await supabaseClient
+              .rpc('update_sequence_progress', { p_outbox_id: email.id, p_success: false })
+            if (progErr) console.error('update_sequence_progress error:', progErr)
+          }
 
           results.push({ id: email.id, status: 'failed', error: errorMessage || 'No email provider configured' })
         }

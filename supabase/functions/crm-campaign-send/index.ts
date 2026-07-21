@@ -106,11 +106,11 @@ Deno.serve(async (req: Request) => {
         const resolvedBody = resolvePlaceholders(firstStep.body_html, client, customValues);
         const resolvedSubject = resolvePlaceholders(firstStep.subject, client, customValues);
         outboxRows.push({
+          user_id,
           from_email,
           to_email: client.email,
           subject: resolvedSubject,
-          body_html: resolvedBody,
-          body_text: resolvedBody.replace(/<[^>]*>/g, ""),
+          body: resolvedBody,
           status: "pending",
           campaign_id,
           step_id: firstStep.id,
@@ -126,11 +126,11 @@ Deno.serve(async (req: Request) => {
           const sBody = resolvePlaceholders(step.body_html, client, customValues);
           const sSubject = resolvePlaceholders(step.subject, client, customValues);
           outboxRows.push({
+            user_id,
             from_email,
             to_email: client.email,
             subject: sSubject,
-            body_html: sBody,
-            body_text: sBody.replace(/<[^>]*>/g, ""),
+            body: sBody,
             status: "pending",
             campaign_id,
             step_id: step.id,
@@ -148,11 +148,11 @@ Deno.serve(async (req: Request) => {
         const resolvedBody = resolvePlaceholders(body_html, client, customValues);
         const resolvedSubject = resolvePlaceholders(subject, client, customValues);
         outboxRows.push({
+          user_id,
           from_email,
           to_email: client.email,
           subject: resolvedSubject,
-          body_html: resolvedBody,
-          body_text: resolvedBody.replace(/<[^>]*>/g, ""),
+          body: resolvedBody,
           status: "pending",
           campaign_id,
         });
