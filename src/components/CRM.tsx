@@ -1594,6 +1594,12 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                                   className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
+                                {crmMode === 'personal' && userOrgs.length > 0 && (
+                                  <button onClick={() => openPromoteDialog(client.id)} title="Promote to organization"
+                                    className="p-1.5 text-gray-400 hover:text-blue-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <ArrowUpCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1653,6 +1659,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                   <Edit className="w-4 h-4 mr-1.5" />
                   Edit
                 </button>
+                {crmMode === 'personal' && userOrgs.length > 0 && (
+                  <button onClick={() => openPromoteDialog(selectedClient.id)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <ArrowUpCircle className="w-4 h-4 mr-1.5" />
+                    Promote
+                  </button>
+                )}
                 <button onClick={() => setShowInteractionForm(true)}
                   className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700">
                   <Plus className="w-4 h-4 mr-1.5" />
@@ -2643,7 +2656,17 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                       Cancel
                     </button>
-                    <button onClick={() => { setShowPromoteDialog(false); setPromoteDuplicate(null); }}
+                    <button onClick={() => {
+                        setShowPromoteDialog(false);
+                        setPromoteDuplicate(null);
+                        // Switch to the org and select the existing contact
+                        const org = userOrgs.find(o => o.id === promoteTargetOrg);
+                        if (org) { setCrmMode('org'); setSelectedOrgId(org.id); }
+                        if (promoteDuplicate.existing_client_id) {
+                          const existing = clients.find(c => c.id === promoteDuplicate.existing_client_id);
+                          if (existing) setSelectedClient(existing);
+                        }
+                      }}
                       className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">
                       View Existing
                     </button>
@@ -2651,6 +2674,11 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 </div>
               ) : !promotePreview ? (
                 <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <strong>This moves the contact</strong> from your personal CRM into the organization. Personal custom field values are transferred and removed from your personal list.
+                    </p>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Organization</label>
                     <select value={promoteTargetOrg} onChange={e => setPromoteTargetOrg(e.target.value)}
