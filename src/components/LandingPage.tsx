@@ -49,7 +49,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
               Sign In
             </button>
             <button
-              onClick={onCreateAccountClick}
+              onClick={onQuizClick}
               className="hidden md:block px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base md:text-lg font-medium transition-colors rounded"
             >
               Get Started
@@ -75,7 +75,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
             <button onClick={onSecurityClick} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Security</button>
             <div className="border-t border-om-forest pt-4 flex flex-col gap-3">
               <button onClick={() => { onSignInClick(); setMobileMenuOpen(false); }} className="text-left text-base text-om-tan hover:text-om-parchment font-medium transition-colors">Sign In</button>
-              <button onClick={() => { onCreateAccountClick(); setMobileMenuOpen(false); }} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base font-medium transition-colors rounded text-center">Get Started</button>
+              <button onClick={() => { onQuizClick(); setMobileMenuOpen(false); }} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base font-medium transition-colors rounded text-center">Get Started</button>
             </div>
           </div>
         )}
@@ -95,7 +95,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={onCreateAccountClick}
+                  onClick={onQuizClick}
                   className="px-8 py-3.5 bg-om-forest text-om-cream hover:bg-om-forest-dark font-medium transition-colors rounded flex items-center justify-center gap-2 shadow-sm"
                 >
                   Get Started
@@ -238,7 +238,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={onCreateAccountClick}
+              onClick={onQuizClick}
               className="px-10 py-3.5 bg-om-gold text-om-forest-deep hover:bg-om-gold-dark font-medium transition-colors rounded flex items-center justify-center gap-2 shadow-sm"
             >
               Get Started
