@@ -299,7 +299,7 @@ export function CrmCampaign({ scope, orgId, clients, orgCustomFields, userCustom
           scope,
           name: campaignName,
           subject: isSequence ? steps[0].subject : subject,
-          body_html: isSequence ? steps[0].body_html : bodyHtml,
+          template_html: isSequence ? steps[0].body_html : bodyHtml,
           from_email: fromEmail,
           status: needsApproval ? 'draft' : 'sending',
           total_count: contactsToSend.length,

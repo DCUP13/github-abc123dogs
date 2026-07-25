@@ -386,10 +386,10 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const loadSesEmails = async (userId: string) => {
     const { data } = await supabase
       .from('amazon_ses_emails')
-      .select('email')
+      .select('address')
       .eq('user_id', userId)
-      .eq('verified', true);
-    const emails = (data || []).map((r: any) => r.email);
+      .order('address', { ascending: true });
+    const emails = (data || []).map((r: any) => r.address);
     setSesEmails(emails);
     if (emails.length > 0 && !composeFromEmail) setComposeFromEmail(emails[0]);
   };
@@ -923,7 +923,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
         .from('crm_campaign_approvals')
         .select(`
           id, campaign_id, org_id, requested_by, status, requested_at, reviewed_by, reviewed_at, queue_position, manager_notes,
-          campaign:crm_campaigns(id, name, subject, body_html, from_email, status, total_count, sent_count, scope, user_id, sequence_id, org_id)
+          campaign:crm_campaigns(id, name, subject, template_html, from_email, status, total_count, sent_count, scope, user_id, sequence_id, org_id)
         `)
         .eq('org_id', selectedOrgId)
         .order('queue_position', { ascending: true });
@@ -1000,7 +1000,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                 user_id: c.user_id,
                 from_email: c.from_email,
                 subject: c.subject,
-                body_html: c.body_html,
+                body_html: c.template_html,
                 is_sequence: isSequence,
               }),
             });
