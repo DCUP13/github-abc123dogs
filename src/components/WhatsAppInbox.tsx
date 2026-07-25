@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { MessageCircle, Send, Bot, User, ToggleLeft, ToggleRight, Phone, Clock, RefreshCw } from 'lucide-react';
+import { MessageCircle, Send, Bot, User, ToggleLeft, ToggleRight, Phone, Clock, RefreshCw, Settings as SettingsIcon, X, Save, Info } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -23,13 +23,18 @@ interface Message {
   created_at: string;
 }
 
+interface WhatsAppPrompt {
+  id: string;
+  content: string;
+  is_active: boolean;
+}
+
 interface WhatsAppInboxProps {
   onSignOut: () => void;
   currentView: string;
 }
 
 function formatPhone(phone: string): string {
-  // Convert E.164 to readable: +1 (555) 123-4567
   if (phone.length === 11 && phone.startsWith('1')) {
     return `+1 (${phone.slice(1, 4)}) ${phone.slice(4, 7)}-${phone.slice(7)}`;
   }
@@ -52,6 +57,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [showPromptPanel, setShowPromptPanel] = useState(false);
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
@@ -86,7 +92,6 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
 
   useEffect(() => {
     loadConversations();
-    // Realtime subscription for new conversations
     const channel = supabase
       .channel('whatsapp_conversations')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_conversations' }, () => {
@@ -112,29 +117,36 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
       .update({ ai_enabled: !conv.ai_enabled })
       .eq('id', conv.id);
     if (error) { console.error('Error toggling AI:', error); return; }
-    setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, ai_enabled: !c.ai_enabled } : c));
+    setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, ai_enabled: !conv.ai_enabled } : c));
   };
 
   const sendReply = async () => {
     if (!replyText.trim() || !selectedId) return;
     setSending(true);
-    // Store the outbound message; actual WhatsApp sending will be wired once the
-    // WhatsApp Business phone number ID and access token are configured.
-    const { error } = await supabase
-      .from('whatsapp_messages')
-      .insert({
-        conversation_id: selectedId,
-        direction: 'outbound',
-        body: replyText.trim(),
-        status: 'pending',
-        ai_source: 'manual',
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-send`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ conversationId: selectedId, body: replyText.trim() }),
       });
 
-    if (error) {
-      console.error('Error sending reply:', error);
-    } else {
-      setReplyText('');
-      loadMessages(selectedId);
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        console.error('Send failed:', response.status, errBody);
+        alert(errBody?.error || `Send failed (${response.status})`);
+      } else {
+        setReplyText('');
+        loadMessages(selectedId);
+      }
+    } catch (err) {
+      console.error('Error sending reply:', err);
+      alert('Could not send the reply. Please try again.');
     }
     setSending(false);
   };
@@ -150,9 +162,14 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
             <MessageCircle className="w-5 h-5 text-green-500" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">WhatsApp</h1>
           </div>
-          <button onClick={loadConversations} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setShowPromptPanel(true)} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="AI reply prompt settings">
+              <SettingsIcon className="w-4 h-4" />
+            </button>
+            <button onClick={loadConversations} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -172,7 +189,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
               <button
                 key={conv.id}
                 onClick={() => setSelectedId(conv.id)}
-                className={`w-full text-left p-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${selectedId === conv.id ? 'bg-purple-50 dark:bg-purple-900/20' : ''}`}
+                className={`w-full text-left p-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors ${selectedId === conv.id ? 'bg-green-50 dark:bg-green-900/20' : ''}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -296,6 +313,165 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
                   AI auto-reply is ON for this number. Your manual replies will still be stored; the AI will also respond to new incoming messages.
                 </p>
               )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {showPromptPanel && (
+        <WhatsAppPromptPanel onClose={() => setShowPromptPanel(false)} />
+      )}
+    </div>
+  );
+}
+
+// ── WhatsApp AI prompt editor panel ──────────────────────────────────────────
+function WhatsAppPromptPanel({ onClose }: { onClose: () => void }) {
+  const [prompt, setPrompt] = useState<WhatsAppPrompt | null>(null);
+  const [content, setContent] = useState('');
+  const [isActive, setIsActive] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('whatsapp_prompts')
+      .select('id, content, is_active')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading whatsapp prompt:', error);
+    } else if (data) {
+      setPrompt(data as WhatsAppPrompt);
+      setContent(data.content);
+      setIsActive(data.is_active);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    setSaving(true);
+    setSavedMsg(false);
+    try {
+      if (prompt) {
+        const { error } = await supabase
+          .from('whatsapp_prompts')
+          .update({ content, is_active: isActive, updated_at: new Date().toISOString() })
+          .eq('id', prompt.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('whatsapp_prompts')
+          .insert({ content, is_active: isActive });
+        if (error) throw error;
+      }
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 2500);
+      load();
+    } catch (err) {
+      console.error('Error saving whatsapp prompt:', err);
+      alert('Could not save the prompt. Please try again.');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="app-bg rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-green-500" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">WhatsApp AI Reply Prompt</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center text-sm text-gray-400">Loading...</div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Master on/off */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">AI auto-replies</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    When on, incoming WhatsApp messages get an AI reply (if the conversation also has AI enabled). When off, you reply to everyone manually.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsActive(!isActive)}
+                  className="flex items-center gap-2 flex-shrink-0 ml-3"
+                  title={isActive ? 'Click to turn AI replies off' : 'Click to turn AI replies on'}
+                >
+                  {isActive ? (
+                    <><ToggleRight className="w-7 h-7 text-green-500" /><span className="text-sm text-green-600 dark:text-green-400">On</span></>
+                  ) : (
+                    <><ToggleLeft className="w-7 h-7 text-gray-400" /><span className="text-sm text-gray-500">Off</span></>
+                  )}
+                </button>
+              </div>
+
+              {/* Prompt editor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Reply prompt</label>
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  rows={10}
+                  placeholder="You are a helpful assistant replying to WhatsApp messages from leads. Be friendly and concise.&#10;&#10;Incoming message: {{whatsapp_message}}&#10;Contact: {{contact_name}}&#10;Recent conversation:&#10;{{conversation_history}}&#10;&#10;Here are FAQs that may help:&#10;{{faq_knowledge_base}}"
+                  className="w-full px-3 py-2 app-card border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y font-mono"
+                />
+              </div>
+
+              {/* Placeholder help */}
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <p className="font-medium">Placeholders you can use in the prompt:</p>
+                    <ul className="space-y-0.5 list-disc list-inside">
+                      <li><code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{whatsapp_message}}'}</code> — the latest incoming message text</li>
+                      <li><code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{conversation_history}}'}</code> — recent back-and-forth in this chat</li>
+                      <li><code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{contact_name}}'}</code> — the contact's name (or phone number)</li>
+                      <li><code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{faq_knowledge_base}}'}</code> — your active FAQ Q&A pairs</li>
+                    </ul>
+                    <p className="pt-1">Only include <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{{faq_knowledge_base}}'}</code> if you want the AI to use your FAQs. Write instructions in the prompt for how the AI should pick and use them.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-green-600 dark:text-green-400">{savedMsg ? 'Saved!' : ''}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Saving...' : 'Save prompt'}
+                </button>
+              </div>
             </div>
           </>
         )}

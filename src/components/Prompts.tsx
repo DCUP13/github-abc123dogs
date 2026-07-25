@@ -1215,7 +1215,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                               <ArrowRight className={`w-4 h-4 ${formData.prompt_type === 'one_step' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`} />
                               <span className={`text-sm font-semibold ${formData.prompt_type === 'one_step' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'}`}>One-Step</span>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Single AI call. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>.</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Single AI call. Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>, or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{faq_knowledge_base}}'}</code>.</p>
                           </button>
                           <button
                             type="button"
@@ -1238,7 +1238,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         </label>
                         {formData.prompt_type === 'two_step' && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code> or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>. The AI response is saved and passed to Step 2.
+                            Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>, or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{faq_knowledge_base}}'}</code>. The AI response is saved and passed to Step 2.
                           </p>
                         )}
                         <textarea
@@ -1256,7 +1256,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Step 2 — Reply Generation Prompt</label>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                            Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code>, or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>.
+                            Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{step1_result}}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{email_content}}'}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{FULL_CONVERSATION_HISTORY}}'}</code>, or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{faq_knowledge_base}}'}</code>.
                           </p>
                           <textarea
                             value={formData.step2_content}
@@ -1277,7 +1277,7 @@ export function Prompts({ onSignOut, currentView }: PromptsProps) {
                           </div>
                           <div className="px-4 pb-4 pt-3">
                             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                              Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{company_info}}'}</code> in your prompt to inject this context.
+                              Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{company_info}}'}</code> or <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{faq_knowledge_base}}'}</code> in your prompt to inject this context.
                             </p>
                             <textarea
                               value={formData.company_info}

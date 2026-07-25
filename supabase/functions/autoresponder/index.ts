@@ -38,9 +38,9 @@ async function callAIWithSystem(systemPrompt: string, userMessage: string): Prom
   return response.choices[0]?.message?.content || '';
 }
 
-// Check the shared FAQ knowledge base for a near-match before calling the full AI.
-// Returns the FAQ answer and its id if matched, or null if no match.
-async function checkFaqForMatch(userId: string, emailContent: string): Promise<{ answer: string; faqId: string } | null> {
+// Build the formatted FAQ knowledge-base string for placeholder injection.
+// Returns null if the user has no active FAQs.
+async function fetchFaqKnowledgeBase(userId: string): Promise<string | null> {
   const { data: faqs, error } = await supabase
     .from('faq_entries')
     .select('id, question, answer')
@@ -49,32 +49,7 @@ async function checkFaqForMatch(userId: string, emailContent: string): Promise<{
 
   if (error || !faqs || faqs.length === 0) return null;
 
-  const faqList = faqs.map((f, i) => `${i + 1}. Q: ${f.question}\n   A: ${f.answer}`).join('\n\n');
-
-  const systemPrompt = `You are a FAQ matcher. Given an incoming email and a list of FAQs, determine if any FAQ directly answers the email's question.
-Reply with ONLY a JSON object: {"match": <1-based index or null>, "reason": "<brief>"}
-If no FAQ is a clear match, return {"match": null, "reason": "no match"}.
-Do NOT match on vague similarity — only match if the FAQ genuinely answers what the sender is asking.`;
-
-  const userMessage = `Incoming email:\n${emailContent}\n\nFAQs:\n${faqList}`;
-
-  try {
-    const result = await callAIWithSystem(systemPrompt, userMessage);
-    const parsed = JSON.parse(result.trim());
-    if (parsed.match && typeof parsed.match === 'number' && parsed.match >= 1 && parsed.match <= faqs.length) {
-      const matched = faqs[parsed.match - 1];
-      // Increment match count in the background
-      supabase
-        .from('faq_entries')
-        .update({ match_count: (matched as any).match_count ? (matched as any).match_count + 1 : 1 })
-        .eq('id', matched.id)
-        .then(() => {});
-      return { answer: matched.answer, faqId: matched.id };
-    }
-  } catch (e) {
-    console.error('FAQ match check failed:', e);
-  }
-  return null;
+  return faqs.map((f, i) => `${i + 1}. Q: ${f.question}\n   A: ${f.answer}`).join('\n\n');
 }
 
 Deno.serve(async (req: Request) => {
@@ -191,55 +166,17 @@ Deno.serve(async (req: Request) => {
     // {{email_content}} = only the latest inbound message body
     const emailContent = `Subject: ${subject}\n\nBody:\n${body}`;
 
-    // Check the shared FAQ knowledge base first — if a FAQ matches, use it and skip full AI generation
-    const faqMatch = await checkFaqForMatch(userId, emailContent);
-    if (faqMatch) {
-      console.log('FAQ match found, using saved answer instead of full AI generation');
-      const replyBody = faqMatch.answer;
-      const finalSubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
-
-      if (shouldAutoSend) {
-        const { error: outboxError } = await supabase
-          .from('email_outbox')
-          .insert({
-            user_id: userId,
-            to_email: originalSender,
-            from_email: receivedByEmail,
-            subject: finalSubject,
-            body: replyBody,
-            reply_to_id: emailId,
-            attachments: [],
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        if (outboxError) throw new Error(`Failed to queue FAQ autoresponse: ${outboxError.message}`);
-        return new Response(
-          JSON.stringify({ success: true, message: 'FAQ autoresponse queued', to: originalSender, from: receivedByEmail, mode: 'faq' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
-      } else {
-        const { error: draftError } = await supabase
-          .from('email_drafts')
-          .insert({
-            user_id: userId,
-            sender: receivedByEmail,
-            receiver: [originalSender],
-            subject: finalSubject,
-            body: replyBody,
-            attachments: [],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-        if (draftError) throw new Error(`Failed to save FAQ draft: ${draftError.message}`);
-        return new Response(
-          JSON.stringify({ success: true, message: 'FAQ draft saved', to: originalSender, from: receivedByEmail, mode: 'faq_draft' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
+    // Lazily fetch the FAQ knowledge base only if at least one prompt uses the
+    // {{faq_knowledge_base}} placeholder. The owner writes the instructions for
+    // how to use the FAQs directly in the prompt text.
+    let faqKbCache: string | null | undefined = undefined;
+    const getFaqKb = async (): Promise<string> => {
+      if (faqKbCache === undefined) {
+        faqKbCache = await fetchFaqKnowledgeBase(userId);
       }
-    }
-
-    // No FAQ match — proceed with full AI prompt pipeline
+      return faqKbCache ?? '';
+    };
+    const promptUsesFaq = (text: string) => text.includes('{{faq_knowledge_base}}');
 
     // {{FULL_CONVERSATION_HISTORY}} = full thread: original + all sent replies, oldest first
     const { data: sentReplies } = await supabase
@@ -284,9 +221,14 @@ Deno.serve(async (req: Request) => {
         const aiInstructions = prompt.template_ai_instructions || '';
 
         if (templateBody) {
-          const systemPrompt = aiInstructions
+          let systemPrompt = aiInstructions
             ? `${aiInstructions}\n\nBase template to personalize:\n${templateBody}`
             : `Personalize the following template for the incoming email:\n${templateBody}`;
+
+          if (promptUsesFaq(aiInstructions) || promptUsesFaq(templateBody)) {
+            const faqKb = await getFaqKb();
+            systemPrompt = systemPrompt.replace(/\{\{faq_knowledge_base\}\}/g, faqKb);
+          }
 
           const result = await callAIWithSystem(systemPrompt, emailContent);
           if (result) {
@@ -315,15 +257,22 @@ Deno.serve(async (req: Request) => {
           .join('\n\n');
       }
 
-      const step1Prompt = prompt.content
-        .replace(/\{\{email_content\}\}/g, emailContent)
-        .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
-        .replace(/\{\{property_info\}\}/g, propertyInfoText)
-        .replace(/\{\{company_info\}\}/g, prompt.company_info || '');
+      const buildPrompt = async (templateText: string): Promise<string> => {
+        let result = templateText
+          .replace(/\{\{email_content\}\}/g, emailContent)
+          .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
+          .replace(/\{\{property_info\}\}/g, propertyInfoText)
+          .replace(/\{\{company_info\}\}/g, prompt.company_info || '');
+        if (promptUsesFaq(templateText)) {
+          result = result.replace(/\{\{faq_knowledge_base\}\}/g, await getFaqKb());
+        }
+        return result;
+      };
 
       if (prompt.prompt_type === 'two_step') {
         console.log(`Running two-step prompt: ${prompt.title}`);
 
+        const step1Prompt = await buildPrompt(prompt.content);
         const step1Result = await callAI(step1Prompt);
         if (!step1Result) {
           console.error('Step 1 produced no output for prompt:', prompt.id);
@@ -343,20 +292,14 @@ Deno.serve(async (req: Request) => {
           console.error('Failed to save step 1 result:', step1SaveError);
         }
 
-        const step2Template = prompt.step2_content || '';
-        const step2Prompt = step2Template
-          .replace(/\{\{email_content\}\}/g, emailContent)
-          .replace(/\{\{FULL_CONVERSATION_HISTORY\}\}/g, fullConversationHistory)
-          .replace(/\{\{step1_result\}\}/g, step1Result)
-          .replace(/\{\{property_info\}\}/g, propertyInfoText)
-          .replace(/\{\{company_info\}\}/g, prompt.company_info || '');
-
+        const step2Prompt = await buildPrompt(prompt.step2_content || '');
         const step2Result = await callAI(step2Prompt);
         if (step2Result) {
           replyParts.push(step2Result);
         }
       } else {
         console.log(`Running one-step prompt: ${prompt.title}`);
+        const step1Prompt = await buildPrompt(prompt.content);
         const result = await callAI(step1Prompt);
         if (result) {
           replyParts.push(result);
