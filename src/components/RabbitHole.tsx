@@ -261,6 +261,9 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
 
         {/* Bottom actions */}
         <div className="absolute bottom-[22vh] left-0 right-0 p-6 text-center z-10">
+          <p className="text-sm font-bold tracking-wide text-om-brown mb-3">
+            1/3 slots available
+          </p>
           <p className="text-sm text-om-brown mb-2">Fine. You win. Do the easy thing:</p>
           <a
             href="https://wa.me/15555555555"
@@ -286,9 +289,6 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
               Back to home
             </button>
           </div>
-          <p className="mt-6 text-sm font-bold tracking-wide text-om-brown">
-            1/3 slots available
-          </p>
         </div>
       </div>
     );
