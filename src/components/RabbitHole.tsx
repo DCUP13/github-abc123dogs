@@ -108,6 +108,12 @@ function DodgingButton() {
     const threshold = 140;
     if (dist > threshold || dist === 0) return;
 
+    // Let the current glide finish before accepting a new target,
+    // otherwise mousemove fires so often it keeps cutting the animation short.
+    const now = Date.now();
+    const cooldown = 380;
+    if (now - lastMoveRef.current < cooldown) return;
+
     const nx = dx / dist;
     const ny = dy / dist;
     const fleeDist = 240;
@@ -122,7 +128,7 @@ function DodgingButton() {
     posRef.current = { x: newX, y: newY };
     setPos({ x: newX, y: newY });
     setEscaped(e => e + 1);
-    lastMoveRef.current = Date.now();
+    lastMoveRef.current = now;
 
     // After the user stops chasing, ease the button back to center.
     if (recenterTimerRef.current) clearTimeout(recenterTimerRef.current);
@@ -194,7 +200,7 @@ function DodgingButton() {
       >
         <button
           ref={buttonRef}
-          style={{ pointerEvents: 'auto', transition: 'left 0.4s cubic-bezier(0.34, 1.4, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.4, 0.64, 1)' }}
+          style={{ pointerEvents: 'auto', transition: 'left 0.7s cubic-bezier(0.16, 1, 0.3, 1), top 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }}
           className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-xl relative select-none whitespace-nowrap"
         >
           Book a Call
