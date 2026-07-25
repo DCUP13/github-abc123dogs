@@ -255,7 +255,7 @@ export function Quiz({ onBackClick }: QuizProps) {
 
         {/* Bottom actions */}
         <div className="absolute bottom-[22vh] left-0 right-0 p-6 text-center z-10">
-          <p className="text-sm text-om-brown mb-2">Fine. You win. Do the easy thing:</p>
+          <p className="text-sm text-om-brown mb-2">Forget the call. Do the easy thing:</p>
           <a
             href="https://wa.me/15555555555"
             target="_blank"
@@ -263,7 +263,7 @@ export function Quiz({ onBackClick }: QuizProps) {
             className="inline-flex items-center gap-2 text-om-forest-deep hover:text-om-forest font-medium text-lg transition-colors"
           >
             <MessageCircle className="w-5 h-5 text-green-600" />
-            Message me on WhatsApp
+            Just message me on WhatsApp
           </a>
           <div className="mt-6 flex items-center justify-center gap-5">
             <button
