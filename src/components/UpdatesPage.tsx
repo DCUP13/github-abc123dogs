@@ -4,10 +4,9 @@ import { Mail, Sparkles, Gift, TrendingUp, Zap, Users, CheckCircle, Rocket, Star
 interface UpdatesPageProps {
   onBackClick: () => void;
   onSignInClick: () => void;
-  onCreateAccountClick: () => void;
 }
 
-export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }: UpdatesPageProps) {
+export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = (e: string) => () => { window.dispatchEvent(new CustomEvent(e)); setMobileMenuOpen(false); };
   return (
@@ -29,7 +28,6 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
           </nav>
           <div className="flex items-center gap-3">
             <button onClick={onSignInClick} className="hidden md:block px-6 py-2.5 text-om-tan hover:text-om-parchment text-base md:text-lg font-medium transition-colors">Sign In</button>
-            <button onClick={onCreateAccountClick} className="hidden md:block px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base md:text-lg font-medium transition-colors rounded">Get Started</button>
             <button
               onClick={() => setMobileMenuOpen(o => !o)}
               className="md:hidden p-2 text-om-tan hover:text-om-parchment transition-colors"
@@ -47,7 +45,6 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
             <button onClick={nav('navigate-to-security')} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Security</button>
             <div className="border-t border-om-forest pt-4 flex flex-col gap-3">
               <button onClick={() => { onSignInClick(); setMobileMenuOpen(false); }} className="text-left text-base text-om-tan hover:text-om-parchment font-medium transition-colors">Sign In</button>
-              <button onClick={() => { onCreateAccountClick(); setMobileMenuOpen(false); }} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base font-medium transition-colors rounded text-center">Get Started</button>
             </div>
           </div>
         )}
@@ -217,10 +214,7 @@ export function UpdatesPage({ onBackClick, onSignInClick, onCreateAccountClick }
             Join LoiReply and get access to continuous improvements and new features at no extra cost
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={onCreateAccountClick} className="px-10 py-3.5 bg-om-gold text-om-forest-deep hover:bg-om-gold-dark font-medium transition-colors rounded">
-              Get Started
-            </button>
-            <button onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Product Updates Inquiry'} className="px-10 py-3.5 border border-om-cream/40 text-om-cream hover:bg-om-cream/10 font-medium transition-colors rounded">
+            <button onClick={() => window.location.href = 'mailto:sales@loireply.com?subject=Product Updates Inquiry'} className="px-10 py-3.5 bg-om-gold text-om-forest-deep hover:bg-om-gold-dark font-medium transition-colors rounded">
               Learn More
             </button>
           </div>

@@ -3,14 +3,13 @@ import { Mail, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarChart3, Check
 
 interface LandingPageProps {
   onSignInClick: () => void;
-  onCreateAccountClick: () => void;
   onPrivacyClick: () => void;
   onTermsClick: () => void;
   onCookieClick: () => void;
   onADAClick: () => void;
 }
 
-export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClick, onTermsClick, onCookieClick, onADAClick }: LandingPageProps) {
+export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCookieClick, onADAClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {

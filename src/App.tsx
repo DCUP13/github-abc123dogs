@@ -1,6 +1,5 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
 import { Login } from './components/Login';
-import { Register } from './components/Register';
 import { Dashboard } from './components/Dashboard';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { Quiz } from './components/Quiz';
@@ -38,7 +37,7 @@ import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'analytics' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about' | 'quiz' | 'faq' | 'whatsapp';
+type View = 'landing' | 'login' | 'dashboard' | 'analytics' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about' | 'quiz' | 'faq' | 'whatsapp';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -399,7 +398,7 @@ export default function App() {
 
           // Restore URL path unless it's an auth page
           const currentPath = window.location.pathname.replace(/^\//, '');
-          const authPages = ['login', 'register'];
+          const authPages = ['login'];
           if (currentPath && !authPages.includes(currentPath)) {
             console.log('Restoring view from URL:', currentPath);
             setView(currentPath as View);
@@ -720,36 +719,30 @@ export default function App() {
               <FeaturesPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
               />
             ) : view === 'pricing' ? (
               <PricingPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
               />
             ) : view === 'security' ? (
               <SecurityPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
               />
             ) : view === 'updates' ? (
               <UpdatesPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
               />
             ) : view === 'about' ? (
               <AboutPage
                 onBackClick={() => updateView('landing')}
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
               />
             ) : view === 'landing' ? (
               <LandingPage
                 onSignInClick={() => updateView('login')}
-                onCreateAccountClick={() => updateView('register')}
                 onPrivacyClick={() => updateView('privacy-policy')}
                 onTermsClick={() => updateView('terms-of-service')}
                 onCookieClick={() => updateView('cookie-policy')}
@@ -760,18 +753,10 @@ export default function App() {
             ) : (
               <div className="min-h-screen bg-om-cream flex items-center justify-center p-4">
                 <div className="bg-white border border-om-tan rounded-xl shadow-sm p-8 w-full max-w-md">
-                  {view === 'login' ? (
-                    <Login
-                      onRegisterClick={() => updateView('register')}
-                      onLoginSuccess={handleLogin}
-                      onBackToHome={() => updateView('landing')}
-                    />
-                  ) : (
-                    <Register
-                      onLoginClick={() => updateView('login')}
-                      onBackToHome={() => updateView('landing')}
-                    />
-                  )}
+                  <Login
+                    onLoginSuccess={handleLogin}
+                    onBackToHome={() => updateView('landing')}
+                  />
                 </div>
               </div>
             )}

@@ -4,10 +4,9 @@ import { Mail, ArrowLeft, Calendar, Users, Zap, TrendingUp, Clock, Shield, BarCh
 interface FeaturesPageProps {
   onBackClick: () => void;
   onSignInClick: () => void;
-  onCreateAccountClick: () => void;
 }
 
-function OmHeader({ onBackClick, onSignInClick, onCreateAccountClick }: { onBackClick: () => void; onSignInClick: () => void; onCreateAccountClick: () => void }) {
+function OmHeader({ onBackClick, onSignInClick }: { onBackClick: () => void; onSignInClick: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = (event: string) => () => { window.dispatchEvent(new CustomEvent(event)); setMobileMenuOpen(false); };
   return (
@@ -29,9 +28,6 @@ function OmHeader({ onBackClick, onSignInClick, onCreateAccountClick }: { onBack
         <button onClick={onSignInClick} className="hidden md:block px-6 py-2.5 text-om-tan hover:text-om-parchment text-base md:text-lg font-medium transition-colors">
           Sign In
         </button>
-        <button onClick={onCreateAccountClick} className="hidden md:block px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base md:text-lg font-medium transition-colors rounded">
-          Get Started
-        </button>
         <button
           onClick={() => setMobileMenuOpen(o => !o)}
           className="md:hidden p-2 text-om-tan hover:text-om-parchment transition-colors"
@@ -49,7 +45,6 @@ function OmHeader({ onBackClick, onSignInClick, onCreateAccountClick }: { onBack
         <button onClick={nav('navigate-to-security')} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Security</button>
         <div className="border-t border-om-forest pt-4 flex flex-col gap-3">
           <button onClick={() => { onSignInClick(); setMobileMenuOpen(false); }} className="text-left text-base text-om-tan hover:text-om-parchment font-medium transition-colors">Sign In</button>
-          <button onClick={() => { onCreateAccountClick(); setMobileMenuOpen(false); }} className="px-6 py-2.5 border border-om-gold text-om-gold hover:bg-om-gold hover:text-om-forest-deep text-base font-medium transition-colors rounded text-center">Get Started</button>
         </div>
       </div>
     )}
@@ -124,10 +119,10 @@ const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCook
   );
 };
 
-export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick }: FeaturesPageProps) {
+export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) {
   return (
     <div className="min-h-screen bg-om-cream font-body">
-      <OmHeader onBackClick={onBackClick} onSignInClick={onSignInClick} onCreateAccountClick={onCreateAccountClick} />
+      <OmHeader onBackClick={onBackClick} onSignInClick={onSignInClick} />
 
       {/* Hero */}
       <section className="pt-36 pb-14 px-6">
@@ -262,10 +257,7 @@ export function FeaturesPage({ onBackClick, onSignInClick, onCreateAccountClick 
             Join professionals who have streamlined their communications with LoiReply
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={onCreateAccountClick} className="px-10 py-3.5 bg-om-gold text-om-forest-deep hover:bg-om-gold-dark font-medium transition-colors rounded">
-              Get Started
-            </button>
-            <button onClick={onSignInClick} className="px-10 py-3.5 border border-om-cream/40 text-om-cream hover:bg-om-cream/10 font-medium transition-colors rounded">
+            <button onClick={onSignInClick} className="px-10 py-3.5 bg-om-gold text-om-forest-deep hover:bg-om-gold-dark font-medium transition-colors rounded">
               Sign In
             </button>
           </div>

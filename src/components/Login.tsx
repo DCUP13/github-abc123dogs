@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { LogIn, UserPlus, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
+import { LogIn, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface LoginProps {
-  onRegisterClick: () => void;
   onLoginSuccess: () => void;
   onBackToHome: () => void;
 }
 
-export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginProps) {
+export function Login({ onLoginSuccess, onBackToHome }: LoginProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -331,16 +330,6 @@ export function Login({ onRegisterClick, onLoginSuccess, onBackToHome }: LoginPr
           )}
         </button>
       </form>
-
-      <div className="mt-6 text-center">
-        <button
-          onClick={onRegisterClick}
-          className="inline-flex items-center gap-2 text-sm text-om-forest hover:text-om-forest-dark font-medium transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          Create an account
-        </button>
-      </div>
     </>
   );
 }
