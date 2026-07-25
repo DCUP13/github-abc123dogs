@@ -84,7 +84,7 @@ function DodgingButton() {
     const w = btn.offsetWidth;
     const h = btn.offsetHeight;
     const cx = (window.innerWidth - w) / 2;
-    const cy = (window.innerHeight - h) / 2;
+    const cy = (window.innerHeight - h) / 2 + 60;
     setPos({ x: cx, y: cy });
     posRef.current = { x: cx, y: cy };
   }, []);
@@ -259,11 +259,15 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
         {/* Full-screen dodging button overlay */}
         <DodgingButton />
 
-        {/* Bottom actions */}
-        <div className="absolute bottom-[22vh] left-0 right-0 p-6 text-center z-10">
-          <p className="text-sm font-bold tracking-wide text-om-brown mb-3">
+        {/* Slots text — sits just under the button's starting position */}
+        <div className="absolute bottom-[38vh] left-0 right-0 text-center z-10 pointer-events-none">
+          <p className="text-sm font-bold tracking-wide text-black">
             1/3 slots available
           </p>
+        </div>
+
+        {/* Bottom actions */}
+        <div className="absolute bottom-[22vh] left-0 right-0 p-6 text-center z-10">
           <p className="text-sm text-om-brown mb-2">Fine. You win. Do the easy thing:</p>
           <a
             href="https://wa.me/15555555555"
