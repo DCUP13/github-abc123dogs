@@ -246,8 +246,8 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
   if (finished) {
     return (
       <div className="min-h-screen bg-om-cream font-body relative overflow-hidden">
-        {/* Heading + slots text — centered on screen, stays still */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 pointer-events-none">
+        {/* Heading + slots text — above the button, stays still */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 pointer-events-none pb-[20vh]">
           <h1 className="text-4xl md:text-6xl font-display font-bold text-om-forest-deep leading-tight">
             Cook the Competition
           </h1>
