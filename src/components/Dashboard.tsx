@@ -197,8 +197,6 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
     },
   ];
 
-  const allCards = [...stats_cards, ...analyticsCards];
-
   const toggleExpanded = (index: number) => {
     setExpandedCards(prev => {
       const next = new Set(prev);
@@ -345,6 +343,3 @@ export function Dashboard({ onSignOut, currentView }: DashboardProps) {
     </div>
   );
 }
-
-// Suppress unused import warning for allCards (kept for potential future use)
-void allCards;
