@@ -188,14 +188,6 @@ function DodgingButton() {
           Book a Call
         </button>
 
-        {/* "1/3 slots available" stays centered under the button */}
-        <div
-          style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 10, whiteSpace: 'nowrap' }}
-          className="text-sm font-bold tracking-wide text-black bg-om-parchment/90 px-3 py-1 rounded-full border border-om-tan shadow-sm"
-        >
-          1/3 slots available
-        </div>
-
         {/* Bursts originate from the button center */}
         {bursts.map(b => (
           <span
@@ -254,14 +246,17 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
   if (finished) {
     return (
       <div className="min-h-screen bg-om-cream font-body relative overflow-hidden">
-        {/* Heading */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 relative z-10">
+        {/* Heading + slots text — centered on screen, stays still */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10 pointer-events-none">
           <h1 className="text-4xl md:text-6xl font-display font-bold text-om-forest-deep leading-tight">
             Cook the Competition
           </h1>
           <p className="mt-5 text-base md:text-xl text-om-mahogany max-w-xl mx-auto leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
             We make sure your leads don't go to your competition. Or we'll help your competition. Choose wisely.
           </p>
+          <div className="mt-8 text-sm font-bold tracking-wide text-black bg-om-parchment/90 px-4 py-1.5 rounded-full border border-om-tan shadow-sm whitespace-nowrap">
+            1/3 slots available
+          </div>
         </div>
 
         {/* Full-screen dodging button overlay */}
