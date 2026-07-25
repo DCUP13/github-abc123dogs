@@ -254,9 +254,6 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
           <p className="mt-5 text-base md:text-xl text-om-mahogany max-w-xl mx-auto leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
             We make sure your leads don't go to your competition. Or we'll help your competition. Choose wisely.
           </p>
-          <div className="mt-8 text-sm font-bold tracking-wide text-black bg-om-parchment/90 px-4 py-1.5 rounded-full border border-om-tan shadow-sm whitespace-nowrap">
-            1/3 slots available
-          </div>
         </div>
 
         {/* Full-screen dodging button overlay */}
@@ -289,6 +286,9 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
               Back to home
             </button>
           </div>
+          <p className="mt-6 text-sm font-bold tracking-wide text-om-brown">
+            1/3 slots available
+          </p>
         </div>
       </div>
     );
