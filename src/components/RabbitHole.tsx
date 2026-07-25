@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { ArrowRight, RotateCcw, MessageCircle } from 'lucide-react';
 
 interface RabbitHoleProps {
@@ -58,99 +58,180 @@ const QUIZ_STEPS: QuizStep[] = [
   },
 ];
 
-const EMOJIS = ['✨', '🎉', '🚀', '💼', '⚡', '🎯', '🔥', '💡', '⭐', '💫'];
+const BURST_EMOJIS = ['✨', '🎉', '🚀', '💼', '⚡', '🎯', '🔥', '💡', '⭐', '💫', '💨', '🏃', '😂', '🙈'];
+const BURST_TEXTS = ['sorry', 'oops', 'message me on whatsapp', 'try whatsapp', 'bro stop', 'bruh', 'nah', 'catch me', 'lol no', 'nice try', 'almost!', 'too slow', 'nope', 'gotcha'];
+
+interface Burst {
+  id: number;
+  content: string;
+  isText: boolean;
+  dx: number;
+  dy: number;
+}
 
 function DodgingButton() {
-  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [escaped, setEscaped] = useState(0);
-  const [bursts, setBursts] = useState<{ id: number; emoji: string; dx: number; dy: number }[]>([]);
-  const [resetTimer, setResetTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [bursts, setBursts] = useState<Burst[]>([]);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(pos);
+  const burstIdRef = useRef(0);
 
-  const escape = useCallback(() => {
+  // Center the button precisely on mount once we can measure it.
+  useLayoutEffect(() => {
     const btn = buttonRef.current;
-    const container = containerRef.current;
-    if (!btn || !container) return;
+    if (!btn) return;
+    const w = btn.offsetWidth;
+    const h = btn.offsetHeight;
+    const cx = (window.innerWidth - w) / 2;
+    const cy = (window.innerHeight - h) / 2;
+    setPos({ x: cx, y: cy });
+    posRef.current = { x: cx, y: cy };
+  }, []);
 
-    const containerRect = container.getBoundingClientRect();
-    const btnRect = btn.getBoundingClientRect();
+  const flee = useCallback((mouseX: number, mouseY: number) => {
+    const btn = buttonRef.current;
+    if (!btn) return;
+    const w = btn.offsetWidth;
+    const h = btn.offsetHeight;
+    const cx = posRef.current.x + w / 2;
+    const cy = posRef.current.y + h / 2;
 
-    // Random direction, keep within container
-    const maxDX = (containerRect.width - btnRect.width) / 2 - 20;
-    const maxDY = (containerRect.height - btnRect.height) / 2 - 20;
-    const dx = (Math.random() * 2 - 1) * maxDX;
-    const dy = (Math.random() * 2 - 1) * maxDY;
+    // Vector from the mouse to the button center — the button flees along it.
+    const dx = cx - mouseX;
+    const dy = cy - mouseY;
+    const dist = Math.hypot(dx, dy);
+    const threshold = 140;
+    if (dist > threshold || dist === 0) return;
 
-    setPos({ x: dx, y: dy });
+    const nx = dx / dist;
+    const ny = dy / dist;
+    const fleeDist = 240;
+    const margin = 16;
+    const bottomMargin = 48;
+
+    let newX = posRef.current.x + nx * fleeDist;
+    let newY = posRef.current.y + ny * fleeDist;
+    newX = Math.max(margin, Math.min(window.innerWidth - w - margin, newX));
+    newY = Math.max(margin, Math.min(window.innerHeight - h - bottomMargin, newY));
+
+    posRef.current = { x: newX, y: newY };
+    setPos({ x: newX, y: newY });
     setEscaped(e => e + 1);
 
-    // Emoji burst
-    const newBursts = Array.from({ length: 5 }).map((_, i) => ({
-      id: Date.now() + i,
-      emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
-      dx: (Math.random() * 2 - 1) * 60,
-      dy: (Math.random() * 2 - 1) * 60 - 30,
-    }));
+    // Spawn bursts that originate from the button's new position.
+    const count = 4 + Math.floor(Math.random() * 3);
+    const newBursts: Burst[] = Array.from({ length: count }).map((_, i) => {
+      const useText = i === 0 ? true : Math.random() < 0.45;
+      return {
+        id: burstIdRef.current++,
+        content: useText
+          ? BURST_TEXTS[Math.floor(Math.random() * BURST_TEXTS.length)]
+          : BURST_EMOJIS[Math.floor(Math.random() * BURST_EMOJIS.length)],
+        isText: useText,
+        dx: (Math.random() * 2 - 1) * 90,
+        dy: (Math.random() * 2 - 1) * 90 - 40,
+      };
+    });
     setBursts(prev => [...prev, ...newBursts]);
+    const ids = newBursts.map(b => b.id);
     setTimeout(() => {
-      setBursts(prev => prev.filter(b => !newBursts.some(nb => nb.id === b.id)));
-    }, 1000);
+      setBursts(prev => prev.filter(b => !ids.includes(b.id)));
+    }, 1200);
+  }, []);
 
-    // Reset after cursor stays away
-    if (resetTimer) clearTimeout(resetTimer);
-    setResetTimer(setTimeout(() => {
-      setPos({ x: 0, y: 0 });
-    }, 2500));
-  }, [resetTimer]);
+  // Track the mouse/touch across the whole viewport so the button flees
+  // based on the direction the cursor is approaching from.
+  useEffect(() => {
+    const handleMouse = (e: MouseEvent) => flee(e.clientX, e.clientY);
+    const handleTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) flee(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    window.addEventListener('mousemove', handleMouse);
+    window.addEventListener('touchmove', handleTouch, { passive: true });
+    window.addEventListener('touchstart', handleTouch, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouse);
+      window.removeEventListener('touchmove', handleTouch);
+      window.removeEventListener('touchstart', handleTouch);
+    };
+  }, [flee]);
+
+  // Keep the button on-screen when the window resizes.
+  useEffect(() => {
+    const handleResize = () => {
+      const btn = buttonRef.current;
+      if (!btn) return;
+      const w = btn.offsetWidth;
+      const h = btn.offsetHeight;
+      const margin = 16;
+      posRef.current = {
+        x: Math.max(margin, Math.min(window.innerWidth - w - margin, posRef.current.x)),
+        y: Math.max(margin, Math.min(window.innerHeight - h - 48, posRef.current.y)),
+      };
+      setPos(posRef.current);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex items-center justify-center min-h-[180px] w-full"
-    >
-      {/* Emoji bursts layer */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-visible">
+    <>
+      <div
+        style={{ position: 'fixed', left: pos.x, top: pos.y, pointerEvents: 'none', zIndex: 50 }}
+      >
+        <button
+          ref={buttonRef}
+          style={{ pointerEvents: 'auto' }}
+          className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-xl relative select-none whitespace-nowrap"
+        >
+          Book a Call
+          {escaped > 2 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full shadow">
+              {escaped}
+            </span>
+          )}
+        </button>
+
+        {/* "1/3 slots available" follows the button */}
+        <div
+          style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 10, whiteSpace: 'nowrap' }}
+          className="text-xs font-semibold tracking-wide text-om-mahogany bg-om-parchment/90 px-3 py-1 rounded-full border border-om-tan shadow-sm"
+        >
+          1/3 slots available
+        </div>
+
+        {/* Bursts originate from the button center */}
         {bursts.map(b => (
           <span
             key={b.id}
-            className="absolute text-2xl"
             style={{
-              animation: 'burst 1s ease-out forwards',
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              animation: 'burst 1.2s ease-out forwards',
               ['--burst-dx' as string]: `${b.dx}px`,
               ['--burst-dy' as string]: `${b.dy}px`,
             }}
           >
-            {b.emoji}
+            {b.isText ? (
+              <span className="block px-2.5 py-1 bg-om-gold/90 text-om-forest-deep text-xs font-bold rounded-full whitespace-nowrap shadow-md">
+                {b.content}
+              </span>
+            ) : (
+              <span className="block text-2xl">{b.content}</span>
+            )}
           </span>
         ))}
       </div>
 
-      <button
-        ref={buttonRef}
-        onMouseEnter={escape}
-        onTouchStart={escape}
-        className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-shadow relative z-10 select-none"
-        style={{
-          transform: `translate(${pos.x}px, ${pos.y}px)`,
-          transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
-      >
-        Book a Call
-        {escaped > 2 && (
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-            {escaped}
-          </span>
-        )}
-      </button>
-
       <style>{`
         @keyframes burst {
-          0% { transform: translate(0, 0) scale(0.5); opacity: 1; }
-          100% { transform: translate(var(--burst-dx), var(--burst-dy)) scale(1.2); opacity: 0; }
+          0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--burst-dx)), calc(-50% + var(--burst-dy))) scale(1.2); opacity: 0; }
         }
       `}</style>
-    </div>
+    </>
   );
 }
 
@@ -175,57 +256,49 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
     setFinished(false);
   };
 
-  // Determine the fun title based on collected identities
-  const getFunTitle = () => {
-    const hasAction = identities.some(i => i.includes('action') || i.includes('decided'));
-    const hasSkeptic = identities.some(i => i.includes('skeptical') || i.includes('researches'));
-    if (hasAction) return "The Impatient Opportunist";
-    if (hasSkeptic) return "The Converted Skeptic";
-    return "The Quietly Ready";
-  };
-
   if (finished) {
     return (
-      <div className="min-h-screen bg-om-cream font-body flex flex-col items-center justify-center px-6">
-        <div className="max-w-lg w-full text-center">
-          <p className="text-om-gold text-sm tracking-widest uppercase mb-3">Quiz Complete</p>
-          <h1 className="text-3xl md:text-4xl font-display font-semibold text-om-forest-deep mb-4">
-            You are: {getFunTitle()}
+      <div className="min-h-screen bg-om-cream font-body relative overflow-hidden">
+        {/* Heading */}
+        <div className="pt-16 md:pt-20 pb-8 text-center px-6 relative z-10">
+          <h1 className="text-4xl md:text-6xl font-display font-bold text-om-forest-deep leading-tight">
+            Cook the Competition
           </h1>
-          <p className="text-lg text-om-mahogany mb-8" style={{ fontFamily: "'EB Garamond', serif" }}>
-            You've just talked yourself into it. Five questions, five honest answers, and look at you now —
-            someone who's ready. So go ahead. Try to book a call.
+          <p className="mt-5 text-base md:text-xl text-om-mahogany max-w-xl mx-auto leading-relaxed" style={{ fontFamily: "'EB Garamond', serif" }}>
+            We make sure your leads don't go to your competition. Or we'll help your competition. Choose wisely.
           </p>
+        </div>
 
-          <DodgingButton />
+        {/* Full-screen dodging button overlay */}
+        <DodgingButton />
 
-          <div className="mt-8 border-t border-om-tan pt-6">
-            <p className="text-sm text-om-brown mb-2">Or, you know, just do the easy thing:</p>
-            <a
-              href="https://wa.me/15555555555"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-om-forest-deep hover:text-om-forest font-medium text-lg transition-colors"
+        {/* Bottom actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-center z-10">
+          <p className="text-sm text-om-brown mb-2">Fine. You win. Do the easy thing:</p>
+          <a
+            href="https://wa.me/15555555555"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-om-forest-deep hover:text-om-forest font-medium text-lg transition-colors"
+          >
+            <MessageCircle className="w-5 h-5 text-green-600" />
+            Message me on WhatsApp
+          </a>
+          <div className="mt-6 flex items-center justify-center gap-5">
+            <button
+              onClick={restart}
+              className="inline-flex items-center gap-2 text-sm text-om-brown hover:text-om-mahogany transition-colors"
             >
-              <MessageCircle className="w-5 h-5 text-green-600" />
-              Message me on WhatsApp
-            </a>
+              <RotateCcw className="w-4 h-4" />
+              Take the quiz again
+            </button>
+            <button
+              onClick={onBackClick}
+              className="inline-flex items-center text-sm text-om-brown hover:text-om-mahogany transition-colors"
+            >
+              Back to home
+            </button>
           </div>
-
-          <button
-            onClick={restart}
-            className="mt-10 inline-flex items-center gap-2 text-sm text-om-brown hover:text-om-mahogany transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Take the quiz again
-          </button>
-
-          <button
-            onClick={onBackClick}
-            className="mt-4 block mx-auto text-sm text-om-brown hover:text-om-mahogany transition-colors"
-          >
-            Back to home
-          </button>
         </div>
       </div>
     );
