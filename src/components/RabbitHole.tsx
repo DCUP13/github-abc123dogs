@@ -76,6 +76,9 @@ function DodgingButton() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const posRef = useRef(pos);
   const burstIdRef = useRef(0);
+  const lastMoveRef = useRef(0);
+  const centerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const recenterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Center the button precisely on mount once we can measure it.
   useLayoutEffect(() => {
@@ -87,6 +90,7 @@ function DodgingButton() {
     const cy = (window.innerHeight - h) / 2 + 60;
     setPos({ x: cx, y: cy });
     posRef.current = { x: cx, y: cy };
+    centerRef.current = { x: cx, y: cy };
   }, []);
 
   const flee = useCallback((mouseX: number, mouseY: number) => {
@@ -118,6 +122,14 @@ function DodgingButton() {
     posRef.current = { x: newX, y: newY };
     setPos({ x: newX, y: newY });
     setEscaped(e => e + 1);
+    lastMoveRef.current = Date.now();
+
+    // After the user stops chasing, ease the button back to center.
+    if (recenterTimerRef.current) clearTimeout(recenterTimerRef.current);
+    recenterTimerRef.current = setTimeout(() => {
+      posRef.current = centerRef.current;
+      setPos(centerRef.current);
+    }, 2200);
 
     // Spawn bursts that originate from the button's new position.
     const count = 4 + Math.floor(Math.random() * 3);
@@ -182,7 +194,7 @@ function DodgingButton() {
       >
         <button
           ref={buttonRef}
-          style={{ pointerEvents: 'auto', transition: 'left 0.25s cubic-bezier(0.22, 1, 0.36, 1), top 0.25s cubic-bezier(0.22, 1, 0.36, 1)' }}
+          style={{ pointerEvents: 'auto', transition: 'left 0.4s cubic-bezier(0.34, 1.4, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.4, 0.64, 1)' }}
           className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-xl relative select-none whitespace-nowrap"
         >
           Book a Call
