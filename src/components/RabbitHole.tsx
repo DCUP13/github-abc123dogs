@@ -196,11 +196,11 @@ function DodgingButton() {
   return (
     <>
       <div
-        style={{ position: 'fixed', left: pos.x, top: pos.y, pointerEvents: 'none', zIndex: 50 }}
+        style={{ position: 'fixed', left: pos.x, top: pos.y, pointerEvents: 'none', zIndex: 50, transition: 'left 0.7s cubic-bezier(0.16, 1, 0.3, 1), top 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         <button
           ref={buttonRef}
-          style={{ pointerEvents: 'auto', transition: 'left 0.7s cubic-bezier(0.16, 1, 0.3, 1), top 0.7s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          style={{ pointerEvents: 'auto' }}
           className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-xl relative select-none whitespace-nowrap"
         >
           Book a Call
