@@ -1,11 +1,14 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Home, Settings as SettingsIcon, LogOut, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug, X } from 'lucide-react';
+import { Home, BarChart3, Settings as SettingsIcon, LogOut, Mail, Inbox, MessageSquare, Users, Calendar as CalendarIcon, HelpCircle, Plug, X, BookOpen, MessageCircle } from 'lucide-react';
 import { ThemeContext } from '../App';
 import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   onSignOut: () => void;
   onHomeClick: () => void;
+  onAnalyticsClick: () => void;
+  onFaqClick: () => void;
+  onWhatsAppClick: () => void;
   onSettingsClick: () => void;
   onAddressesClick: () => void;
   onEmailsClick: () => void;
@@ -63,6 +66,9 @@ function useTeamUnread() {
 export function Sidebar({
   onSignOut,
   onHomeClick,
+  onAnalyticsClick,
+  onFaqClick,
+  onWhatsAppClick,
   onSettingsClick,
   onAddressesClick,
   onEmailsClick,
@@ -133,6 +139,9 @@ export function Sidebar({
 
   const VIEW_MAP: Record<string, string> = {
     dashboard: 'Home',
+    analytics: 'Analytics',
+    faq: 'FAQ',
+    whatsapp: 'WhatsApp',
     emails: 'Emails',
     addresses: 'Addresses',
     prompts: 'Prompts',
@@ -148,6 +157,9 @@ export function Sidebar({
 
   const navItems = [
     { onClick: onHomeClick,         Icon: Home,          label: 'Home' },
+    { onClick: onAnalyticsClick,    Icon: BarChart3,     label: 'Analytics' },
+    { onClick: onFaqClick,          Icon: BookOpen,      label: 'FAQ' },
+    { onClick: onWhatsAppClick,    Icon: MessageCircle, label: 'WhatsApp' },
     { onClick: onEmailsClick,       Icon: Inbox,         label: 'Emails' },
     { onClick: onAddressesClick,    Icon: Mail,          label: 'Addresses' },
     { onClick: onPromptsClick,      Icon: MessageSquare, label: 'Prompts' },

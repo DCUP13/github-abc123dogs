@@ -23,6 +23,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
   const onSecurityClick = () => { window.dispatchEvent(new CustomEvent('navigate-to-security')); setMobileMenuOpen(false); };
   const onUpdatesClick  = () => { window.dispatchEvent(new CustomEvent('navigate-to-updates'));  setMobileMenuOpen(false); };
   const onAboutClick    = () => { window.dispatchEvent(new CustomEvent('navigate-to-about'));    setMobileMenuOpen(false); };
+  const onRabbitHoleClick = () => { window.dispatchEvent(new CustomEvent('navigate-to-rabbit-hole')); setMobileMenuOpen(false); };
 
   return (
     <div className="min-h-screen bg-om-cream font-body">
@@ -36,6 +37,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           <nav className="hidden md:flex items-center gap-8 text-base md:text-lg text-om-tan">
             <button onClick={onFeaturesClick} className="hover:text-om-parchment transition-colors">Features</button>
             <button onClick={onPricingClick}  className="hover:text-om-parchment transition-colors">Pricing</button>
+            <button onClick={onRabbitHoleClick} className="hover:text-om-parchment transition-colors text-om-gold">Rabbit Hole</button>
             <button onClick={onAboutClick}    className="hover:text-om-parchment transition-colors">About</button>
             <button onClick={onSecurityClick} className="hover:text-om-parchment transition-colors">Security</button>
           </nav>
@@ -68,6 +70,7 @@ export function LandingPage({ onSignInClick, onCreateAccountClick, onPrivacyClic
           <div id="mobile-menu" className="md:hidden bg-om-forest-deep border-t border-om-forest px-6 py-4 flex flex-col gap-4">
             <button onClick={onFeaturesClick} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Features</button>
             <button onClick={onPricingClick}  className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Pricing</button>
+            <button onClick={onRabbitHoleClick} className="text-left text-base text-om-gold hover:text-om-parchment transition-colors py-1">Rabbit Hole</button>
             <button onClick={onAboutClick}    className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">About</button>
             <button onClick={onSecurityClick} className="text-left text-base text-om-tan hover:text-om-parchment transition-colors py-1">Security</button>
             <div className="border-t border-om-forest pt-4 flex flex-col gap-3">

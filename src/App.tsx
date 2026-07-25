@@ -2,6 +2,10 @@ import React, { useState, createContext, useContext, useEffect } from 'react';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Dashboard } from './components/Dashboard';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { RabbitHole } from './components/RabbitHole';
+import { FaqManager } from './components/FaqManager';
+import { WhatsAppInbox } from './components/WhatsAppInbox';
 import { AppPage } from './components/AppPage';
 import { Sidebar } from './components/Sidebar';
 import { Settings } from './components/Settings';
@@ -34,7 +38,7 @@ import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'analytics' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about' | 'rabbit-hole' | 'faq' | 'whatsapp';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -302,11 +306,16 @@ export default function App() {
       updateView('about');
     };
 
+    const handleNavigateToRabbitHole = () => {
+      updateView('rabbit-hole');
+    };
+
     window.addEventListener('navigate-to-features', handleNavigateToFeatures);
     window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
     window.addEventListener('navigate-to-security', handleNavigateToSecurity);
     window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
     window.addEventListener('navigate-to-about', handleNavigateToAbout);
+    window.addEventListener('navigate-to-rabbit-hole', handleNavigateToRabbitHole);
 
     // Check for existing session
     const initAuth = async () => {
@@ -500,6 +509,7 @@ export default function App() {
       window.removeEventListener('navigate-to-security', handleNavigateToSecurity);
       window.removeEventListener('navigate-to-updates', handleNavigateToUpdates);
       window.removeEventListener('navigate-to-about', handleNavigateToAbout);
+      window.removeEventListener('navigate-to-rabbit-hole', handleNavigateToRabbitHole);
     };
   }, []);
 
@@ -605,11 +615,14 @@ export default function App() {
             {view === 'team-management' && (
               <TeamManagement onSignOut={handleSignOut} />
             )}
-            {view === 'dashboard' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
+            {view === 'dashboard' || view === 'analytics' || view === 'faq' || view === 'whatsapp' || view === 'settings' || view === 'emails' || view === 'addresses' || view === 'prompts' || view === 'crm' || view === 'calendar' || view === 'support' || view === 'integrations' || view === 'team-view' ? (
               <div className="flex min-h-screen" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
                 <Sidebar
                   onSignOut={handleSignOut}
                   onHomeClick={() => { updateView('dashboard'); setMobileNavOpen(false); }}
+                  onAnalyticsClick={() => { updateView('analytics'); setMobileNavOpen(false); }}
+                  onFaqClick={() => { updateView('faq'); setMobileNavOpen(false); }}
+                  onWhatsAppClick={() => { updateView('whatsapp'); setMobileNavOpen(false); }}
                   onSettingsClick={() => { updateView('settings'); setMobileNavOpen(false); }}
                   onEmailsClick={() => { updateView('emails'); setMobileNavOpen(false); }}
                   onAddressesClick={() => { updateView('addresses'); setMobileNavOpen(false); }}
@@ -647,6 +660,15 @@ export default function App() {
                   </div>
                   {view === 'dashboard' && (
                     <Dashboard onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'analytics' && (
+                    <AnalyticsDashboard onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'faq' && (
+                    <FaqManager onSignOut={handleSignOut} currentView={view} />
+                  )}
+                  {view === 'whatsapp' && (
+                    <WhatsAppInbox onSignOut={handleSignOut} currentView={view} />
                   )}
                   {view === 'settings' && (
                     <Settings
@@ -733,6 +755,8 @@ export default function App() {
                 onCookieClick={() => updateView('cookie-policy')}
                 onADAClick={() => updateView('ada')}
               />
+            ) : view === 'rabbit-hole' ? (
+              <RabbitHole onBackClick={() => updateView('landing')} />
             ) : (
               <div className="min-h-screen bg-om-cream flex items-center justify-center p-4">
                 <div className="bg-white border border-om-tan rounded-xl shadow-sm p-8 w-full max-w-md">
