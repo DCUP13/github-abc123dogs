@@ -34,6 +34,8 @@ export interface Client {
   notes?: string;
   source?: string;
   deleted_at?: string | null;
+  promoted_from_personal?: boolean | null;
+  original_user_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -209,6 +211,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
   const [promoteSelectedFields, setPromoteSelectedFields] = useState<string[]>([]);
   const [promoteDuplicate, setPromoteDuplicate] = useState<any>(null);
   const [promoteLoading, setPromoteLoading] = useState(false);
+  const [reclaimLoading, setReclaimLoading] = useState<string | null>(null);
 
   // Org campaign approval queue
   const [showApprovalQueue, setShowApprovalQueue] = useState(false);
@@ -914,6 +917,39 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
     setShowPromoteDialog(true);
   };
 
+  // ─── Reclaim org contact back to personal ─────────────────────────────────
+  const handleReclaimClient = async (clientId: string) => {
+    if (!await showConfirm({
+      message: 'Move this contact back to your personal contacts? Custom field data will be moved back too.',
+      confirmText: 'Move to my contacts',
+    })) return;
+    setReclaimLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reclaim-client-from-org`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Reclaim failed');
+      if (json.duplicate) {
+        toast.error(`A contact with this email already exists in your personal contacts: ${json.existing_name}`);
+        return;
+      }
+      toast.success('Contact moved back to your personal contacts.');
+      if (selectedClient?.id === clientId) setSelectedClient(null);
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(`Reclaim failed: ${err.message}`);
+    } finally {
+      setReclaimLoading(false);
+    }
+  };
+
   // ─── Org campaign approval queue ──────────────────────────────────────────
   const fetchApprovalQueue = async () => {
     if (!selectedOrgId) return;
@@ -1481,6 +1517,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                                 <ArrowUpCircle className="w-4 h-4" />
                               </button>
                             )}
+                            {crmMode === 'org' && client.promoted_from_personal && (
+                              <button onClick={e => { e.stopPropagation(); handleReclaimClient(client.id); }} title="Move back to my contacts"
+                                disabled={reclaimLoading === client.id}
+                                className="p-1.5 text-gray-400 hover:text-emerald-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50">
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1600,6 +1643,13 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                                     <ArrowUpCircle className="w-3.5 h-3.5" />
                                   </button>
                                 )}
+                                {crmMode === 'org' && client.promoted_from_personal && (
+                                  <button onClick={() => handleReclaimClient(client.id)} title="Move back to my contacts"
+                                    disabled={reclaimLoading === client.id}
+                                    className="p-1.5 text-gray-400 hover:text-emerald-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50">
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1664,6 +1714,14 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700">
                     <ArrowUpCircle className="w-4 h-4 mr-1.5" />
                     Promote
+                  </button>
+                )}
+                {crmMode === 'org' && selectedClient.promoted_from_personal && (
+                  <button onClick={() => handleReclaimClient(selectedClient.id)}
+                    disabled={reclaimLoading === selectedClient.id}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 app-card hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+                    <RotateCcw className="w-4 h-4 mr-1.5" />
+                    {reclaimLoading === selectedClient.id ? 'Moving…' : 'Move to my contacts'}
                   </button>
                 )}
                 <button onClick={() => setShowInteractionForm(true)}
