@@ -635,6 +635,7 @@ export default function App() {
                   isOpen={mobileNavOpen}
                   onClose={() => setMobileNavOpen(false)}
                   currentView={view}
+                  userRole={userRole}
                 />
                 <div id="main-content" className="flex-1 sm:ml-14 lg:ml-56 xl:ml-64 min-w-0" style={{ backgroundColor: darkMode ? (THEME_VARS[colorScheme]?.['--page-bg-d'] ?? '#0f172a') : (THEME_VARS[colorScheme]?.['--page-bg'] ?? '#f8fafc') }}>
                   {/* Mobile top bar — only shows below sm where drawer is used */}
@@ -666,7 +667,7 @@ export default function App() {
                   {view === 'faq' && (
                     <FaqManager onSignOut={handleSignOut} currentView={view} />
                   )}
-                  {view === 'whatsapp' && (
+                  {view === 'whatsapp' && userRole === 'owner' && (
                     <WhatsAppInbox onSignOut={handleSignOut} currentView={view} />
                   )}
                   {view === 'settings' && (

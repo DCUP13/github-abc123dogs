@@ -22,6 +22,7 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   currentView?: string;
+  userRole?: string | null;
 }
 
 function useTeamUnread() {
@@ -82,6 +83,7 @@ export function Sidebar({
   isOpen = false,
   onClose,
   currentView = '',
+  userRole = null,
 }: SidebarProps) {
   const { darkMode } = useContext(ThemeContext);
   const teamUnread = useTeamUnread();
@@ -159,7 +161,7 @@ export function Sidebar({
     { onClick: onHomeClick,         Icon: Home,          label: 'Home' },
     { onClick: onAnalyticsClick,    Icon: BarChart3,     label: 'Analytics' },
     { onClick: onFaqClick,          Icon: BookOpen,      label: 'FAQ' },
-    { onClick: onWhatsAppClick,    Icon: MessageCircle, label: 'WhatsApp' },
+    ...(userRole === 'owner' ? [{ onClick: onWhatsAppClick, Icon: MessageCircle, label: 'WhatsApp' }] : []),
     { onClick: onEmailsClick,       Icon: Inbox,         label: 'Emails' },
     { onClick: onAddressesClick,    Icon: Mail,          label: 'Addresses' },
     { onClick: onPromptsClick,      Icon: MessageSquare, label: 'Prompts' },
