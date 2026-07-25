@@ -182,21 +182,16 @@ function DodgingButton() {
       >
         <button
           ref={buttonRef}
-          style={{ pointerEvents: 'auto' }}
+          style={{ pointerEvents: 'auto', transition: 'left 0.25s cubic-bezier(0.22, 1, 0.36, 1), top 0.25s cubic-bezier(0.22, 1, 0.36, 1)' }}
           className="px-8 py-4 bg-om-gold text-om-forest-deep font-bold text-lg rounded-lg shadow-xl relative select-none whitespace-nowrap"
         >
           Book a Call
-          {escaped > 2 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full shadow">
-              {escaped}
-            </span>
-          )}
         </button>
 
-        {/* "1/3 slots available" follows the button */}
+        {/* "1/3 slots available" stays centered under the button */}
         <div
           style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 10, whiteSpace: 'nowrap' }}
-          className="text-xs font-semibold tracking-wide text-om-mahogany bg-om-parchment/90 px-3 py-1 rounded-full border border-om-tan shadow-sm"
+          className="text-sm font-bold tracking-wide text-black bg-om-parchment/90 px-3 py-1 rounded-full border border-om-tan shadow-sm"
         >
           1/3 slots available
         </div>
@@ -215,7 +210,7 @@ function DodgingButton() {
             }}
           >
             {b.isText ? (
-              <span className="block px-2.5 py-1 bg-om-gold/90 text-om-forest-deep text-xs font-bold rounded-full whitespace-nowrap shadow-md">
+              <span className="block px-2.5 py-1 bg-om-gold/90 text-black text-xs font-bold rounded-full whitespace-nowrap shadow-md">
                 {b.content}
               </span>
             ) : (
@@ -260,7 +255,7 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
     return (
       <div className="min-h-screen bg-om-cream font-body relative overflow-hidden">
         {/* Heading */}
-        <div className="pt-16 md:pt-20 pb-8 text-center px-6 relative z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 relative z-10">
           <h1 className="text-4xl md:text-6xl font-display font-bold text-om-forest-deep leading-tight">
             Cook the Competition
           </h1>
