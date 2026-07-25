@@ -15,27 +15,7 @@ const QUIZ_STEPS: QuizStep[] = [
     question: "Be honest. Why are you really here?",
     options: [
       { text: "I'm drowning in emails and need a lifeline.", identity: "someone who's ready to be rescued" },
-      { text: "I keep hearing 'automation' but I'm skeptical.", identity: "someone who researches before they invest" },
       { text: "I want my evenings back.", identity: "someone who values their time" },
-      { text: "My competitors are doing something I'm not.", identity: "someone who refuses to be left behind" },
-    ],
-  },
-  {
-    question: "Let's say your inbox handled itself tomorrow. What changes?",
-    options: [
-      { text: "I finally answer leads before they go cold.", identity: "someone who closes deals" },
-      { text: "I stop dreading the little red notification dot.", identity: "someone who wants peace of mind" },
-      { text: "I have time to actually grow the business.", identity: "someone who thinks bigger than busywork" },
-      { text: "I stop missing the important ones buried in spam.", identity: "someone who can't afford to miss opportunities" },
-    ],
-  },
-  {
-    question: "What's actually been stopping you?",
-    options: [
-      { text: "It feels complicated to set up.", identity: "someone who wants done-for-you simplicity" },
-      { text: "I'm not sure AI can sound like me.", identity: "someone who cares about their brand voice" },
-      { text: "I've been burned by tools before.", identity: "someone who's due for something that works" },
-      { text: "Honestly? I just haven't made the time.", identity: "someone who's ready to stop waiting" },
     ],
   },
   {
@@ -43,17 +23,6 @@ const QUIZ_STEPS: QuizStep[] = [
     options: [
       { text: "Close more deals. Obviously.", identity: "someone driven by revenue" },
       { text: "Be present with my family again.", identity: "someone who remembers what matters" },
-      { text: "Build the thing I've been putting off for a year.", identity: "someone with untapped ambition" },
-      { text: "Finally take a real lunch break.", identity: "someone who deserves a break" },
-    ],
-  },
-  {
-    question: "Last one. You've made it this far. What does that tell you?",
-    options: [
-      { text: "I'm more ready than I've been admitting.", identity: "someone who's already decided" },
-      { text: "I'm at least curious enough to see what's next.", identity: "someone who follows through on curiosity" },
-      { text: "I don't waste time on things that aren't for me.", identity: "someone who trusts their instincts" },
-      { text: "I'm done reading. I want to see it work.", identity: "someone who takes action" },
     ],
   },
 ];
