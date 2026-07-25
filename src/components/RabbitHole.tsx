@@ -263,7 +263,7 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
         <DodgingButton />
 
         {/* Bottom actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 pb-16 text-center z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-center z-10">
           <p className="text-sm text-om-brown mb-2">Fine. You win. Do the easy thing:</p>
           <a
             href="https://wa.me/15555555555"
