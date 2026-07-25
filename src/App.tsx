@@ -3,7 +3,7 @@ import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Dashboard } from './components/Dashboard';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
-import { RabbitHole } from './components/RabbitHole';
+import { Quiz } from './components/Quiz';
 import { FaqManager } from './components/FaqManager';
 import { WhatsAppInbox } from './components/WhatsAppInbox';
 import { AppPage } from './components/AppPage';
@@ -38,7 +38,7 @@ import { ConfirmProvider } from './components/ui/ConfirmProvider';
 import { AlertCircle, Menu, Mail } from 'lucide-react';
 import { DashboardProvider } from './contexts/DashboardContext';
 
-type View = 'landing' | 'login' | 'register' | 'dashboard' | 'analytics' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about' | 'rabbit-hole' | 'faq' | 'whatsapp';
+type View = 'landing' | 'login' | 'register' | 'dashboard' | 'analytics' | 'app' | 'settings' | 'templates' | 'emails' | 'addresses' | 'prompts' | 'crm' | 'calendar' | 'support' | 'integrations' | 'team-management' | 'team-view' | 'google-callback' | 'privacy-policy' | 'terms-of-service' | 'cookie-policy' | 'ada' | 'features' | 'pricing' | 'security' | 'updates' | 'about' | 'quiz' | 'faq' | 'whatsapp';
 
 interface ThemeContextType {
   darkMode: boolean;
@@ -306,8 +306,8 @@ export default function App() {
       updateView('about');
     };
 
-    const handleNavigateToRabbitHole = () => {
-      updateView('rabbit-hole');
+    const handleNavigateToQuiz = () => {
+      updateView('quiz');
     };
 
     window.addEventListener('navigate-to-features', handleNavigateToFeatures);
@@ -315,7 +315,7 @@ export default function App() {
     window.addEventListener('navigate-to-security', handleNavigateToSecurity);
     window.addEventListener('navigate-to-updates', handleNavigateToUpdates);
     window.addEventListener('navigate-to-about', handleNavigateToAbout);
-    window.addEventListener('navigate-to-rabbit-hole', handleNavigateToRabbitHole);
+    window.addEventListener('navigate-to-quiz', handleNavigateToQuiz);
 
     // Check for existing session
     const initAuth = async () => {
@@ -509,7 +509,7 @@ export default function App() {
       window.removeEventListener('navigate-to-security', handleNavigateToSecurity);
       window.removeEventListener('navigate-to-updates', handleNavigateToUpdates);
       window.removeEventListener('navigate-to-about', handleNavigateToAbout);
-      window.removeEventListener('navigate-to-rabbit-hole', handleNavigateToRabbitHole);
+      window.removeEventListener('navigate-to-quiz', handleNavigateToQuiz);
     };
   }, []);
 
@@ -755,8 +755,8 @@ export default function App() {
                 onCookieClick={() => updateView('cookie-policy')}
                 onADAClick={() => updateView('ada')}
               />
-            ) : view === 'rabbit-hole' ? (
-              <RabbitHole onBackClick={() => updateView('landing')} />
+            ) : view === 'quiz' ? (
+              <Quiz onBackClick={() => updateView('landing')} />
             ) : (
               <div className="min-h-screen bg-om-cream flex items-center justify-center p-4">
                 <div className="bg-white border border-om-tan rounded-xl shadow-sm p-8 w-full max-w-md">

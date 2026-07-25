@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { ArrowRight, RotateCcw, MessageCircle } from 'lucide-react';
 
-interface RabbitHoleProps {
+interface QuizProps {
   onBackClick: () => void;
 }
 
@@ -209,7 +209,7 @@ function DodgingButton() {
   );
 }
 
-export function RabbitHole({ onBackClick }: RabbitHoleProps) {
+export function Quiz({ onBackClick }: QuizProps) {
   const [step, setStep] = useState(0);
   const [identities, setIdentities] = useState<string[]>([]);
   const [finished, setFinished] = useState(false);
@@ -301,7 +301,7 @@ export function RabbitHole({ onBackClick }: RabbitHoleProps) {
         </div>
 
         <p className="text-om-gold text-sm tracking-widest uppercase mb-3">
-          The Rabbit Hole · Step {step + 1} of {QUIZ_STEPS.length}
+          Quiz · Step {step + 1} of {QUIZ_STEPS.length}
         </p>
         <h1 className="text-2xl md:text-3xl font-display font-semibold text-om-forest-deep mb-6 leading-tight">
           {current.question}
