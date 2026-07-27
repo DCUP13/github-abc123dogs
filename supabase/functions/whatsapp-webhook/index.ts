@@ -121,7 +121,7 @@ async function generateAiReply(
   // Fetch the owner's most recent active WhatsApp prompt.
   const { data: prompt, error: promptError } = await supabase
     .from("whatsapp_prompts")
-    .select("id, content, is_active")
+    .select("id, content, is_active, prompt_type, step2_content, company_info, property_info")
     .eq("user_id", userId)
     .eq("is_active", true)
     .order("updated_at", { ascending: false })
@@ -145,13 +145,55 @@ async function generateAiReply(
     : "";
   const displayName = contactName || phoneNumber;
 
-  const finalPrompt = prompt.content
-    .replace(/\{\{whatsapp_message\}\}/g, inboundBody)
-    .replace(/\{\{conversation_history\}\}/g, history)
-    .replace(/\{\{contact_name\}\}/g, displayName)
-    .replace(/\{\{faq_knowledge_base\}\}/g, faqKb);
+  // Format property_info (jsonb: array or single object) into readable text.
+  const rawPropertyInfo = prompt.property_info;
+  let propertyInfoText = "";
+  if (rawPropertyInfo) {
+    const properties = Array.isArray(rawPropertyInfo) ? rawPropertyInfo : [rawPropertyInfo];
+    propertyInfoText = properties.map((p: Record<string, unknown>, i: number) => {
+      const lines = Object.entries(p).map(([k, v]) => `${k}: ${v}`);
+      return properties.length > 1 ? `Property ${i + 1}:\n${lines.join("\n")}` : lines.join("\n");
+    }).join("\n\n");
+  }
+  const companyInfo = prompt.company_info || "";
+
+  // Substitute every supported placeholder into a prompt string.
+  const buildPrompt = (text: string): string =>
+    text
+      .replace(/\{\{whatsapp_message\}\}/g, inboundBody)
+      .replace(/\{\{conversation_history\}\}/g, history)
+      .replace(/\{\{contact_name\}\}/g, displayName)
+      .replace(/\{\{company_info\}\}/g, companyInfo)
+      .replace(/\{\{property_info\}\}/g, propertyInfoText)
+      .replace(/\{\{faq_knowledge_base\}\}/g, faqKb);
 
   try {
+    if (prompt.prompt_type === "two_step") {
+      // Step 1 uses `content`; its result feeds into step 2 via {{step1_result}}.
+      const step1Prompt = buildPrompt(prompt.content);
+      const step1Completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: step1Prompt }],
+        max_tokens: 800,
+        temperature: 0.7,
+      });
+      const step1Result = step1Completion.choices[0]?.message?.content?.trim() || "";
+      if (!step1Result) return null;
+
+      const step2Prompt = buildPrompt(prompt.step2_content || "")
+        .replace(/\{\{step1_result\}\}/g, step1Result);
+      const step2Completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: step2Prompt }],
+        max_tokens: 600,
+        temperature: 0.7,
+      });
+      const reply = step2Completion.choices[0]?.message?.content?.trim();
+      return reply || null;
+    }
+
+    // One-step: run `content` and return the result directly.
+    const finalPrompt = buildPrompt(prompt.content);
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: finalPrompt }],
