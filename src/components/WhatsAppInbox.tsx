@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { ThemeContext } from '../App';
-import { MessageCircle, Send, Bot, User, ToggleLeft, ToggleRight, Phone, Clock, RefreshCw, Settings as SettingsIcon, X, Save, Info } from 'lucide-react';
+import { MessageCircle, Send, Bot, User, ToggleLeft, ToggleRight, Phone, Clock, RefreshCw, Settings as SettingsIcon, X, Save, Info, Home, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -24,6 +24,22 @@ interface Message {
   created_at: string;
 }
 
+interface PropertyInfo {
+  address: string;
+  price: string;
+  bedrooms: string;
+  bathrooms: string;
+  sqft: string;
+  property_type: string;
+  description: string;
+  features: string;
+}
+
+const emptyProperty = (): PropertyInfo => ({
+  address: '', price: '', bedrooms: '', bathrooms: '',
+  sqft: '', property_type: '', description: '', features: ''
+});
+
 interface WhatsAppPrompt {
   id: string;
   content: string;
@@ -31,7 +47,7 @@ interface WhatsAppPrompt {
   prompt_type: 'one_step' | 'two_step';
   step2_content: string | null;
   company_info: string | null;
-  property_info: unknown;
+  property_info: PropertyInfo[] | null;
 }
 
 interface WhatsAppInboxProps {
@@ -66,8 +82,8 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
   const [showPromptPanel, setShowPromptPanel] = useState(false);
   const [globalAiOn, setGlobalAiOn] = useState(true);
 
-  const loadConversations = useCallback(async () => {
-    setLoading(true);
+  const loadConversations = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     const { data, error } = await supabase
       .from('whatsapp_conversations')
       .select('*')
@@ -78,11 +94,11 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
     } else {
       setConversations((data || []) as Conversation[]);
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, []);
 
-  const loadMessages = useCallback(async (convId: string) => {
-    setLoadingMessages(true);
+  const loadMessages = useCallback(async (convId: string, silent = false) => {
+    if (!silent) setLoadingMessages(true);
     const { data, error } = await supabase
       .from('whatsapp_messages')
       .select('*')
@@ -94,7 +110,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
     } else {
       setMessages((data || []) as Message[]);
     }
-    setLoadingMessages(false);
+    if (!silent) setLoadingMessages(false);
   }, []);
 
   // Load global AI state (prompt.is_active) so the header toggle reflects truth.
@@ -113,8 +129,9 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
     loadGlobalAiState();
   }, [loadConversations, loadGlobalAiState]);
 
-  // Realtime: catch new messages + conversation updates. Resubscribes when the
-  // selected conversation changes so the open thread gets live inserts.
+  // Realtime: subscribe to conversations, messages, AND the prompt table so
+  // toggles/settings made in one window appear live in another. Silent refreshes
+  // avoid the skeleton-flash glitch. Resubscribes when selection changes.
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
@@ -122,7 +139,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
     const channel = supabase
       .channel('whatsapp_inbox_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_conversations' }, () => {
-        loadConversations();
+        loadConversations(true);
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_messages' }, (payload) => {
         const msg = payload.new as Message;
@@ -130,16 +147,20 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
           setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
         }
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_prompts' }, () => {
+        loadGlobalAiState();
+      })
       .subscribe();
 
-    // Fallback: poll every 20s in case a realtime event is missed.
+    // Fallback: poll every 25s silently in case a realtime event is missed.
     const interval = setInterval(() => {
-      loadConversations();
-      if (selectedIdRef.current) loadMessages(selectedIdRef.current);
-    }, 20000);
+      loadConversations(true);
+      if (selectedIdRef.current) loadMessages(selectedIdRef.current, true);
+      loadGlobalAiState();
+    }, 25000);
 
     return () => { supabase.removeChannel(channel); clearInterval(interval); };
-  }, [loadConversations, loadMessages]);
+  }, [loadConversations, loadMessages, loadGlobalAiState]);
 
   useEffect(() => {
     if (selectedId) loadMessages(selectedId);
@@ -151,6 +172,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
       .update({ ai_enabled: !conv.ai_enabled })
       .eq('id', conv.id);
     if (error) { console.error('Error toggling AI:', error); return; }
+    // Realtime will sync other windows; update local immediately.
     setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, ai_enabled: !conv.ai_enabled } : c));
   };
 
@@ -228,7 +250,7 @@ export function WhatsAppInbox({ currentView }: WhatsAppInboxProps) {
             <button onClick={() => setShowPromptPanel(true)} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="AI reply prompt settings">
               <SettingsIcon className="w-4 h-4" />
             </button>
-            <button onClick={loadConversations} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
+            <button onClick={() => loadConversations()} className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Refresh">
               <RefreshCw className="w-4 h-4" />
             </button>
           </div>
@@ -408,7 +430,8 @@ function WhatsAppPromptPanel({ onClose, onAiToggleChanged }: { onClose: () => vo
   const [promptType, setPromptType] = useState<'one_step' | 'two_step'>('one_step');
   const [step2Content, setStep2Content] = useState('');
   const [companyInfo, setCompanyInfo] = useState('');
-  const [propertyInfoText, setPropertyInfoText] = useState('');
+  const [properties, setProperties] = useState<PropertyInfo[]>([]);
+  const [collapsedProperties, setCollapsedProperties] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -432,10 +455,13 @@ function WhatsAppPromptPanel({ onClose, onAiToggleChanged }: { onClose: () => vo
       setPromptType(p.prompt_type || 'one_step');
       setStep2Content(p.step2_content || '');
       setCompanyInfo(p.company_info || '');
-      // property_info is jsonb — render as pretty JSON for editing.
-      if (p.property_info) {
-        try { setPropertyInfoText(JSON.stringify(p.property_info, null, 2)); }
-        catch { setPropertyInfoText(''); }
+      const raw = p.property_info;
+      if (raw && Array.isArray(raw) && raw.length > 0) {
+        setProperties(raw as PropertyInfo[]);
+      } else if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+        setProperties([raw as unknown as PropertyInfo]);
+      } else {
+        setProperties([]);
       }
     }
     setLoading(false);
@@ -443,15 +469,41 @@ function WhatsAppPromptPanel({ onClose, onAiToggleChanged }: { onClose: () => vo
 
   useEffect(() => { load(); }, [load]);
 
+  const handleAddProperty = () =>
+    setProperties(prev => [...prev, emptyProperty()]);
+
+  const handleRemoveProperty = (index: number) => {
+    setProperties(prev => prev.filter((_, i) => i !== index));
+    setCollapsedProperties(prev => {
+      const next = new Set<number>();
+      prev.forEach(i => { if (i < index) next.add(i); else if (i > index) next.add(i - 1); });
+      return next;
+    });
+  };
+
+  const handlePropertyChange = (index: number, field: keyof PropertyInfo, value: string) => {
+    setProperties(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  };
+
+  const togglePropertyCollapse = (index: number) => {
+    setCollapsedProperties(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
+  };
+
+  const propertyLabel = (p: PropertyInfo, index: number) => {
+    if (p.address.trim()) return p.address.trim();
+    if (p.price.trim()) return `Property ${index + 1} — ${p.price.trim()}`;
+    return `Property ${index + 1}`;
+  };
+
   const save = async () => {
     setSaving(true);
     setSavedMsg(false);
     try {
-      let parsedProperty: unknown = null;
-      if (propertyInfoText.trim()) {
-        try { parsedProperty = JSON.parse(propertyInfoText); }
-        catch { alert('Property info is not valid JSON. Use an object like {"address":"123 Main","price":"$500k"} or an array of such objects.'); setSaving(false); return; }
-      }
+      const filledProperties = properties.filter(p => Object.values(p).some(v => v.trim() !== ''));
 
       const payload = {
         content,
@@ -459,7 +511,7 @@ function WhatsAppPromptPanel({ onClose, onAiToggleChanged }: { onClose: () => vo
         prompt_type: promptType,
         step2_content: promptType === 'two_step' ? step2Content : null,
         company_info: companyInfo || null,
-        property_info: parsedProperty,
+        property_info: filledProperties.length > 0 ? filledProperties : null,
         updated_at: new Date().toISOString(),
       };
 
@@ -597,20 +649,83 @@ function WhatsAppPromptPanel({ onClose, onAiToggleChanged }: { onClose: () => vo
                 />
               </div>
 
-              {/* Property info */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Property info <span className="text-gray-400 font-normal">(optional, JSON)</span></label>
-                <textarea
-                  value={propertyInfoText}
-                  onChange={e => setPropertyInfoText(e.target.value)}
-                  rows={5}
-                  placeholder='{"address":"123 Main St","price":"$500,000","beds":3,"baths":2,"sqft":1800,"description":"Charming family home near schools."}'
-                  className="w-full px-3 py-2 app-card border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 resize-y font-mono"
-                  style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Use a single object or an array of objects. Reference with <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{property_info}}'}</code> in the prompt.
-                </p>
+              {/* Property info — structured, add/remove properties like the email Prompts page */}
+              <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 app-card-inner">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Property Information</span>
+                    {properties.length > 0 && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">({properties.length} {properties.length === 1 ? 'property' : 'properties'})</span>
+                    )}
+                  </div>
+                  <button type="button" onClick={handleAddProperty} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-md transition-colors" style={{ backgroundColor: 'var(--accent)' }}>
+                    <Plus className="w-3 h-3" />Add Property
+                  </button>
+                </div>
+                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 app-card-inner">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Use <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{'{{property_info}}'}</code> in your prompt to inject listing data.</p>
+                </div>
+                {properties.length === 0 ? (
+                  <div className="px-4 py-5 text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No properties added yet. Click "Add Property" to add one.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {properties.map((property, index) => {
+                      const isCollapsed = collapsedProperties.has(index);
+                      return (
+                        <div key={index} className="app-card">
+                          <div className="flex items-center justify-between px-4 py-3">
+                            <button type="button" onClick={() => togglePropertyCollapse(index)} className="flex items-center gap-2 flex-1 text-left">
+                              {isCollapsed ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronUp className="w-4 h-4 text-gray-400" />}
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{propertyLabel(property, index)}</span>
+                            </button>
+                            <button type="button" onClick={() => handleRemoveProperty(index)} className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors ml-2">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          {!isCollapsed && (
+                            <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                                <input type="text" value={property.address} onChange={(e) => handlePropertyChange(index, 'address', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="123 Main St, City, State 00000" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Listing Price</label>
+                                <input type="text" value={property.price} onChange={(e) => handlePropertyChange(index, 'price', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="$500,000" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Property Type</label>
+                                <input type="text" value={property.property_type} onChange={(e) => handlePropertyChange(index, 'property_type', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="Single Family, Condo..." />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bedrooms</label>
+                                <input type="text" value={property.bedrooms} onChange={(e) => handlePropertyChange(index, 'bedrooms', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="3" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bathrooms</label>
+                                <input type="text" value={property.bathrooms} onChange={(e) => handlePropertyChange(index, 'bathrooms', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="2" />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Square Footage</label>
+                                <input type="text" value={property.sqft} onChange={(e) => handlePropertyChange(index, 'sqft', e.target.value)} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="1,800 sq ft" />
+                              </div>
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                                <textarea value={property.description} onChange={(e) => handlePropertyChange(index, 'description', e.target.value)} rows={3} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 resize-none" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="Charming home with open floor plan..." />
+                              </div>
+                              <div className="col-span-2">
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Key Features / Amenities</label>
+                                <textarea value={property.features} onChange={(e) => handlePropertyChange(index, 'features', e.target.value)} rows={2} className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 resize-none" style={{ '--tw-ring-color': 'var(--accent)' } as React.CSSProperties} placeholder="Pool, 2-car garage, hardwood floors..." />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Placeholder help */}
