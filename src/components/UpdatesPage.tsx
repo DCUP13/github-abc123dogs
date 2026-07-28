@@ -13,7 +13,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
     <div className="min-h-screen bg-om-cream font-body">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
@@ -51,7 +51,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </header>
 
       {/* Hero */}
-      <section className="pt-36 pb-14 px-6">
+      <section className="pt-36 pb-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-om-parchment border border-om-tan rounded-xl flex items-center justify-center">
@@ -69,7 +69,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* All Updates Included banner */}
-      <section className="py-14 px-6 bg-om-forest-deep">
+      <section className="py-14 px-4 sm:px-6 bg-om-forest-deep">
         <div className="max-w-4xl mx-auto">
           <div className="border border-om-forest rounded-xl p-10 text-center">
             <div className="flex justify-center mb-4">
@@ -96,7 +96,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* What you get */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Included</p>
@@ -125,7 +125,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* Update Philosophy */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Approach</p>
@@ -154,7 +154,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* What's coming */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Roadmap</p>
@@ -183,7 +183,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* Guarantees */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-4xl mx-auto">
           <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3 text-center">Guarantees</p>
           <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-forest-deep text-center mb-10">Update Guarantees</h2>
@@ -207,7 +207,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-om-forest">
+      <section className="py-20 px-4 sm:px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">Start Getting Updates Today</h2>
           <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
@@ -221,7 +221,7 @@ export function UpdatesPage({ onBackClick, onSignInClick }: UpdatesPageProps) {
         </div>
       </section>
 
-      <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+      <footer className="bg-om-forest-deep text-om-brown py-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-10">
             <div>

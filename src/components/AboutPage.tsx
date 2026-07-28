@@ -13,7 +13,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
     <div className="min-h-screen bg-om-cream font-body">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={onBackClick} className="flex items-center gap-2">
               <Mail className="w-7 h-7 text-om-gold" />
@@ -51,7 +51,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </header>
 
       {/* Hero */}
-      <section className="pt-36 pb-14 px-6">
+      <section className="pt-36 pb-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-om-parchment border border-om-tan rounded-xl flex items-center justify-center">
@@ -69,7 +69,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* Mantra */}
-      <section className="py-14 px-6 bg-om-forest-deep">
+      <section className="py-14 px-4 sm:px-6 bg-om-forest-deep">
         <div className="max-w-4xl mx-auto">
           <div className="border border-om-forest rounded-xl p-10 text-center">
             <p className="text-sm md:text-base text-om-gold font-medium tracking-widest uppercase mb-4">Our Mantra</p>
@@ -84,7 +84,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* Core Values */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Principles</p>
@@ -113,7 +113,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* Mission */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Purpose</p>
@@ -143,7 +143,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* Why prompt responses matter */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Impact</p>
@@ -170,7 +170,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* Commitment */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10 text-center">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Promise</p>
@@ -199,7 +199,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-om-forest">
+      <section className="py-20 px-4 sm:px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">Join Our Community</h2>
           <p className="text-om-tan text-lg md:text-xl mb-10" style={{ fontFamily: "'EB Garamond', serif" }}>
@@ -213,7 +213,7 @@ export function AboutPage({ onBackClick, onSignInClick }: AboutPageProps) {
         </div>
       </section>
 
-      <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+      <footer className="bg-om-forest-deep text-om-brown py-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-10">
             <div>

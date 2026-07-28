@@ -617,7 +617,7 @@ function YearView({ currentDate, onMonthClick }: { currentDate: Date; onMonthCli
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {months.map((month) => {
           const monthDate = new Date(currentDate.getFullYear(), month, 1);
           const firstDay = monthDate.getDay();
@@ -753,7 +753,7 @@ function EventDialog({ selectedDate, onClose, onSave }: { selectedDate: Date; on
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Start

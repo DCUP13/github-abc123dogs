@@ -11,7 +11,7 @@ function OmHeader({ onBackClick, onSignInClick }: { onBackClick: () => void; onS
   const nav = (event: string) => () => { window.dispatchEvent(new CustomEvent(event)); setMobileMenuOpen(false); };
   return (
   <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
-    <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <button onClick={onBackClick} className="flex items-center gap-2">
           <Mail className="w-7 h-7 text-om-gold" />
@@ -55,7 +55,7 @@ function OmHeader({ onBackClick, onSignInClick }: { onBackClick: () => void; onS
 const omFooter = (onPrivacyClick?: () => void, onTermsClick?: () => void, onCookieClick?: () => void) => {
   const nav = (event: string) => () => window.dispatchEvent(new CustomEvent(event));
   return (
-    <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+    <footer className="bg-om-forest-deep text-om-brown py-14 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-10 mb-10">
           <div>
@@ -125,7 +125,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       <OmHeader onBackClick={onBackClick} onSignInClick={onSignInClick} />
 
       {/* Hero */}
-      <section className="pt-36 pb-14 px-6">
+      <section className="pt-36 pb-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center mb-4">
           <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-4">Platform Overview</p>
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-semibold text-om-forest-deep mb-6">
@@ -138,7 +138,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       </section>
 
       {/* AI Automation */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Automation</p>
@@ -167,7 +167,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       </section>
 
       {/* CRM */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Relationships</p>
@@ -196,7 +196,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       </section>
 
       {/* Calendar */}
-      <section className="py-16 px-6 bg-om-parchment">
+      <section className="py-16 px-4 sm:px-6 bg-om-parchment">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Scheduling</p>
@@ -222,7 +222,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       </section>
 
       {/* Security */}
-      <section className="py-16 px-6 bg-om-cream">
+      <section className="py-16 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="mb-10">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-2">Protection</p>
@@ -248,7 +248,7 @@ export function FeaturesPage({ onBackClick, onSignInClick }: FeaturesPageProps) 
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-om-forest">
+      <section className="py-20 px-4 sm:px-6 bg-om-forest">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">
             Ready to Transform Your Email Workflow?

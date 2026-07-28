@@ -28,7 +28,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
     <div className="min-h-screen bg-om-cream font-body">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-om-forest-deep/95 backdrop-blur-md border-b border-om-forest z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="w-7 h-7 text-om-gold" />
             <span className="text-base md:text-lg font-display font-semibold text-om-parchment tracking-wide">LoiReply</span>
@@ -81,7 +81,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
       </header>
 
       {/* Hero */}
-      <section className="pt-36 pb-24 px-6">
+      <section className="pt-36 pb-24 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -136,7 +136,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
       </section>
 
       {/* Features grid */}
-      <section className="py-20 bg-om-parchment px-6">
+      <section className="py-20 bg-om-parchment px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Capabilities</p>
@@ -170,7 +170,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
       </section>
 
       {/* Business results */}
-      <section className="py-20 px-6 bg-om-cream">
+      <section className="py-20 px-4 sm:px-6 bg-om-cream">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-om-gold text-sm md:text-base font-medium tracking-widest uppercase mb-3">Results</p>
@@ -227,7 +227,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-om-forest px-6">
+      <section className="py-20 bg-om-forest px-4 sm:px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-4xl font-display font-semibold text-om-cream mb-5">
             Ready to Transform Your Business?
@@ -254,7 +254,7 @@ export function LandingPage({ onSignInClick, onPrivacyClick, onTermsClick, onCoo
       </section>
 
       {/* Footer */}
-      <footer className="bg-om-forest-deep text-om-brown py-14 px-6">
+      <footer className="bg-om-forest-deep text-om-brown py-14 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-10 mb-10">
             <div>

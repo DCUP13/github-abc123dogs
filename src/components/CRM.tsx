@@ -1938,7 +1938,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 mb-4">
                           {[
                             { label: 'Financial', score: selectedClientGrade.financial_score, color: 'text-green-600 dark:text-green-400' },
                             { label: 'Motivation', score: selectedClientGrade.motivation_score, color: 'text-blue-600 dark:text-blue-400' },
@@ -2325,7 +2325,7 @@ export function CRM({ onSignOut, currentView }: CRMProps) {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg app-card-inner text-gray-900 dark:text-white text-sm" />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
                     <input type="text" value={clientForm.city}
